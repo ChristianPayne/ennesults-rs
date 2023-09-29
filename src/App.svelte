@@ -2,7 +2,7 @@
   import Greet from './lib/Greet.svelte'
   import { invoke } from "@tauri-apps/api/tauri"
   
-  async function connect () {
+  async function connect_to_channel () {
     let status = await invoke("connect_to_channel");
     console.log('🛠 Status', status);
   }
@@ -19,7 +19,7 @@
     </h2>
   </div>
 
-  <button on:click={connect}>
+  <button on:click={connect_to_channel}>
     Connect to Ennegineer!
   </button>
 

@@ -852,6 +852,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-positioner",
+ "tauri-plugin-store",
  "tokio",
  "twitch-irc",
  "twitch_api",
@@ -3558,6 +3559,18 @@ dependencies = [
  "serde_json",
  "serde_repr",
  "tauri",
+]
+
+[[package]]
+name = "tauri-plugin-store"
+version = "0.0.0"
+source = "git+https://github.com/tauri-apps/plugins-workspace?branch=v1#9b96996b5a90a6a57d587ce4312975f13a4d8bc2"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror",
 ]
 
 [[package]]
