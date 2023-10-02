@@ -6,6 +6,10 @@
     let status = await invoke("connect_to_channel");
     console.log('🛠 Status', status);
   }
+  async function print_state () {
+    let state = await invoke("print_state");
+    console.log('🛠 print_state', state);
+  }
 </script>
 
 <div class="flex-col text-center space-y-5">
@@ -21,6 +25,9 @@
 
   <button on:click={connect_to_channel}>
     Connect to Ennegineer!
+  </button>
+  <button on:click={print_state}>
+    Print State!
   </button>
 
   <Greet />

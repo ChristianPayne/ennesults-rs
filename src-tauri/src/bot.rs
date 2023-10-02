@@ -1,5 +1,6 @@
 // Helpers
 use std::sync::Mutex;
+use std::sync::Arc;
 
 // IRC
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
@@ -8,17 +9,42 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 
 use serde::ser::{Serialize, Serializer};
 
+// BOT 
 #[derive(Debug)]
 pub struct Bot {
-  pub client: Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>
+  pub client : Mutex<Client>
 }
 
 impl Default for Bot {
     fn default() -> Self { 
         Bot {
-          client: None
+          client: Mutex::new(Client(None))
         }
     }
+}
+
+// CLIENT
+#[derive(Debug)]
+pub struct Client (pub Option<Arc<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>>);
+impl Client {
+  pub fn new(client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>) -> Self {
+    Client(Some(Arc::new(client)))
+  }
+}
+impl Default for Client {
+  fn default() -> Self { 
+    Client (None)
+  }
+}
+pub fn get_client (state: &tauri::State<'_, Bot>) -> Option<Arc<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>> {
+  let mutex_result = &state.client.lock();
+  match mutex_result {
+      Ok(guard) => guard.0.clone(),
+      Err(_) => {
+          println!("Error getting client out of mutex!");
+          None
+      }
+  }
 }
 
 // impl Clone for Bot {

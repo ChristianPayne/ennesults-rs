@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::sync::Arc;
+
 // TAURI
 use tauri::Manager;
 use tauri_plugin_store::StoreBuilder;
@@ -26,6 +28,16 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+
+
+#[tauri::command]
+fn print_state(state: tauri::State<'_, Bot>) {
+    dbg!(&state);
+    if let Some(client) = bot::get_client(&state) {
+        //Do something with the client.
+    }
+}
+
 #[tauri::command]
 async fn connect_to_channel (app_handle: tauri::AppHandle, state: tauri::State<'_, Bot>) -> Result<(), ()> {
     // dbg!(app_handle.path_resolver().app_data_dir());
@@ -46,8 +58,12 @@ async fn connect_to_channel (app_handle: tauri::AppHandle, state: tauri::State<'
         }
     });
 
-    // join a channel
+    // join a channel 
     let _ = client.join("ennegineer".to_owned());
+
+    {
+        *state.client.lock().unwrap() = bot::Client::new(client);
+    }
 
     // *state.client = client;
 
@@ -70,7 +86,8 @@ async fn main() {
       .plugin(tauri_plugin_store::Builder::default().build())
       .invoke_handler(tauri::generate_handler![
         greet,
-        connect_to_channel
+        connect_to_channel,
+        print_state
       ])
       .setup(|app| {
         // Window position
