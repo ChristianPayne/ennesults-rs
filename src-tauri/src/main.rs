@@ -1,7 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::sync::Arc;
+#[macro_use]
+extern crate dotenv_codegen;
 
 // TAURI
 use tauri::Manager;
@@ -19,8 +20,12 @@ use bot::{Bot};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+async fn say(name: &str, state: tauri::State<'_, Bot>) -> Result<String, ()> {
+    if let Some(client) = bot::get_client(&state) {
+        //Do something with the client.
+        client.say(config::CHANNEL_NAME.to_owned(), name.to_owned()).await;
+    };
+    Ok(format!("Hello, {}! You've been greeted from Rust!", name))
 }
 
 
@@ -47,7 +52,6 @@ async fn connect_to_channel (state: tauri::State<'_, Bot>) -> Result<(), &str> {
     match bot::get_client(&state) {
         None => {
             // Add the client to the shared state.
-            // *state.
             Bot::connect_to_twitch(state);
             Ok(())
         },
@@ -75,7 +79,7 @@ async fn main() {
       .manage(Bot::default())
       .plugin(tauri_plugin_store::Builder::default().build())
       .invoke_handler(tauri::generate_handler![
-        greet,
+        say,
         connect_to_channel,
         leave_channel,
         print_state
