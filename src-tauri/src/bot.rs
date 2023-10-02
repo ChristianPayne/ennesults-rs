@@ -1,11 +1,15 @@
 // Helpers
 use std::sync::Mutex;
 use std::sync::Arc;
+use tauri;
 
 // IRC
+use tokio::task::JoinHandle;
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
+use twitch_irc::message::ServerMessage;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
+
 
 use serde::ser::{Serialize, Serializer};
 
@@ -14,7 +18,28 @@ use serde::ser::{Serialize, Serializer};
 pub struct Bot {
   pub client : Mutex<Client>
 }
+impl Bot {
+    pub fn connect_to_twitch (state: tauri::State<'_, Bot>) {
+      println!("Connecting to Twitch!");
+      // default configuration is to join chat as anonymous.
+      let config = ClientConfig::default();
 
+      let (mut incoming_messages, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+
+      // first thing you should do: start consuming incoming messages,
+      // otherwise they will back up.
+      let join_handle = tokio::spawn(async move {
+          while let Some(message) = incoming_messages.recv().await {
+              match message {
+                  ServerMessage::Privmsg(msg) => println!("Received message: {:?}", msg.message_text),
+                  _ => ()
+              }
+          }
+      });
+
+      *state.client.lock().unwrap() = Client::new(client);
+    }
+}
 impl Default for Bot {
     fn default() -> Self { 
         Bot {
@@ -46,50 +71,3 @@ pub fn get_client (state: &tauri::State<'_, Bot>) -> Option<TwitchIRCClient<TCPT
       }
   }
 }
-
-// impl Clone for Bot {
-//   fn clone(&self) -> Self {
-//     Bot {
-//       client: &self.client.lock().unwrap().clone()
-//     }
-//   }
-// }
-
-// #[derive(Debug)]
-// pub struct Connection (Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>);
-
-// impl Clone for Connection {
-//   fn clone(&self) -> Self {
-//     self.clone()
-//   }
-// }
-
-// impl Connection {
-//     pub fn test () {
-//       println!("Testing");
-//     }
-//     pub async fn initialize (mut self) -> tokio::task::JoinHandle<()> {
-//         tokio::spawn(async {
-//           println!("Connection connecting!");
-//           // default configuration is to join chat as anonymous.
-//           let config = ClientConfig::default();
-//           let (mut incoming_messages, client) =
-//               TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
-      
-//           // first thing you should do: start consuming incoming messages,
-//           // otherwise they will back up.
-//           let join_handle = tokio::spawn(async move {
-//               while let Some(message) = incoming_messages.recv().await {
-//                   println!("Received message: {:?}", message);
-//               }
-//           });
-      
-//           // join a channel
-//           let _ = client.join("ennegineer".to_owned());
-      
-//           // keep the tokio executor alive.
-//           // If you return instead of waiting the background task will exit.
-//           join_handle.await.unwrap();
-//         })
-//     }
-// }

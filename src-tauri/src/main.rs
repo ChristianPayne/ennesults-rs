@@ -8,16 +8,11 @@ use tauri::Manager;
 use tauri_plugin_store::StoreBuilder;
 use tauri_plugin_positioner::{WindowExt, Position};
 
-use tokio::task::JoinHandle;
-use twitch_irc::message::ServerMessage;
-use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
-use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::transport::tcp::{TCPTransport, TLS};
-
 use serde_json::json;
 
 // Ennesults
 mod bot;
+mod config;
 use bot::{Bot};
 
 
@@ -33,44 +28,39 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn print_state(state: tauri::State<'_, Bot>) {
     dbg!(&state);
+    // if let Some(client) = bot::get_client(&state) {
+    //     //Do something with the client.
+    // }
+}
+
+
+#[tauri::command]
+fn leave_channel(state: tauri::State<'_, Bot>) {
     if let Some(client) = bot::get_client(&state) {
         //Do something with the client.
+        client.part(config::CHANNEL_NAME.to_owned());
     }
 }
 
 #[tauri::command]
-async fn connect_to_channel (app_handle: tauri::AppHandle, state: tauri::State<'_, Bot>) -> Result<(), ()> {
-    // dbg!(app_handle.path_resolver().app_data_dir());
-    // let client = *state;//.client.lock().unwrap();
-    println!("Connection connecting!");
-    // default configuration is to join chat as anonymous.
-    let config = ClientConfig::default();
-    let (mut incoming_messages, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
-
-    // first thing you should do: start consuming incoming messages,
-    // otherwise they will back up.
-    let join_handle = tokio::spawn(async move {
-        while let Some(message) = incoming_messages.recv().await {
-            match message {
-                ServerMessage::Privmsg(msg) => println!("Received message: {:?}", msg.message_text),
-                _ => ()
+async fn connect_to_channel (state: tauri::State<'_, Bot>) -> Result<(), &str> {
+    match bot::get_client(&state) {
+        None => {
+            // Add the client to the shared state.
+            // *state.
+            Bot::connect_to_twitch(state);
+            Ok(())
+        },
+        Some(client) => {
+            // join a channel 
+            match client.join(config::CHANNEL_NAME.to_owned()) {
+                Ok(_) => {
+                    Ok(())
+                },
+                Err(_e) => Err("Could not join channel!")
             }
         }
-    });
-
-    // join a channel 
-    let _ = client.join("ennegineer".to_owned());
-
-    {
-        *state.client.lock().unwrap() = bot::Client::new(client);
     }
-
-    // *state.client = client;
-
-    // keep the tokio executor alive.
-    // If you return instead of waiting the background task will exit.
-    join_handle.await.unwrap();
-    Ok(())
 }
 
 // #[tauri::command]
@@ -87,6 +77,7 @@ async fn main() {
       .invoke_handler(tauri::generate_handler![
         greet,
         connect_to_channel,
+        leave_channel,
         print_state
       ])
       .setup(|app| {

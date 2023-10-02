@@ -4,7 +4,12 @@
   
   async function connect_to_channel () {
     let status = await invoke("connect_to_channel");
-    console.log('🛠 Status', status);
+    console.log('🛠 Connect To Channel', status);
+  }
+  
+  async function leave_channel () {
+    let status = await invoke("leave_channel");
+    console.log('🛠 Leave Channel', status);
   }
   async function print_state () {
     let state = await invoke("print_state");
@@ -25,6 +30,9 @@
 
   <button on:click={connect_to_channel}>
     Connect to Ennegineer!
+  </button>
+  <button on:click={leave_channel}>
+    Leave Ennegineer!
   </button>
   <button on:click={print_state}>
     Print State!
