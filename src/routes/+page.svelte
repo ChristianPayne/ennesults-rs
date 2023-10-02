@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Greet from './lib/Greet.svelte'
+  import Greet from './Greet.svelte'
   import { invoke } from "@tauri-apps/api/tauri"
   
   async function connect_to_channel () {

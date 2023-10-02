@@ -11,6 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@sveltejs/kit": "^1.25.1",
     "@tauri-apps/api": "^1.4.0"
   },
   "devDependencies": {
