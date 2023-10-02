@@ -28,15 +28,21 @@
     </h2>
   </div>
 
-  <button on:click={connect_to_channel}>
-    Connect to Ennegineer!
-  </button>
-  <button on:click={leave_channel}>
-    Leave Ennegineer!
-  </button>
-  <button on:click={print_state}>
-    Print State!
-  </button>
+  <div>
+    <button on:click={connect_to_channel}>
+      Connect to Ennegineer!
+    </button>
+    <button on:click={leave_channel}>
+      Leave Ennegineer!
+    </button>
+    <button on:click={print_state}>
+      Print State!
+    </button>
+  </div>
+
+  <div>
+    <a href="/settings">Settings</a>
+  </div>
 
   <Greet />
 </div>
