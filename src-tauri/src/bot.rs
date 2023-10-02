@@ -25,10 +25,10 @@ impl Default for Bot {
 
 // CLIENT
 #[derive(Debug)]
-pub struct Client (pub Option<Arc<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>>);
+pub struct Client (pub Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>);
 impl Client {
   pub fn new(client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>) -> Self {
-    Client(Some(Arc::new(client)))
+    Client(Some(client))
   }
 }
 impl Default for Client {
@@ -36,7 +36,7 @@ impl Default for Client {
     Client (None)
   }
 }
-pub fn get_client (state: &tauri::State<'_, Bot>) -> Option<Arc<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>> {
+pub fn get_client (state: &tauri::State<'_, Bot>) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
   let mutex_result = &state.client.lock();
   match mutex_result {
       Ok(guard) => guard.0.clone(),
