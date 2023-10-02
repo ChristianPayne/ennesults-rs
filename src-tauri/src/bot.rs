@@ -19,6 +19,7 @@ impl Bot {
       // default configuration is to join chat as anonymous.
       // let config = ClientConfig::default();
 
+      // TODO: Get a configuration file going after collecting info from the user.
       let login_name: String = dotenv!("BOT_NAME").to_owned();
       let oauth_token: String = dotenv!("BOT_OAUTH").to_owned();
 
@@ -32,6 +33,7 @@ impl Bot {
       // first thing you should do: start consuming incoming messages,
       // otherwise they will back up.
       let _join_handle = tokio::spawn(async move {
+        // TODO: Figure out how to make this an event emission that rust and js can listen to.
           while let Some(message) = incoming_messages.recv().await {
               match message {
                   ServerMessage::Privmsg(msg) => println!("Received message: {:?}", msg.message_text),

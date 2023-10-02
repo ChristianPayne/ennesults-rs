@@ -20,12 +20,29 @@ use bot::{Bot};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
-async fn say(name: &str, state: tauri::State<'_, Bot>) -> Result<String, ()> {
-    if let Some(client) = bot::get_client(&state) {
-        //Do something with the client.
-        client.say(config::CHANNEL_NAME.to_owned(), name.to_owned()).await;
-    };
-    Ok(format!("Hello, {}! You've been greeted from Rust!", name))
+async fn say(message: &str, state: tauri::State<'_, Bot>) -> Result<String, String> {
+    match bot::get_client(&state) {
+        Some(client) => {
+            let _ = client.say(config::CHANNEL_NAME.to_owned(), message.to_owned()).await;
+            Ok(message.clone().to_owned())
+        },
+        None => Err("Failed to connect to channel.".to_owned())
+    }
+}
+
+
+// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+#[tauri::command]
+async fn status(state: tauri::State<'_, Bot>) -> Result<(bool, bool), String> {
+    // Is this the best way to get the client? Should we just ignore this command if we don't have a client?
+    match bot::get_client(&state) {
+        Some(client) => {
+            let channel_status = client.get_channel_status(config::CHANNEL_NAME.to_owned()).await;
+            dbg!(channel_status);
+            Ok(channel_status)
+        },
+        None => Err("Failed to connect to channel.".to_owned())
+    }
 }
 
 
@@ -47,6 +64,8 @@ fn leave_channel(state: tauri::State<'_, Bot>) {
     }
 }
 
+
+// TODO: As it stands, when the connection is first initiated, there is no client so we don't join the channel, we just connect to twitch. Then we need to click it again to join.
 #[tauri::command]
 async fn connect_to_channel (state: tauri::State<'_, Bot>) -> Result<(), &str> {
     match bot::get_client(&state) {
@@ -59,6 +78,7 @@ async fn connect_to_channel (state: tauri::State<'_, Bot>) -> Result<(), &str> {
             // join a channel 
             match client.join(config::CHANNEL_NAME.to_owned()) {
                 Ok(_) => {
+                    println!("Connected to channel!");
                     Ok(())
                 },
                 Err(_e) => Err("Could not join channel!")
@@ -66,12 +86,6 @@ async fn connect_to_channel (state: tauri::State<'_, Bot>) -> Result<(), &str> {
         }
     }
 }
-
-// #[tauri::command]
-// fn connect(connection: State<DbConnection>) {
-//   // initialize the connection, mutating the state with interior mutability
-//   *connection.db.lock().unwrap() = Some(Connection {});
-// }
 
 #[tokio::main]
 async fn main() {
@@ -82,7 +96,8 @@ async fn main() {
         say,
         connect_to_channel,
         leave_channel,
-        print_state
+        print_state,
+        status
       ])
       .setup(|app| {
         // Window position
