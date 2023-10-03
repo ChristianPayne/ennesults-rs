@@ -5,9 +5,9 @@
 extern crate dotenv_codegen;
 
 // TAURI
-use tauri::Manager;
+// use tauri::Manager;
 use tauri_plugin_store::StoreBuilder;
-use tauri_plugin_positioner::{WindowExt, Position};
+// use tauri_plugin_positioner::{WindowExt, Position};
 
 use serde_json::json;
 
@@ -93,6 +93,7 @@ async fn main() {
     tauri::Builder::default()
       .manage(Bot::default())
       .plugin(tauri_plugin_store::Builder::default().build())
+      .plugin(tauri_plugin_window_state::Builder::default().build())
       .invoke_handler(tauri::generate_handler![
         say,
         connect_to_channel,
@@ -101,10 +102,6 @@ async fn main() {
         status
       ])
       .setup(|app| {
-        // Window position
-        let win = app.get_window("main").unwrap();
-        let _ = win.move_window(Position::BottomRight);
-
         // Create store
         let mut store = StoreBuilder::new(app.handle(), "./store.bin".parse()?).build();
         let _ = store.insert("a".to_string(), json!("b"));
