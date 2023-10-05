@@ -12,9 +12,10 @@ use tauri_plugin_store::StoreBuilder;
 use serde_json::json;
 
 // Ennesults
-mod bot;
-mod config;
-use bot::{Bot};
+pub mod bot;
+pub mod commands;
+pub mod config;
+use crate::bot::Bot;
 
 
 

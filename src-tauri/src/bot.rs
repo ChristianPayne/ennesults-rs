@@ -36,7 +36,12 @@ impl Bot {
         // TODO: Figure out how to make this an event emission that rust and js can listen to.
           while let Some(message) = incoming_messages.recv().await {
               match message {
-                  ServerMessage::Privmsg(msg) => println!("Received message: {:?}", msg.message_text),
+                  ServerMessage::Privmsg(msg) => {
+                    // match msg. {
+                    //   msg
+                    // }
+                    println!("Received message: {:?}", msg)
+                  },
                   _ => ()
               }
           }

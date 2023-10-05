@@ -1,6 +1,7 @@
 <script lang="ts">
   import Greet from '$lib/Greet.svelte'
   import { invoke } from "@tauri-apps/api/tauri"
+  import { Button } from 'flowbite-svelte';
   
   async function connect_to_channel () {
     let status = await invoke("connect_to_channel");
@@ -17,32 +18,16 @@
   }
 </script>
 
-<div class="flex-col text-center space-y-5">
-  <!-- Title -->
-  <div>
-    <h1>
-      Ennesults
-    </h1>
-    <h2>
-      Rust Edition
-    </h2>
-  </div>
+<div class="flex space-x-2 mb-4">
+  <Button on:click={connect_to_channel}>
+    Connect to Ennegineer!
+  </Button>
+  <Button on:click={leave_channel}>
+    Leave Ennegineer!
+  </Button>
+  <Button on:click={print_state}>
+    Print State!
+  </Button>
+</div>  
 
-  <div>
-    <button on:click={connect_to_channel}>
-      Connect to Ennegineer!
-    </button>
-    <button on:click={leave_channel}>
-      Leave Ennegineer!
-    </button>
-    <button on:click={print_state}>
-      Print State!
-    </button>
-  </div>
-
-  <div>
-    <a href="/settings">Settings</a>
-  </div>
-
-  <Greet />
-</div>
+<Greet />
