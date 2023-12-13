@@ -7,28 +7,37 @@
 </script>
 
 <div class="flex flex-col h-full">
-  <!-- Title -->
-  <div class="flex justify-between m-4">
-    <a href="/">
-      <h1 class="font-sans">
-        Ennesults
-      </h1>
-    </a>
-    <div class="flex space-x-2 items-center">
-      <a href="/chat">Chat</a>
-      <a href="/commands">Commands</a>
-      <a href="/ennesults">Ennesults</a>
-      <a href="/users">Users</a>
-      <a href="/settings">Settings</a>
-      <DarkMode size="md"/>
+  <!-- <div class="flex grow"> -->
+    <!-- Sidebar -->
+    <!-- <div class="bg-primary-600 dark:bg-primary-900 
+    w-[250px] min-w-[215px] max-w-[215px] p-2">
+      Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero in quis labore perferendis possimus assumenda perspiciatis provident magnam quaerat. Architecto vero iusto dolore deleniti asperiores earum quas culpa delectus odio.
+    </div> -->
+    <div class="flex flex-col grow">
+      <!-- Title -->
+      <div class="flex justify-between m-4">
+        <a href="/">
+          <h1 class="font-sans">
+            Ennesults
+          </h1>
+        </a>
+        <div class="flex space-x-2 items-center">
+          <a href="/chat">Chat</a>
+          <a href="/commands">Commands</a>
+          <a href="/ennesults">Ennesults</a>
+          <a href="/users">Users</a>
+          <a href="/settings">Settings</a>
+          <DarkMode size="md"/>
+        </div>
+      </div>
+      <!-- Main Content -->
+      <div class="grow mx-4 overflow-y-scroll">
+        <slot/>
+      </div>
     </div>
   </div>
-  <!-- Main Content -->
-  <div class="grow mx-4 overflow-y-scroll">
-    <slot/>
-  </div>
   <!-- Footer -->
-  <div class="bg-primary-600 py-1 px-2 flex">
+  <div class="bg-primary-600 py-1 px-2 flex border-t border-primary-800 rounded-t-md">
     <div class="grow"></div>
     <!-- Badges -->
     <div class="flex space-x-2">
@@ -41,5 +50,5 @@
         </Popover>
       </div>
     </div>
-  </div>
+  <!-- </div> -->
 </div>

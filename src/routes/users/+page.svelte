@@ -9,7 +9,7 @@
   ];
   $: filteredItems = items.filter((item) => item.user.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1);
 </script>
-<TableSearch placeholder="Search by user name" hoverable={true} bind:inputValue={searchTerm}>
+<TableSearch color="custom" placeholder="Search by user name" hoverable={true} bind:inputValue={searchTerm}>
   <TableHead>
     <TableHeadCell>ID</TableHeadCell>
     <TableHeadCell>Username</TableHeadCell>

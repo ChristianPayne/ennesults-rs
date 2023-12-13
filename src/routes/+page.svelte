@@ -18,6 +18,13 @@
   }
 </script>
 
+<h1 class="text-4xl h-24 text-center flex items-center 
+text-primary-900
+bg-gradient-to-b from-primary-500 to-primary-100
+hover:bg-primary-900 p-4 rounded-2xl m-8">
+  <p class="w-full">Welcome, Ennegineer!</p>
+</h1>
+
 <div class="flex space-x-2 mb-4">
   <Button on:click={connect_to_channel}>
     Connect to Ennegineer!

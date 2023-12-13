@@ -8,6 +8,11 @@ pub enum AccessLevel {
     Moderator
 }
 
+pub enum CommandTypes {
+    Say,
+    Action
+}
+
 trait Command {
     fn get_name(self) -> CommandName;
     fn get_aliases(self) -> Vec<String>;
