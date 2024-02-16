@@ -1,7 +1,7 @@
 import tailwindColors from "tailwindcss/colors";
 import * as pallettes from "./colors";
 
-const PALLETTE = pallettes.teal;
+const PALLETTE = pallettes.bud;
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -21,6 +21,9 @@ export default {
       primary: {
         ...PALLETTE,
       },
+      zinc: {
+        ...tailwindColors.zinc
+      }
     }
   }
 }

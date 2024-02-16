@@ -2,7 +2,7 @@ use crate::commands::*;
 
 pub struct HelloWorld {
   name: CommandName,
-  aliases: Vec<String>
+  aliases: Vec<&'static str>
 }
 
 impl Command for HelloWorld {
@@ -10,7 +10,7 @@ impl Command for HelloWorld {
       self.name.clone()
   }
 
-  fn get_aliases(self) -> Vec<String> {
+  fn get_aliases(self) -> Vec<&'static str> {
       self.aliases.clone()
   }
 }
@@ -19,9 +19,7 @@ impl Default for HelloWorld {
     fn default() -> Self {
         HelloWorld { 
           name: CommandName("hello_world".to_owned()), 
-          aliases: vec![
-            "hello".to_owned()
-          ]
+          aliases: vec!["hello"]
         }
     }
 }

@@ -25,7 +25,7 @@ async fn say(message: &str, state: tauri::State<'_, Bot>) -> Result<String, Stri
     match bot::get_client(&state) {
         Some(client) => {
             let _ = client.say(config::CHANNEL_NAME.to_owned(), message.to_owned()).await;
-            Ok(message.clone().to_owned())
+            Ok(message.to_owned())
         },
         None => Err("Failed to connect to channel.".to_owned())
     }
@@ -69,14 +69,17 @@ fn leave_channel(state: tauri::State<'_, Bot>) {
 
 // TODO: As it stands, when the connection is first initiated, there is no client so we don't join the channel, we just connect to twitch. Then we need to click it again to join.
 #[tauri::command]
-async fn connect_to_channel (state: tauri::State<'_, Bot>) -> Result<(), &str> {
+async fn connect_to_channel (app: tauri::AppHandle, state: tauri::State<'_, Bot>) -> Result<(), &str> {
     match bot::get_client(&state) {
         None => {
             // Add the client to the shared state.
-            Bot::connect_to_twitch(state);
+            Bot::connect_to_twitch(app, state);
             Ok(())
         },
         Some(client) => {
+            let channel_status = client.get_channel_status(config::CHANNEL_NAME.to_owned()).await;
+            dbg!(channel_status);
+
             // join a channel 
             match client.join(config::CHANNEL_NAME.to_owned()) {
                 Ok(_) => {
@@ -104,9 +107,9 @@ async fn main() {
       ])
       .setup(|app| {
         // Create store
-        let mut store = StoreBuilder::new(app.handle(), "./store.bin".parse()?).build();
-        let _ = store.insert("a".to_string(), json!("b"));
-        let _ = store.save();
+        // let mut store = StoreBuilder::new(app.handle(), "./store.bin".parse()?).build();
+        // let _ = store.insert("a".to_string(), json!("b"));
+        // let _ = store.save();
 
         println!("App Started!");
         Ok(())

@@ -4,8 +4,9 @@ pub mod hello_world;
 #[derive(Clone)]
 pub struct CommandName (String);
 pub enum AccessLevel {
-    User,
-    Moderator
+    Streamer,
+    Moderator,
+    User
 }
 
 pub enum CommandTypes {
@@ -15,5 +16,5 @@ pub enum CommandTypes {
 
 trait Command {
     fn get_name(self) -> CommandName;
-    fn get_aliases(self) -> Vec<String>;
+    fn get_aliases(self) -> Vec<&'static str>;
 }

@@ -1,6 +1,6 @@
 // Helpers
 use std::sync::Mutex;
-use tauri;
+use tauri::{self, Manager};
 
 // IRC
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
@@ -14,7 +14,7 @@ pub struct Bot {
   pub client : Mutex<Client>
 }
 impl Bot {
-    pub fn connect_to_twitch (state: tauri::State<'_, Bot>) {
+    pub fn connect_to_twitch (app: tauri::AppHandle, state: tauri::State<'_, Bot>) {
       println!("Connecting to Twitch!");
       // default configuration is to join chat as anonymous.
       // let config = ClientConfig::default();
@@ -42,7 +42,20 @@ impl Bot {
                     // }
                     println!("Received message: {:?}", msg)
                   },
-                  _ => ()
+                  ServerMessage::Pong(_) => {
+                    println!("Pong received...")
+                  },
+                  ServerMessage::Join(msg) => {
+                    // TODO: Emit join event for the channel as been joined.
+                    let _ = app.emit_all("channel_join", msg.channel_login);
+                  },
+                  ServerMessage::Part(_) => {
+                    // TODO: Emit part event for the channel as been left.
+                  },
+                  ServerMessage::Generic(_) =>(),
+                  other => {
+                    println!("Other message type: {:?}", other)
+                  }
               }
           }
       });
