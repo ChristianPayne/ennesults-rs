@@ -3,14 +3,6 @@
 
 #[macro_use]
 extern crate dotenv_codegen;
-
-// TAURI
-// use tauri::Manager;
-use tauri_plugin_store::StoreBuilder;
-// use tauri_plugin_positioner::{WindowExt, Position};
-
-use serde_json::json;
-
 // Ennesults
 pub mod bot;
 pub mod commands;
@@ -110,6 +102,8 @@ async fn main() {
         // let mut store = StoreBuilder::new(app.handle(), "./store.bin".parse()?).build();
         // let _ = store.insert("a".to_string(), json!("b"));
         // let _ = store.save();
+
+        // Bot::rs2js("test message".to_string(), &app);
 
         println!("App Started!");
         Ok(())

@@ -63,6 +63,13 @@ impl Bot {
       *state.client.lock().unwrap() = Client::new(client);
       println!("Connected to Twitch!");
     }
+
+    pub fn rs2js<R: tauri::Runtime>(message: String, manager: &impl Manager<R>) {
+      dbg!(&message, "rs2js");
+      manager
+        .emit_all("rs2js", message)
+        .unwrap();
+    }
 }
 impl Default for Bot {
     fn default() -> Self { 
