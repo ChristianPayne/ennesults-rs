@@ -7,8 +7,15 @@ extern crate dotenv_codegen;
 pub mod bot;
 pub mod commands;
 pub mod config;
+use serde_json::json;
+use tauri::Manager;
+use tauri_plugin_store::StoreBuilder;
+
 use crate::bot::Bot;
 
+use serde::{Deserialize, Serialize};
+use serde_json;
+use std::{fs,io::Write};
 
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -84,8 +91,21 @@ async fn connect_to_channel (app: tauri::AppHandle, state: tauri::State<'_, Bot>
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct Settings {
+    channel: String
+}
+
 #[tokio::main]
 async fn main() {
+
+    let json = serde_json::to_string_pretty(&Settings {
+        channel: "ennegineer".to_string()
+    }).unwrap();
+
+    let mut f = fs::File::create("./test.json").expect("Failed to create");
+    f.write_all(json.as_bytes()).expect("Failed to write");
+
     tauri::Builder::default()
       .manage(Bot::default())
       .plugin(tauri_plugin_store::Builder::default().build())
@@ -101,6 +121,7 @@ async fn main() {
         // Create store
         // let mut store = StoreBuilder::new(app.handle(), "./store.bin".parse()?).build();
         // let _ = store.insert("a".to_string(), json!("b"));
+        // dbg!(store.is_empty());
         // let _ = store.save();
 
         // Bot::rs2js("test message".to_string(), &app);
