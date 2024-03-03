@@ -27,3 +27,5 @@ dist-ssr
 .env
 .svelte-kit
 /build
+
+src-tauri/data

@@ -1,3 +1,8 @@
+pub mod say;
+pub mod connect_to_channel;
+pub mod leave_channel;
+pub mod print_state;
+pub mod status;
 pub mod hello_world;
 
 // Command components
