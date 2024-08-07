@@ -4,9 +4,16 @@ use tauri::{self, Manager};
 
 // IRC
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
-use twitch_irc::message::ServerMessage;
+use twitch_irc::message::{RGBColor, ServerMessage};
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
+
+#[derive(serde::Serialize, Clone)]
+struct TwitchMessage {
+  username: String,
+  message: String
+}
+
 
 // BOT 
 #[derive(Debug)]
@@ -37,13 +44,19 @@ impl Bot {
           while let Some(message) = incoming_messages.recv().await {
               match message {
                   ServerMessage::Privmsg(msg) => {
-                    // match msg. {
-                    //   msg
-                    // }
-                    println!("Received message: {:?}", msg)
+                    println!("Received message: {:?}", msg);
+                    let twitch_message = TwitchMessage {
+                      username: msg.sender.name,
+                      message: msg.message_text
+                    };
+
+                    // self.chat_messages.push(twitch_message.clone());
+                    app.emit_all("message", twitch_message).unwrap();
+
                   },
                   ServerMessage::Pong(_) => {
-                    println!("Pong received...")
+                    // println!("Pong received...")
+                    ()
                   },
                   ServerMessage::Join(msg) => {
                     // TODO: Emit join event for the channel as been joined.
