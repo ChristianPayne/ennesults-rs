@@ -6,8 +6,13 @@ This is a rework of the original [Ennesults](https://github.com/ChristianPayne/E
 This project was intended to get me more familiar with Rust. The original bot works just fine however the tech stack is known very well. The scope of this project allows me to learn new skills as well as provide a better user experience for Enne (UI, hosting the bot herself, etc.).
 
 # Development
-## Running the app
-From the root directory, use npm to start the front and back end code; `npm run tauri dev`
+## Tech Stack
+- Frontend
+  - SvelteKit
+  - TailwindCSS
+  - Flowbite
+- Backend
+  - Tauri
 
 ## Root Environment
 ```
@@ -15,3 +20,6 @@ From the root directory, use npm to start the front and back end code; `npm run 
 BOT_NAME=<name>
 BOT_OAUTH=<token>
 ```
+
+## Running the app
+From the root directory, use npm to start the front and back end code; `npm run tauri dev`
