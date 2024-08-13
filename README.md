@@ -1,7 +1,17 @@
-# Tauri + Svelte + Typescript
+# Ennesults - Rust Edition
+Ennesults is a Twitch bot designed to kindly insult random people in chat, originally designed for [Ennegineer](https://www.twitch.tv/ennegineer/).  
+This is a rework of the original [Ennesults](https://github.com/ChristianPayne/Ennesults) bot that was written for Node.
 
-This template should help get you started developing with Tauri, Svelte and TypeScript in Vite.
+# Tauri
+This project was intended to get me more familiar with Rust. The original bot works just fine however the tech stack is known very well. The scope of this project allows me to learn new skills as well as provide a better user experience for Enne (UI, hosting the bot herself, etc.).
 
-## Recommended IDE Setup
+# Development
+## Running the app
+From the root directory, use npm to start the front and back end code; `npm run tauri dev`
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).
+## Root Environment
+```
+// .env
+BOT_NAME=<name>
+BOT_OAUTH=<token>
+```
