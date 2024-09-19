@@ -7,9 +7,11 @@ use crate::config;
 pub async fn say(message: &str, state: tauri::State<'_, Bot>) -> Result<String, String> {
     match bot::get_client(&state) {
         Some(client) => {
-            let _ = client.say(config::CHANNEL_NAME.to_string(), message.to_string()).await;
+            let _ = client
+                .say(config::CHANNEL_NAME.to_string(), message.to_string())
+                .await;
             Ok(message.to_string())
-        },
-        None => Err("Failed to connect to channel.".to_string())
+        }
+        None => Err("Failed to connect to channel.".to_string()),
     }
 }

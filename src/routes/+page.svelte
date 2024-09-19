@@ -1,7 +1,7 @@
 <script lang="ts">
   import Greet from '$lib/Greet.svelte'
     import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-  import { invoke } from "@tauri-apps/api/tauri"
+  import { invoke } from "@tauri-apps/api/core"
   import { Button } from 'flowbite-svelte';
     import { onDestroy, onMount } from 'svelte';
 

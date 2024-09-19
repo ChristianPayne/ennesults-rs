@@ -1,22 +1,22 @@
-pub mod say;
 pub mod connect_to_channel;
+pub mod hello_world;
 pub mod leave_channel;
 pub mod print_state;
+pub mod say;
 pub mod status;
-pub mod hello_world;
 
 // Command components
 #[derive(Clone)]
-pub struct CommandName (String);
+pub struct CommandName(String);
 pub enum AccessLevel {
     Streamer,
     Moderator,
-    User
+    User,
 }
 
 pub enum CommandTypes {
     Say,
-    Action
+    Action,
 }
 
 trait Command {
