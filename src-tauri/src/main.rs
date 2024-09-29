@@ -14,7 +14,10 @@ pub mod commands;
 pub mod config;
 pub mod file;
 
+use tauri::Manager;
+
 use crate::bot::Bot;
+use crate::commands::connect_to_channel::connect_to_channel;
 
 #[tokio::main]
 async fn main() {
@@ -27,42 +30,22 @@ async fn main() {
         .invoke_handler(tauri::generate_handler![
             crate::commands::say::say,
             crate::commands::connect_to_channel::connect_to_channel,
+            crate::commands::leave_channel::leave_channel,
             crate::commands::print_state::print_state,
             crate::commands::status::status,
         ])
         .setup(|app| {
+            println!("Setting up bot!");
             // MOVED ALL FILE RELATED RESEARCH INTO FILE.RS //
 
-            // Get a resource path for where the files will live.
-            // let resource_path = app.path_resolver().app_data_dir().expect("Can't resolve app data dir.");
-            // let full_path = format!("{}/test.json", resource_path.to_str().expect("Can't convert to str"));
+            // Connect the bot to Twitch on startup.
+            let state = app.state::<Bot>();
+            state.connect_to_twitch(app.handle().clone());
 
-            // println!("Files for the app will be saved here: {}", &full_path);
+            // Not in an async block, we can't kick this off here.
+            // More knowledge needed.
+            // connect_to_channel(state);
 
-            // if Path::new(&full_path).exists() == false {
-            //   fs::write(&full_path, "{}").expect("Failed to write file.")
-            // }
-
-            // let message: String = fs::read_to_string(&full_path).expect("Failed to read string from file path.");
-
-            // dbg!(message);
-
-            let test_data: bool = false;
-
-            file::create_file(
-                app.handle(),
-                "test_json_file",
-                file::to_json(test_data).expect("Failed to convert to json."),
-            )
-            .expect("failed to create file");
-
-            // app.handle().path_resolver().app_data_dir()
-
-            // let contents = read_string("$DESKTOP/test/test.json");
-
-            // dbg!(contents);
-
-            println!("App Started!");
             Ok(())
         })
         .run(tauri::generate_context!())

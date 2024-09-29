@@ -1,7 +1,7 @@
 import tailwindColors from "tailwindcss/colors";
 import * as pallettes from "./colors";
 
-const PALLETTE = pallettes.bud;
+const PALLETTE = pallettes.blueLagoon;
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -11,13 +11,13 @@ export default {
   theme: {
     colors: {
       // Background color that flowbite uses.
-      gray: {
-        ...PALLETTE
-      },
-      staple: {
-        dark: "#141414",
-        light: "#F5F5F5"
-      },
+      // gray: {
+      //   ...PALLETTE
+      // },
+      // staple: {
+      //   dark: "#141414",
+      //   light: "#F5F5F5"
+      // },
       primary: {
         ...PALLETTE,
       },

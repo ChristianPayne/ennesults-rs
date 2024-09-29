@@ -52,3 +52,34 @@ where
 
     Ok(data)
 }
+
+// R&D
+
+// Get a resource path for where the files will live.
+// let resource_path = app.path_resolver().app_data_dir().expect("Can't resolve app data dir.");
+// let full_path = format!("{}/test.json", resource_path.to_str().expect("Can't convert to str"));
+
+// println!("Files for the app will be saved here: {}", &full_path);
+
+// if Path::new(&full_path).exists() == false {
+//   fs::write(&full_path, "{}").expect("Failed to write file.")
+// }
+
+// let message: String = fs::read_to_string(&full_path).expect("Failed to read string from file path.");
+
+            // dbg!(message);
+
+            // let test_data: bool = false;
+
+            // file::create_file(
+            //     app.handle(),
+            //     "test_json_file",
+            //     file::to_json(test_data).expect("Failed to convert to json."),
+            // )
+            // .expect("failed to create file");
+
+            // app.handle().path_resolver().app_data_dir()
+
+            // let contents = read_string("$DESKTOP/test/test.json");
+
+            // dbg!(contents);

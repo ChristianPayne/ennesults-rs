@@ -5,10 +5,10 @@ use crate::config;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 pub async fn say(message: &str, state: tauri::State<'_, Bot>) -> Result<String, String> {
-    match bot::get_client(&state) {
+    match state.get_client() {
         Some(client) => {
             let _ = client
-                .say(config::CHANNEL_NAME.to_string(), message.to_string())
+                .say(state.channel_name.clone(), message.to_string())
                 .await;
             Ok(message.to_string())
         }

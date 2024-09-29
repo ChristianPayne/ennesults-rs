@@ -7,13 +7,16 @@
     %sveltekit.head%
   </head>
 
-  <body class="
+  <!-- Alternate colors
   bg-staple-light 
   dark:bg-zinc-700 
   text-staple-dark 
-  dark:text-staple-light
-  h-screen select-none
-  ">
-    %sveltekit.body%
+  dark:text-staple-light 
+  -->
+
+  <body class="bg-zinc-100 dark:bg-zinc-600 text-zinc-900 dark:text-zinc-100 h-screen select-none">
+    <div style="display: contents">
+      %sveltekit.body%
+    </div>
   </body>
 </html>

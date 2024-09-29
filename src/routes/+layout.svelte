@@ -13,6 +13,13 @@
     channelName = event.payload as string;
     connectionStatus = true;
   })
+  listen('channel_part', (event) => {
+    console.log('🪵 ~ unlisten ~ event:', event);
+    // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
+    // event.payload is the payload object
+    channelName = event.payload as string;
+    connectionStatus = false;
+  })
 </script>
 
 <div class="flex flex-col h-full">
@@ -52,7 +59,7 @@
         <Badge id="connectionStatus" color="{connectionStatus ? 'green' : 'red'}">
           {connectionStatus ? channelName : "Disconnected"}
         </Badge>
-        <Popover title="Channel" triggeredBy="#connectionStatus" arrow={false}>
+        <Popover title="Channel" color="primary" triggeredBy="#connectionStatus" arrow={false}>
           { connectionStatus ? `We are connected to ${channelName}.` : "Not connected to a channel." }
         </Popover>
       </div>

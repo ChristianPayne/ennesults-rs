@@ -1,26 +1,31 @@
 // Helpers
 use std::sync::Mutex;
-use tauri::{self, Emitter, Manager};
+use tauri::{self, Config, Emitter, Manager};
 
 // IRC
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{RGBColor, ServerMessage};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
+use twitch_irc::message::PrivmsgMessage;
 
-#[derive(serde::Serialize, Clone)]
-struct TwitchMessage {
-    username: String,
-    message: String,
-}
+use crate::config::CHANNEL_NAME;
+
+// #[derive(serde::Serialize, Clone)]
+// struct TwitchMessage {
+//     username: String,
+//     message: String,
+// }
 
 // BOT
 #[derive(Debug)]
 pub struct Bot {
+    pub channel_name: String,
     pub client: Mutex<Client>,
+    pub chat_messages: Vec<PrivmsgMessage>
 }
 impl Bot {
-    pub fn connect_to_twitch(app: tauri::AppHandle, state: tauri::State<'_, Bot>) {
+    pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) {
         println!("Connecting to Twitch!");
         // default configuration is to join chat as anonymous.
         // let config = ClientConfig::default();
@@ -29,11 +34,9 @@ impl Bot {
         let login_name: String = dotenv!("BOT_NAME").to_owned();
         let oauth_token: String = dotenv!("BOT_OAUTH").to_owned();
 
-        let config =
-            ClientConfig::new_simple(StaticLoginCredentials::new(login_name, Some(oauth_token)));
+        let config = ClientConfig::new_simple(StaticLoginCredentials::new(login_name, Some(oauth_token)));
 
-        let (mut incoming_messages, client) =
-            TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+        let (mut incoming_messages, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
         // first thing you should do: start consuming incoming messages,
         // otherwise they will back up.
@@ -43,13 +46,16 @@ impl Bot {
                 match message {
                     ServerMessage::Privmsg(msg) => {
                         println!("Received message: {:?}", msg);
-                        let twitch_message = TwitchMessage {
-                            username: msg.sender.name,
-                            message: msg.message_text,
-                        };
+                        // let twitch_message = TwitchMessage {
+                        //     username: msg.sender.name,
+                        //     message: msg.message_text,
+                        // };
 
-                        // self.chat_messages.push(twitch_message.clone());
-                        app.emit("message", twitch_message).unwrap();
+                        // *self.chat_messages.push(msg);
+
+                        // dbg!(self.chat_messages);
+
+                        // app.emit("message", twitch_message).unwrap();
                     }
                     ServerMessage::Pong(_) => {
                         // println!("Pong received...")
@@ -57,10 +63,11 @@ impl Bot {
                     }
                     ServerMessage::Join(msg) => {
                         // TODO: Emit join event for the channel as been joined.
-                        let _ = app.emit("channel_join", msg.channel_login);
+                        let _ = app_handle.emit("channel_join", msg.channel_login);
                     }
-                    ServerMessage::Part(_) => {
+                    ServerMessage::Part(msg) => {
                         // TODO: Emit part event for the channel as been left.
+                        let _ = app_handle.emit("channel_part", msg.channel_login);
                     }
                     ServerMessage::Generic(_) => (),
                     other => {
@@ -70,8 +77,19 @@ impl Bot {
             }
         });
 
-        *state.client.lock().unwrap() = Client::new(client);
+        *self.client.lock().unwrap() = Client::new(client);
         println!("Connected to Twitch!");
+    }
+
+    pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
+        let mutex_result = &self.client.lock();
+        match mutex_result {
+            Ok(guard) => guard.0.clone(),
+            Err(_) => {
+                println!("Error getting client out of mutex!");
+                None
+            }
+        }
     }
 
     // pub fn rs2js<R: tauri::Runtime>(message: String, manager: &impl Manager<R>) {
@@ -82,7 +100,9 @@ impl Bot {
 impl Default for Bot {
     fn default() -> Self {
         Bot {
-            client: Mutex::new(Client(None)),
+            channel_name: CHANNEL_NAME.into(),
+            client: Mutex::new(Client::default()),
+            chat_messages: Vec::new()
         }
     }
 }
@@ -98,17 +118,5 @@ impl Client {
 impl Default for Client {
     fn default() -> Self {
         Client(None)
-    }
-}
-pub fn get_client(
-    state: &tauri::State<'_, Bot>,
-) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
-    let mutex_result = &state.client.lock();
-    match mutex_result {
-        Ok(guard) => guard.0.clone(),
-        Err(_) => {
-            println!("Error getting client out of mutex!");
-            None
-        }
     }
 }

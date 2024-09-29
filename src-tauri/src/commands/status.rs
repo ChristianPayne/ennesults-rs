@@ -6,7 +6,7 @@ use crate::config;
 #[tauri::command]
 pub async fn status(state: tauri::State<'_, Bot>) -> Result<(bool, bool), String> {
     // Is this the best way to get the client? Should we just ignore this command if we don't have a client?
-    match bot::get_client(&state) {
+    match state.get_client() {
         Some(client) => {
             let channel_status = client
                 .get_channel_status(config::CHANNEL_NAME.to_owned())

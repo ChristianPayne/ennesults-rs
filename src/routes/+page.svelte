@@ -3,14 +3,12 @@
     import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import { invoke } from "@tauri-apps/api/core"
   import { Button } from 'flowbite-svelte';
-    import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
 
-    type MessageDetails = {
-      username: string,
-      message: string
-    }
-
-  let joined_channel = "No joined channel";
+  type MessageDetails = {
+    username: string,
+    message: string
+  }
 
   let color = "#4E89FF"
 
@@ -18,7 +16,6 @@
   let unlisten: UnlistenFn;
 
   async function connect_to_channel () {
-    
     let status = await invoke("connect_to_channel");
     console.log('🛠 Connect To Channel', status);
   }
@@ -63,7 +60,6 @@
   <Button on:click={print_state}>
     Print State!
   </Button>
-  <p>{joined_channel}</p>
 </div>  
 
 <Greet />
