@@ -1,9 +1,9 @@
 <script lang="ts">
   import Greet from '$lib/Greet.svelte'
-    import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+  import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import { invoke } from "@tauri-apps/api/core"
-  import { Button } from 'flowbite-svelte';
   import { onDestroy, onMount } from 'svelte';
+  import { Button } from "$lib/components/ui/button";
 
   type MessageDetails = {
     username: string,
@@ -20,10 +20,7 @@
     console.log('🛠 Connect To Channel', status);
   }
   
-  async function leave_channel () {
-    let status = await invoke("leave_channel");
-    console.log('🛠 Leave Channel', status);
-  }
+  
   async function print_state () {
     let state = await invoke("print_state");
     console.log('🛠 print_state', state);
@@ -54,17 +51,12 @@
   <Button on:click={connect_to_channel}>
     Connect to Ennegineer!
   </Button>
-  <Button on:click={leave_channel}>
-    Leave Ennegineer!
-  </Button>
   <Button on:click={print_state}>
     Print State!
   </Button>
 </div>  
 
-<Greet />
-
-<p class="my-4">Twitch Chat</p>
+<h1 class="my-4 text-lg font-semibold">Twitch Chat</h1>
 <ul class="space-y-2">
   {#each messages as message}
     <li><span style="color: {color};">{message.username}</span>: {message.message}</li>

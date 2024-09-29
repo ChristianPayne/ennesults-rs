@@ -10,7 +10,7 @@ This project was intended to get me more familiar with Rust. The original bot wo
 - Frontend
   - SvelteKit
   - TailwindCSS
-  - Flowbite
+  - ShadCN (Svelte)
 - Backend
   - Tauri
 

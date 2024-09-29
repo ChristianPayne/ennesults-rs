@@ -11,11 +11,11 @@ use twitch_irc::message::PrivmsgMessage;
 
 use crate::config::CHANNEL_NAME;
 
-// #[derive(serde::Serialize, Clone)]
-// struct TwitchMessage {
-//     username: String,
-//     message: String,
-// }
+#[derive(serde::Serialize, Clone)]
+struct TwitchMessage {
+    username: String,
+    message: String,
+}
 
 // BOT
 #[derive(Debug)]
@@ -46,16 +46,16 @@ impl Bot {
                 match message {
                     ServerMessage::Privmsg(msg) => {
                         println!("Received message: {:?}", msg);
-                        // let twitch_message = TwitchMessage {
-                        //     username: msg.sender.name,
-                        //     message: msg.message_text,
-                        // };
+                        let twitch_message = TwitchMessage {
+                            username: msg.sender.name,
+                            message: msg.message_text,
+                        };
 
-                        // *self.chat_messages.push(msg);
+                        // self.chat_messages.push(msg);
 
-                        // dbg!(self.chat_messages);
+                        // dbg!(&self.chat_messages);
 
-                        // app.emit("message", twitch_message).unwrap();
+                        app_handle.emit("message", twitch_message).unwrap();
                     }
                     ServerMessage::Pong(_) => {
                         // println!("Pong received...")
