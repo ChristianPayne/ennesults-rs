@@ -41,7 +41,6 @@ impl Bot {
         // first thing you should do: start consuming incoming messages,
         // otherwise they will back up.
         let _join_handle = tokio::spawn(async move {
-            // TODO: Figure out how to make this an event emission that rust and js can listen to.
             while let Some(message) = incoming_messages.recv().await {
                 match message {
                     ServerMessage::Privmsg(msg) => {
@@ -51,8 +50,8 @@ impl Bot {
                             message: msg.message_text,
                         };
 
+                        // TODO: Need a lifetime here to be able to hold onto messages.
                         // self.chat_messages.push(msg);
-
                         // dbg!(&self.chat_messages);
 
                         app_handle.emit("message", twitch_message).unwrap();

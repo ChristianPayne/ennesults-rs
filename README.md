@@ -8,13 +8,14 @@ This project was intended to get me more familiar with Rust. The original bot wo
 # Development
 ## Tech Stack
 - Frontend
-  - SvelteKit
-  - TailwindCSS
-  - ShadCN (Svelte)
+  - [SvelteKit](https://kit.svelte.dev/)
+  - [TailwindCSS](https://tailwindcss.com/)
+  - [ShadCN (Svelte)](https://www.shadcn-svelte.com/)
 - Backend
-  - Tauri
+  - [Tauri](https://v2.tauri.app/)
 
 ## Root Environment
+Current iteration requires .env for running. Plans to have a file based loading system for tokens.
 ```
 // .env
 BOT_NAME=<name>
