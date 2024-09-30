@@ -11,8 +11,8 @@ use twitch_irc::message::PrivmsgMessage;
 
 use crate::config::CHANNEL_NAME;
 
-#[derive(serde::Serialize, Clone)]
-struct TwitchMessage {
+#[derive(serde::Serialize, Clone, Debug)]
+pub struct TwitchMessage {
     username: String,
     message: String,
 }
@@ -22,7 +22,7 @@ struct TwitchMessage {
 pub struct Bot {
     pub channel_name: String,
     pub client: Mutex<Client>,
-    pub chat_messages: Vec<PrivmsgMessage>
+    pub chat_messages: Mutex<Vec<TwitchMessage>>
 }
 impl Bot {
     pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) {
@@ -52,8 +52,7 @@ impl Bot {
                         };
 
                         // TODO: Need a lifetime here to be able to hold onto messages.
-                        // self.chat_messages.push(msg);
-                        // dbg!(&self.chat_messages);
+                        // self.chat_messages.lock().expect("Failed to get lock for chat messages.").push(twitch_message.clone());
 
                         app_handle.emit("message", twitch_message).unwrap();
                     }
@@ -102,7 +101,7 @@ impl Default for Bot {
         Bot {
             channel_name: CHANNEL_NAME.into(),
             client: Mutex::new(Client::default()),
-            chat_messages: Vec::new()
+            chat_messages: Mutex::new(Vec::new())
         }
     }
 }

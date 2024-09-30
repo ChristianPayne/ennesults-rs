@@ -11,6 +11,7 @@ This project was intended to get me more familiar with Rust. The original bot wo
   - [SvelteKit](https://kit.svelte.dev/)
   - [TailwindCSS](https://tailwindcss.com/)
   - [ShadCN (Svelte)](https://www.shadcn-svelte.com/)
+  - [Heroicons](https://heroicons.com/)
 - Backend
   - [Tauri](https://v2.tauri.app/)
 
@@ -23,4 +24,4 @@ BOT_OAUTH=<token>
 ```
 
 ## Running the app
-From the root directory, use npm to start the front and back end code; `npm run tauri dev`
+From the root directory, use npm to start the front and backend code; `npm run tauri dev`

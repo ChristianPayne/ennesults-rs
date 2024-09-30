@@ -17,7 +17,7 @@ pub mod file;
 use tauri::Manager;
 
 use crate::bot::Bot;
-use crate::commands::connect_to_channel::connect_to_channel;
+use crate::commands::*;
 
 #[tokio::main]
 async fn main() {
@@ -33,6 +33,7 @@ async fn main() {
             crate::commands::leave_channel::leave_channel,
             crate::commands::print_state::print_state,
             crate::commands::status::status,
+            crate::commands::get_bot_state::get_channel_name
         ])
         .setup(|app| {
             println!("Setting up bot!");
