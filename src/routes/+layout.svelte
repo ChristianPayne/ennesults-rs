@@ -59,7 +59,7 @@
   }
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex flex-col h-full p-2">
   <!-- Sidebar -->
   <!-- <div class="bg-primary-600 dark:bg-primary-900 
   w-[250px] min-w-[215px] max-w-[215px] p-2">
@@ -68,7 +68,7 @@
   <div class="flex flex-col grow">
     <ModeWatcher />
     <!-- Title -->
-    <div class="flex justify-between mx-4 my-2">
+    <div class="flex justify-between">
       <Button variant="ghost" href="/" class="text-2xl font-bold">
         Ennesults
       </Button>
@@ -101,7 +101,8 @@
     </div>
   </div>
   <!-- Footer -->
-  <div class="bg-primary-600 py-1 px-2 flex border-t border-primary-800 rounded-t-md">
+  <Separator/>
+  <div class="bg-primary-600 p-2 flex rounded-t-md">
     <div class="grow"></div>
     <!-- Badges -->
     <div class="flex space-x-2">
@@ -131,10 +132,12 @@
             </Badge>
           </Popover.Trigger>
           
-          <Popover.Content>
-            { connectionStatus ? `We are connected to ${channelName}.` : "Not connected to a channel." }
+          <Popover.Content class="space-y-2">
+            <p>
+              { connectionStatus ? `We are connected to ${channelName}.` : "Not connected to a channel." }
+            </p>
             {#if connectionStatus}
-              <Button on:click={leave_channel}>
+              <Button variant="destructive" on:click={leave_channel}>
                 Leave {channelName}!
               </Button>
             {/if}

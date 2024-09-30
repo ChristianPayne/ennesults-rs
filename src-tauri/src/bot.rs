@@ -45,6 +45,7 @@ impl Bot {
                 match message {
                     ServerMessage::Privmsg(msg) => {
                         println!("Received message: {:?}", msg);
+                        
                         let twitch_message = TwitchMessage {
                             username: msg.sender.name,
                             message: msg.message_text,
