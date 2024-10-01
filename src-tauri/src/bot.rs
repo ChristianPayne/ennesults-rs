@@ -9,6 +9,8 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 use twitch_irc::message::PrivmsgMessage;
 
+use crate::bot;
+use crate::commands::bot_api::get_bot_info;
 use crate::config::CHANNEL_NAME;
 
 #[derive(serde::Serialize, Clone, Debug)]
@@ -20,21 +22,41 @@ pub struct TwitchMessage {
 // BOT
 #[derive(Debug)]
 pub struct Bot {
-    pub channel_name: String,
+    pub bot_info: Mutex<BotInfo>,
     pub client: Mutex<Client>,
     pub chat_messages: Mutex<Vec<TwitchMessage>>
 }
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct BotInfo {
+    pub channel_name: String,
+    pub bot_name: String,
+    pub oauth_token: String,
+    pub auto_connect_on_startup: bool
+}
+
+
 impl Bot {
-    pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) {
+    pub fn new(bot_info: BotInfo) -> Self {
+        Self {
+            bot_info: Mutex::new(bot_info),
+            client: Mutex::new(Client::default()),
+            chat_messages: Mutex::new(Vec::new())
+        }
+    }
+    pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) -> Result<(), &str> {
         println!("Connecting to Twitch!");
+        let _ = app_handle.emit("alert", "Connecting to Twitch");
         // default configuration is to join chat as anonymous.
-        // let config = ClientConfig::default();
 
-        // TODO: Get a configuration file going after collecting info from the user.
-        let login_name: String = dotenv!("BOT_NAME").to_owned();
-        let oauth_token: String = dotenv!("BOT_OAUTH").to_owned();
+        let bot_info = get_bot_info(app_handle.state::<Bot>());
 
-        let config = ClientConfig::new_simple(StaticLoginCredentials::new(login_name, Some(oauth_token)));
+        let config = if bot_info.bot_name == "" || bot_info.oauth_token == "" {
+            ClientConfig::default()
+        } else {
+            ClientConfig::new_simple(StaticLoginCredentials::new(bot_info.bot_name, Some(bot_info.oauth_token)))
+        };
+
 
         let (mut incoming_messages, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
@@ -61,7 +83,6 @@ impl Bot {
                         ()
                     }
                     ServerMessage::Join(msg) => {
-                        // TODO: Emit join event for the channel as been joined.
                         let _ = app_handle.emit("channel_join", msg.channel_login);
                     }
                     ServerMessage::Part(msg) => {
@@ -69,6 +90,10 @@ impl Bot {
                         let _ = app_handle.emit("channel_part", msg.channel_login);
                     }
                     ServerMessage::Generic(_) => (),
+                    ServerMessage::Notice(notice) => {
+                        let _ = app_handle.emit("error", notice.message_text);
+                        break;
+                    },
                     other => {
                         println!("Other message type: {:?}", other)
                     }
@@ -77,7 +102,7 @@ impl Bot {
         });
 
         *self.client.lock().unwrap() = Client::new(client);
-        println!("Connected to Twitch!");
+        Ok(())
     }
 
     pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
@@ -98,10 +123,21 @@ impl Bot {
 }
 impl Default for Bot {
     fn default() -> Self {
-        Bot {
-            channel_name: CHANNEL_NAME.into(),
+        Self {
+            bot_info: Mutex::new(BotInfo::default()),
             client: Mutex::new(Client::default()),
             chat_messages: Mutex::new(Vec::new())
+        }
+    }
+}
+
+impl Default for BotInfo {
+    fn default() -> Self {
+        Self {
+            channel_name: "".into(),
+            bot_name: "".into(),
+            oauth_token: "".into(),
+            auto_connect_on_startup: false,
         }
     }
 }

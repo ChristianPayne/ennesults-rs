@@ -35,6 +35,7 @@
     // event.payload is the payload object
     channelName = event.payload as string;
     connectionStatus = true;
+    toast("Connected to " + event.payload as string)
   })
   listen('channel_part', (event) => {
     console.log('🪵 ~ unlisten ~ event:', event);
@@ -42,6 +43,13 @@
     // event.payload is the payload object
     channelName = event.payload as string;
     connectionStatus = false;
+    toast("Left " + event.payload as string)
+  })
+  listen('error', (event) => {
+    toast.error(event.payload as string)
+  })
+  listen('alert', (event) => {
+    toast(event.payload as string)
   })
 
   async function leave_channel () {
@@ -71,11 +79,6 @@
 </script>
 
 <div class="flex flex-col h-full p-2">
-  <!-- Sidebar -->
-  <!-- <div class="bg-primary-600 dark:bg-primary-900 
-  w-[250px] min-w-[215px] max-w-[215px] p-2">
-    Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero in quis labore perferendis possimus assumenda perspiciatis provident magnam quaerat. Architecto vero iusto dolore deleniti asperiores earum quas culpa delectus odio.
-  </div> -->
   <div class="flex flex-col grow">
     <ModeWatcher />
     <!-- Title -->
@@ -103,14 +106,13 @@
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
           </svg>
-                 
         </Button>
       </div>
     </div>
     <Separator/>
     <!-- Main Content -->
     <div class="grow mx-4 my-2 overflow-y-scroll">
-      <Toaster />
+      <Toaster position="bottom-left"/>
       <slot/>
     </div>
   </div>

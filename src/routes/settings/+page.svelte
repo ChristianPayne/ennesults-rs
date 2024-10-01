@@ -22,7 +22,7 @@
       value: "oauth",
       label: "OAuth"
     }
-  }
+  } as const;
   const connectionTypes: Selected<string>[] = Object.values(connectionTypeMap)
 
   // State values
@@ -33,7 +33,16 @@
   let oauthTokenValue: string = "";
 
   onMount(async () => {
-    channelName = await invoke("get_channel_name");
+    let botInfo: any = await invoke("get_bot_info");
+    channelName = botInfo.channel_name;
+    botName = botInfo.bot_name;
+    oauthTokenValue = botInfo.oauth_token;
+    autoConnectOnStartup = botInfo.auto_connect_on_startup;
+
+    if(botName && oauthTokenValue) {
+      selectedConnectionType = connectionTypeMap['oauth']
+    }
+    console.log(botInfo)
   })
 
   function onConnectionTypeChanged(event: {value: string, label: string, disabled: boolean}) {
@@ -46,8 +55,17 @@
     autoConnectOnStartup = value;
   }
 
-  function save () {
+  async function save () {
+    let result = await invoke("save_bot_info", {
+      botInfo: {
+        channel_name: channelName,
+        bot_name: botName,
+        oauth_token: oauthTokenValue,
+        auto_connect_on_startup: autoConnectOnStartup
+      }
+    })
     console.table({autoConnectOnStartup, channelName, selectedConnectionType:selectedConnectionType.value, botName, oauthTokenValue})
+    console.log(result)
   }
 </script>
 

@@ -4,7 +4,7 @@ pub mod leave_channel;
 pub mod print_state;
 pub mod say;
 pub mod status;
-pub mod get_bot_state;
+pub mod bot_api;
 
 // Command components
 #[derive(Clone)]

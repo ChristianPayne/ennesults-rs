@@ -1,6 +1,6 @@
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
-    fs::File,
+    fs::{self, File, read_to_string},
     io::{Read, Write},
     path::Path,
 };
@@ -8,47 +8,52 @@ use tauri::{AppHandle, Manager};
 
 // const BASE_FILE_PATH: &str = "./data";
 
+pub enum WriteFileError {
+    FailedCreateFile,
+    FailedConvertJSON,
+    FailedWriteFile
+}
+
 pub fn to_json<T: Serialize>(data: T) -> Result<String, serde_json::Error> {
     serde_json::to_string_pretty(&data)
 }
 
-pub fn create_file(app: &AppHandle, file_name: &str, json: String) -> Result<(), std::io::Error> {
-    // LEFT OFF TRYING TO GET THE APP REFERENCE INTO THIS FUNCTION.
-
+pub fn write_file<T: Serialize>(app_handle: &AppHandle, file_name: &str, contents: T) -> Result<(), WriteFileError> {
     // Get a resource path for where the files will live.
-    let resource_path = app
-        .path()
-        .app_data_dir()
-        .expect("Can't resolve app data dir.");
-    let full_path = format!(
-        "{}/{}",
-        resource_path.to_str().expect("Can't convert to str"),
-        file_name
-    );
+    let resource_path = app_handle.path().app_data_dir().expect("Can't resolve app data dir.");
+    let full_path = format!("{}/{}",resource_path.to_str().expect("Can't convert to str"), file_name);
 
-    let mut f = File::create(full_path)?;
-    f.write_all(json.as_bytes())
+    let f_result = File::create(full_path);
+    let mut file = match f_result {
+        Ok(file) => {
+            file
+        },
+        Err(_) => {
+            return Err(WriteFileError::FailedCreateFile)
+        }
+    };
+    let json = match to_json(contents) {
+        Ok(json) => json,
+        Err(_) => return Err(WriteFileError::FailedConvertJSON)
+    };
+    match file.write_all(json.as_bytes()) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(WriteFileError::FailedWriteFile)
+    }
 }
 
-pub fn read_json_file<T, P>(app: AppHandle, file_path: P) -> Result<T, Box<dyn std::error::Error>>
-where
-    T: DeserializeOwned,
-    P: AsRef<Path>,
+pub fn read_json_file<T>(app_handle: &AppHandle, file_name: &str) -> Result<T, Box<dyn std::error::Error>> where T: DeserializeOwned
 {
-    // LEFT OFF TRYING TO GET THE APP REFERENCE INTO THIS FUNCTION.
     // Get a resource path for where the files will live.
-    // let resource_path = app.path_resolver().app_data_dir().expect("Can't resolve app data dir.");
-    // let full_path = format!("{}/{}", resource_path.to_str().expect("Can't convert to str"), file_name);
+    let resource_path = app_handle.path().app_data_dir().expect("Can't resolve app data dir.");
+    let full_path = format!("{}/{}", resource_path.to_str().expect("Can't convert to str"), file_name);
 
-    // Open the file
-    let mut file = File::open(file_path)?;
+    dbg!(&full_path);
 
-    // Read the file contents into a string
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-
+    let file_contents = read_to_string(full_path)?;
+    
     // Parse the JSON string using serde_json
-    let data: T = serde_json::from_str(&contents)?;
+    let data: T = serde_json::from_str(&file_contents)?;
 
     Ok(data)
 }
