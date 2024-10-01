@@ -15,13 +15,8 @@ This project was intended to get me more familiar with Rust. The original bot wo
 - Backend
   - [Tauri](https://v2.tauri.app/)
 
-## Root Environment
-Current iteration requires .env for running. Plans to have a file based loading system for tokens.
-```
-// .env
-BOT_NAME=<name>
-BOT_OAUTH=<token>
-```
+## File system
+Files are being stored in Tauri's `app_data_dir` folder; different for each OS.
 
 ## Running the app
 From the root directory, use npm to start the front and backend code; `npm run tauri dev`
