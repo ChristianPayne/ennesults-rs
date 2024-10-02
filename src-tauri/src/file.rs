@@ -41,7 +41,7 @@ pub fn write_file<T: Serialize>(app_handle: &AppHandle, file_name: &str, content
     }
 }
 
-pub fn read_json_file<T>(app_handle: &AppHandle, file_name: &str) -> Result<T, Box<dyn std::error::Error>> where T: DeserializeOwned
+pub fn read_json_file<T: Default>(app_handle: &AppHandle, file_name: &str) -> Result<T, Box<dyn std::error::Error>> where T: DeserializeOwned
 {
     // Get a resource path for where the files will live.
     let resource_path = app_handle.path().app_data_dir().expect("Can't resolve app data dir.");

@@ -34,37 +34,14 @@ async fn main() {
         ])
         .setup(|app| {
             println!("Setting up bot!");
-            let bot_info = match read_json_file::<BotInfo>(app.handle(), "bot_info.json") {
-                Ok(bot_info) => bot_info,
-                Err(err) => {
-                    dbg!(err);
-                    BotInfo::default()
-                }
-            };
+            let bot_info = read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
             dbg!(&bot_info);
             let bot = Bot::new(bot_info);
             app.manage(bot);
 
-            let comebacks = match read_json_file::<Comebacks>(app.handle(), "comebacks.json") {
-                Ok(comebacks) => comebacks,
-                Err(_) => {
-                    Comebacks::default()
-                }
-            };
-
-            let insults = match read_json_file::<Insults>(app.handle(), "insults.json") {
-                Ok(insults) => insults,
-                Err(_) => {
-                    Insults::default()
-                }
-            };
-
-            let users = match read_json_file::<Users>(app.handle(), "users.json") {
-                Ok(users) => users,
-                Err(_) => {
-                    Users::default()
-                }
-            };
+            let comebacks = read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
+            let insults = read_json_file::<Insults>(app.handle(), "insults.json").unwrap_or_default();
+            let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
 
             let bot_data = BotData::new(comebacks, insults, users);
             app.manage(bot_data);

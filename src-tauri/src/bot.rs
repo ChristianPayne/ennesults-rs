@@ -120,6 +120,7 @@ impl Default for Bot {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(default = "Default::default")]
 pub struct BotInfo {
     pub channel_name: String,
     pub bot_name: String,
@@ -173,6 +174,7 @@ impl Default for BotData {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(default = "Default::default")]
 pub struct Comebacks(pub Vec<Comeback>);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -188,6 +190,7 @@ impl Default for Comebacks {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(default = "Default::default")]
 pub struct Insults(Vec<Insult>);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -203,6 +206,7 @@ impl Default for Insults {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(default = "Default::default")]
 pub struct Users(Vec<User>);
 
 impl Default for Users {
