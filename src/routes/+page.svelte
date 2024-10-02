@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Greet from '$lib/Greet.svelte'
   import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import { invoke } from "@tauri-apps/api/core"
   import { onDestroy, onMount } from 'svelte';
