@@ -1,9 +1,8 @@
 use tauri::Manager;
-use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::{self, BotInfo};
+use crate::bot::BotInfo;
 use crate::bot::Bot;
-use crate::config;
+
 use crate::file::{write_file, WriteFileError};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command

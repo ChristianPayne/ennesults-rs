@@ -1,6 +1,4 @@
-use crate::bot;
 use crate::bot::Bot;
-use crate::config;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]

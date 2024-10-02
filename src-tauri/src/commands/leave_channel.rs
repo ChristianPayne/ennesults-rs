@@ -1,12 +1,11 @@
-use crate::bot;
 use crate::bot::Bot;
-use crate::config;
 
 #[tauri::command]
 pub fn leave_channel(state: tauri::State<'_, Bot>) {
+    let channel_name = state.bot_info.lock().expect("Failed to get lock").channel_name.clone();
     if let Some(client) = state.get_client() {
         //Do something with the client.
-        client.part(config::CHANNEL_NAME.to_owned());
+        client.part(channel_name);
         println!("Left channel!");
     }
 }

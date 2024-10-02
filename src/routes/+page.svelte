@@ -4,7 +4,8 @@
   import { invoke } from "@tauri-apps/api/core"
   import { onDestroy, onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
-    import Title from '$lib/Title.svelte';
+  import Title from '$lib/Title.svelte';
+  import * as Card from "$lib/components/ui/card";
 
   type MessageDetails = {
     username: string,
@@ -15,12 +16,6 @@
 
   let messages: MessageDetails[] = [];
   let unlisten: UnlistenFn;
-  
-  
-  async function print_state () {
-    let state = await invoke("print_state");
-    console.log('🛠 print_state', state);
-  }
 
   onMount(async () => {
     console.log("Messages:", messages)
@@ -43,13 +38,25 @@
 
 <Title title="Dashboard"/>
 
-<div class="flex space-x-2 mb-4">
-  <Button on:click={print_state}>
-    Print State!
-  </Button>
-</div>  
+<div class="md:flex justify-between p-4 gap-4">
+  <a href='/insults' class="border rounded-xl p-6 hover:bg-accent">
+    <p>Insults</p>
+    <p class="text-4xl font-bold mb-8">50</p>
+    <p class="text-muted-foreground">Insults loaded into the bot</p>
+  </a>
+  <a href='/comebacks' class="border rounded-xl p-6 hover:bg-accent">
+    <p>Comebacks</p>
+    <p class="text-4xl font-bold mb-8">12</p>
+    <p class="text-muted-foreground">Reactions to users @-ing her</p>
+  </a>
+  <a href='/users' class="border rounded-xl p-6 hover:bg-accent">
+    <p>Users Consented</p>
+    <p class="text-4xl font-bold mb-8">42</p>
+    <p class="text-muted-foreground">Users wanting to be insulted</p>
+  </a>
+</div>
 
-<h1 class="my-4 text-lg font-semibold">Twitch Chat</h1>
+<Title title="Chat"/>
 <ul class="space-y-2 select-text">
   {#each messages as message}
     <li><span style="color: {color};">{message.username}</span>: {message.message}</li>

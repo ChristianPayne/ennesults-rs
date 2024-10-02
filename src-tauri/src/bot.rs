@@ -1,17 +1,14 @@
 // Helpers
 use std::sync::Mutex;
-use tauri::{self, Config, Emitter, Manager};
+use tauri::{self, Emitter, Manager};
 
 // IRC
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::{RGBColor, ServerMessage};
+use twitch_irc::message::ServerMessage;
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
-use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot;
 use crate::commands::bot_api::get_bot_info;
-use crate::config::CHANNEL_NAME;
 
 #[derive(serde::Serialize, Clone, Debug)]
 pub struct TwitchMessage {

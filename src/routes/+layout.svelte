@@ -111,7 +111,7 @@
     </div>
     <Separator/>
     <!-- Main Content -->
-    <div class="grow mx-4 my-2 overflow-y-scroll">
+    <div class="grow mx-4 xl:mx-auto xl:w-1/2 my-2 overflow-y-scroll">
       <Toaster position="bottom-left"/>
       <slot/>
     </div>

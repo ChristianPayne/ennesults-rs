@@ -1,23 +1,17 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[macro_use]
 extern crate dotenv_codegen;
-
-// STD APIs
-use std::fs;
-use std::path::Path;
 
 // Ennesults
 pub mod bot;
 pub mod commands;
-pub mod config;
 pub mod file;
 
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 
 use crate::bot::{Bot, BotInfo};
-use crate::file::{read_json_file};
+use crate::file::read_json_file;
 
 #[tokio::main]
 async fn main() {
@@ -30,7 +24,6 @@ async fn main() {
             crate::commands::say::say,
             crate::commands::connect_to_channel::connect_to_channel,
             crate::commands::leave_channel::leave_channel,
-            crate::commands::print_state::print_state,
             crate::commands::status::status,
             crate::commands::bot_api::get_channel_name,
             crate::commands::bot_api::save_bot_info,

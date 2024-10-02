@@ -1,8 +1,7 @@
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
-    fs::{self, File, read_to_string},
-    io::{Read, Write},
-    path::Path,
+    fs::{File, read_to_string},
+    io::Write,
 };
 use tauri::{AppHandle, Manager};
 
@@ -47,8 +46,6 @@ pub fn read_json_file<T>(app_handle: &AppHandle, file_name: &str) -> Result<T, B
     // Get a resource path for where the files will live.
     let resource_path = app_handle.path().app_data_dir().expect("Can't resolve app data dir.");
     let full_path = format!("{}/{}", resource_path.to_str().expect("Can't convert to str"), file_name);
-
-    dbg!(&full_path);
 
     let file_contents = read_to_string(full_path)?;
     
