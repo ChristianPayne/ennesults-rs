@@ -124,7 +124,11 @@ pub struct BotInfo {
     pub channel_name: String,
     pub bot_name: String,
     pub oauth_token: String,
-    pub auto_connect_on_startup: bool
+    pub auto_connect_on_startup: bool,
+
+    pub last_comeback_id: u16,
+    pub last_insult_id: u16,
+    pub last_user_id: u16,
 }
 
 impl Default for BotInfo {
@@ -134,6 +138,9 @@ impl Default for BotInfo {
             bot_name: "".into(),
             oauth_token: "".into(),
             auto_connect_on_startup: false,
+            last_comeback_id: 0,
+            last_insult_id: 0, 
+            last_user_id: 0,
         }
     }
 }
@@ -150,7 +157,7 @@ impl BotData {
         Self {
             comebacks: Mutex::new(comebacks),
             insults: Mutex::new(insults),
-            users: Mutex::new(users)
+            users: Mutex::new(users),
         }
     }
 }
@@ -165,8 +172,14 @@ impl Default for BotData {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct Comebacks(Vec<String>);
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct Comebacks(pub Vec<Comeback>);
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct Comeback {
+    pub id: u16,
+    pub value: String
+}
 
 impl Default for Comebacks {
     fn default() -> Self {
@@ -174,8 +187,14 @@ impl Default for Comebacks {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct Insults(Vec<String>);
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct Insults(Vec<Insult>);
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct Insult {
+    id: u16,
+    value: String
+}
 
 impl Default for Insults {
     fn default() -> Self {
@@ -183,7 +202,7 @@ impl Default for Insults {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Users(Vec<User>);
 
 impl Default for Users {
@@ -194,6 +213,7 @@ impl Default for Users {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct User {
+    pub id: u16, // Max 65535 users
     pub username: String,
     pub consented: bool,
 }

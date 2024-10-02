@@ -4,8 +4,6 @@
   import { invoke } from "@tauri-apps/api/core"
   import { onDestroy, onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
-  import Title from '$lib/Title.svelte';
-  import * as Card from "$lib/components/ui/card";
 
   type MessageDetails = {
     username: string,
@@ -36,31 +34,37 @@
   })
 </script>
 
-<Title title="Dashboard"/>
+<h1>Dashboard</h1>
 
-<Button on:click={() => invoke("print_bot_data")}>Print Bot Data</Button>
-
-<div class="md:flex justify-between p-4 gap-4">
-  <a href='/insults' class="border rounded-xl p-6 hover:bg-accent">
-    <p>Insults</p>
+<div class="md:flex justify-between my-4 gap-4">
+  <a href='/insults' class="border hover:border-primary rounded-xl p-6 hover:bg-accent">
+    <p class="text-lg font-semibold">Insults</p>
     <p class="text-4xl font-bold mb-8">50</p>
     <p class="text-muted-foreground">Insults loaded into the bot</p>
   </a>
-  <a href='/comebacks' class="border rounded-xl p-6 hover:bg-accent">
-    <p>Comebacks</p>
+  <a href='/comebacks' class="border hover:border-primary rounded-xl p-6 hover:bg-accent">
+    <p class="text-lg font-semibold">Comebacks</p>
     <p class="text-4xl font-bold mb-8">12</p>
     <p class="text-muted-foreground">Reactions to users @-ing her</p>
   </a>
-  <a href='/users' class="border rounded-xl p-6 hover:bg-accent">
-    <p>Users Consented</p>
-    <p class="text-4xl font-bold mb-8">42</p>
-    <p class="text-muted-foreground">Users wanting to be insulted</p>
+  <a href='/users' class="border hover:border-primary rounded-xl p-6 hover:bg-accent">
+    <p class="text-lg font-semibold">Users Consented</p>
+    <p class="text-4xl font-bold mb-8">42 <span class="text-muted-foreground text-sm">/ 84</span></p>
+    <p class="text-muted-foreground">Users waiting to be insulted</p>
   </a>
 </div>
 
-<Title title="Chat"/>
-<ul class="space-y-2 select-text">
-  {#each messages as message}
-    <li><span style="color: {color};">{message.username}</span>: {message.message}</li>
-  {/each}
+<div class="flex justify-around my-4">
+  <Button on:click={() => invoke("print_bot_data")}>Print Bot Data</Button>
+</div>
+
+<h1>Chat</h1>
+<ul class="space-y-2 select-text border rounded-md grow p-2">
+  {#if messages.length == 0}
+    <li class="w-full text-center text-muted-foreground">No chat messages yet...</li>
+  {:else}
+    {#each messages as message}
+      <li><span style="color: {color};">{message.username}</span>: {message.message}</li>
+    {/each}
+  {/if}
 </ul>

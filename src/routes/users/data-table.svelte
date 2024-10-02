@@ -3,6 +3,8 @@
   import { readable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import DataTableActions from "./data-table-actions.svelte";
+    import Badge from "$lib/components/ui/badge/badge.svelte";
+    import { Checkbox } from "$lib/components/ui/checkbox";
 
 
 
@@ -18,7 +20,8 @@
     { id: 1, user: 'ChrisGriffin522', type: 'Moderator', consented: true },
     { id: 2, user: 'Ennegineer', type: 'Streamer', consented: true },
     { id: 3, user: 'JinJix', type: 'Viewer', consented: false },
-    { id: 4, user: 'jaypez04', type: 'Viewer', consented: false }
+    { id: 4, user: 'jaypez04', type: 'Viewer', consented: false },
+    { id: 5, user: 'mcgyver0302', type: 'Viewer', consented: true },
   ];
 
   const table = createTable(readable(data));
@@ -39,6 +42,9 @@
     table.column({
       accessor: "consented",
       header: "Consented",
+      cell: ({value}) => {
+        return createRender(Checkbox, {checked: value})
+      }
     }),
     table.column({
       accessor: ({ id }) => id,
@@ -80,7 +86,11 @@
             {#each row.cells as cell (cell.id)}
               <Subscribe attrs={cell.attrs()} let:attrs>
                 <Table.Cell {...attrs}>
-                  <Render of={cell.render()} />
+                  {#if cell.id === 'type'}
+                    <Badge>{cell.render()}</Badge>
+                  {:else}
+                    <Render of={cell.render()} />
+                  {/if}
                 </Table.Cell>
               </Subscribe>
             {/each}

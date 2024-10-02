@@ -10,7 +10,6 @@
   import { invoke } from "@tauri-apps/api/core";
   import * as Dialog from "$lib/components/ui/dialog";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { Label } from "$lib/components/ui/label/index.js";
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import { getVersion } from '@tauri-apps/api/app';
@@ -46,7 +45,9 @@
     toast("Left " + event.payload as string)
   })
   listen('error', (event) => {
-    toast.error(event.payload as string)
+    toast.error(event.payload as string, {
+      duration: 10000
+    })
   })
   listen('alert', (event) => {
     toast(event.payload as string)

@@ -29,6 +29,7 @@
    </DropdownMenu.Group>
    <DropdownMenu.Separator />
    <DropdownMenu.Item>Toggle consent</DropdownMenu.Item>
+   <DropdownMenu.Item>Allow whispers</DropdownMenu.Item>
    <DropdownMenu.Item class="text-destructive">Delete user</DropdownMenu.Item>
   </DropdownMenu.Content>
  </DropdownMenu.Root>

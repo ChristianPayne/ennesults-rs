@@ -36,10 +36,12 @@ async fn main() {
             println!("Setting up bot!");
             let bot_info = match read_json_file::<BotInfo>(app.handle(), "bot_info.json") {
                 Ok(bot_info) => bot_info,
-                Err(_) => {
+                Err(err) => {
+                    dbg!(err);
                     BotInfo::default()
                 }
             };
+            dbg!(&bot_info);
             let bot = Bot::new(bot_info);
             app.manage(bot);
 

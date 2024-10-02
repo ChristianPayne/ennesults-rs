@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Title from "$lib/Title.svelte";
+
 </script>
 
-<Title title="Commands"/>
+<h1>Commands</h1>

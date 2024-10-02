@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Title from "$lib/Title.svelte";
 </script>
 
-<Title title="Comebacks"/>
+<h1>Comebacks</h1>
