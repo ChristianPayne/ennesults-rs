@@ -24,15 +24,6 @@ pub struct Bot {
     pub chat_messages: Mutex<Vec<TwitchMessage>>
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct BotInfo {
-    pub channel_name: String,
-    pub bot_name: String,
-    pub oauth_token: String,
-    pub auto_connect_on_startup: bool
-}
-
-
 impl Bot {
     pub fn new(bot_info: BotInfo) -> Self {
         Self {
@@ -128,6 +119,14 @@ impl Default for Bot {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct BotInfo {
+    pub channel_name: String,
+    pub bot_name: String,
+    pub oauth_token: String,
+    pub auto_connect_on_startup: bool
+}
+
 impl Default for BotInfo {
     fn default() -> Self {
         Self {
@@ -137,6 +136,66 @@ impl Default for BotInfo {
             auto_connect_on_startup: false,
         }
     }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct BotData {
+    pub comebacks: Mutex<Comebacks>,
+    pub insults: Mutex<Insults>,
+    pub users: Mutex<Users>,
+}
+
+impl BotData {
+    pub fn new(comebacks: Comebacks, insults: Insults, users: Users) -> Self {
+        Self {
+            comebacks: Mutex::new(comebacks),
+            insults: Mutex::new(insults),
+            users: Mutex::new(users)
+        }
+    }
+}
+
+impl Default for BotData {
+    fn default() -> Self {
+        Self {
+            comebacks: Mutex::new(Comebacks::default()),
+            insults: Mutex::new(Insults::default()),
+            users: Mutex::new(Users::default()),
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct Comebacks(Vec<String>);
+
+impl Default for Comebacks {
+    fn default() -> Self {
+        Self (Vec::new())
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct Insults(Vec<String>);
+
+impl Default for Insults {
+    fn default() -> Self {
+        Self (Vec::new())
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct Users(Vec<User>);
+
+impl Default for Users {
+    fn default() -> Self {
+        Self (Vec::new())
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct User {
+    pub username: String,
+    pub consented: bool,
 }
 
 // CLIENT

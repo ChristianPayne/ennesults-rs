@@ -8,6 +8,7 @@ pub mod bot;
 pub mod commands;
 pub mod file;
 
+use bot::{BotData, Comebacks, Insults, Users};
 use tauri::Manager;
 
 use crate::bot::{Bot, BotInfo};
@@ -27,7 +28,9 @@ async fn main() {
             crate::commands::status::status,
             crate::commands::bot_api::get_channel_name,
             crate::commands::bot_api::save_bot_info,
-            crate::commands::bot_api::get_bot_info
+            crate::commands::bot_api::get_bot_info,
+            crate::commands::print_bot_data::print_bot_data,
+            
         ])
         .setup(|app| {
             println!("Setting up bot!");
@@ -37,9 +40,32 @@ async fn main() {
                     BotInfo::default()
                 }
             };
-
             let bot = Bot::new(bot_info);
             app.manage(bot);
+
+            let comebacks = match read_json_file::<Comebacks>(app.handle(), "comebacks.json") {
+                Ok(comebacks) => comebacks,
+                Err(_) => {
+                    Comebacks::default()
+                }
+            };
+
+            let insults = match read_json_file::<Insults>(app.handle(), "insults.json") {
+                Ok(insults) => insults,
+                Err(_) => {
+                    Insults::default()
+                }
+            };
+
+            let users = match read_json_file::<Users>(app.handle(), "users.json") {
+                Ok(users) => users,
+                Err(_) => {
+                    Users::default()
+                }
+            };
+
+            let bot_data = BotData::new(comebacks, insults, users);
+            app.manage(bot_data);
 
             // Connect the bot to Twitch on startup.
             let state = app.state::<Bot>();

@@ -38,6 +38,8 @@
 
 <Title title="Dashboard"/>
 
+<Button on:click={() => invoke("print_bot_data")}>Print Bot Data</Button>
+
 <div class="md:flex justify-between p-4 gap-4">
   <a href='/insults' class="border rounded-xl p-6 hover:bg-accent">
     <p>Insults</p>

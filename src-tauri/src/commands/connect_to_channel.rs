@@ -1,4 +1,4 @@
-use crate::bot::Bot;
+use crate::bot::{Bot, BotData};
 
 #[tauri::command]
 pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<(), &str> {
