@@ -10,6 +10,7 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 use crate::commands::bot_api::get_bot_info;
+use crate::commands::say::say;
 
 #[derive(serde::Serialize, Clone, Debug)]
 pub struct TwitchMessage {
@@ -111,8 +112,28 @@ impl Bot {
                     ServerMessage::Generic(_) => (),
                     ServerMessage::Notice(notice) => {
                         let _ = app_handle.emit("error", notice.message_text);
-                        break;
                     },
+                    ServerMessage::Whisper(msg) => {
+                        // TODO: Figure out how to implement Sync for a Mutex.
+                        // let bot_data = app_handle.state::<BotData>();
+                        // let users = &bot_data.users_allowed_to_whisper.lock().expect("Failed to get lock for bot data.");
+
+                        // let mut matched_user: Option<User> = None;
+                        // users.0.iter().map(|user| {
+                        //     if user.id.to_string() == msg.sender.id {
+                        //         matched_user = Some(user.clone())
+                        //     }
+                        // });
+
+                        // match matched_user {
+                        //     None => (),
+                        //     Some(user) => {
+                        //         say(msg.message_text.as_str(), app_handle.state::<Bot>()).await;
+                        //         ()
+                        //     }
+                        // }
+                        
+                    }
                     other => {
                         println!("Other message type: {:?}", other)
                     }
@@ -160,7 +181,6 @@ pub struct BotInfo {
 
     pub last_comeback_id: u16,
     pub last_insult_id: u16,
-    pub last_user_id: u16,
 }
 
 impl Default for BotInfo {
@@ -171,8 +191,7 @@ impl Default for BotInfo {
             oauth_token: "".into(),
             auto_connect_on_startup: false,
             last_comeback_id: 0,
-            last_insult_id: 0, 
-            last_user_id: 0,
+            last_insult_id: 0,
         }
     }
 }
@@ -182,14 +201,16 @@ pub struct BotData {
     pub comebacks: Mutex<Comebacks>,
     pub insults: Mutex<Insults>,
     pub users: Mutex<Users>,
+    pub users_allowed_to_whisper: Mutex<Users>
 }
 
 impl BotData {
-    pub fn new(comebacks: Comebacks, insults: Insults, users: Users) -> Self {
+    pub fn new(comebacks: Comebacks, insults: Insults, users: Users, users_allowed_to_whisper: Users) -> Self {
         Self {
             comebacks: Mutex::new(comebacks),
             insults: Mutex::new(insults),
             users: Mutex::new(users),
+            users_allowed_to_whisper: Mutex::new(users_allowed_to_whisper)
         }
     }
 }
@@ -200,6 +221,7 @@ impl Default for BotData {
             comebacks: Mutex::new(Comebacks::default()),
             insults: Mutex::new(Insults::default()),
             users: Mutex::new(Users::default()),
+            users_allowed_to_whisper: Mutex::new(Users::default())
         }
     }
 }

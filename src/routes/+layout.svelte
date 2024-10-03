@@ -30,7 +30,19 @@
     if(botInfo) {
       channelName = botInfo.channel_name;
       if(botInfo.auto_connect_on_startup) {
-        await connect_to_channel()
+        let [ wanted, joined ] = await invoke<[boolean, boolean]>('get_channel_status');
+        
+        if(wanted == false && joined == false) {
+          await connect_to_channel()
+        }
+
+        if(wanted == true && joined == true) {
+          connectionStatus = true;
+        }
+
+        if(wanted == true && joined == false) {
+          toast.warning(`Still connecting to ${channelName}...`)
+        }
       }
     }
   });
@@ -86,10 +98,14 @@
   }
 
   async function connect_to_channel () {
-    let status = await invoke("connect_to_channel").catch(err => {
+    let channel = await invoke<string>("connect_to_channel").catch(err => {
       toast.error(err);
     });
-    console.log('🛠 Connect To Channel', status);
+    if(channel) {
+      toast.info(`Connecting to ${channel}...`,)
+    }
+
+    console.log('🛠 Connect To Channel', channel);
   }
 </script>
 
@@ -155,7 +171,7 @@
             </Button>
           </Dialog.Trigger>
           <Dialog.Content>
-            <Dialog.Header>
+            <Dialog.Header> 
               <Dialog.Title>Make Ennesults speak in chat!</Dialog.Title>
               <Dialog.Description>
                 <div class="grid w-full gap-1.5">

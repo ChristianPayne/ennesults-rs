@@ -25,12 +25,11 @@ async fn main() {
             crate::commands::say::say,
             crate::commands::connect_to_channel::connect_to_channel,
             crate::commands::leave_channel::leave_channel,
-            crate::commands::status::status,
+            crate::commands::get_channel_status::get_channel_status,
             crate::commands::bot_api::get_channel_name,
             crate::commands::bot_api::save_bot_info,
             crate::commands::bot_api::get_bot_info,
             crate::commands::print_bot_data::print_bot_data,
-            
         ])
         .setup(|app| {
             println!("Setting up bot!");
@@ -41,8 +40,9 @@ async fn main() {
             let comebacks = read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
             let insults = read_json_file::<Insults>(app.handle(), "insults.json").unwrap_or_default();
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
+            let users_allowed_to_whisper = read_json_file::<Users>(app.handle(), "users_allowed_to_whisper.json").unwrap_or_default();
 
-            let bot_data = BotData::new(comebacks, insults, users);
+            let bot_data = BotData::new(comebacks, insults, users, users_allowed_to_whisper);
             app.manage(bot_data);
 
             // Connect the bot to Twitch on startup.
