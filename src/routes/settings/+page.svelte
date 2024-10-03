@@ -56,6 +56,7 @@
   }
 
   async function save () {
+    await invoke("leave_channel");
     let result = await invoke("save_bot_info", {
       botInfo: {
         channel_name: channelName,

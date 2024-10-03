@@ -14,6 +14,7 @@ This project was intended to get me more familiar with Rust. The original bot wo
   - [Heroicons](https://heroicons.com/)
 - Backend
   - [Tauri](https://v2.tauri.app/)
+  - [Twitch IRC](https://docs.rs/twitch-irc/latest/twitch_irc/#)
 
 ## File system
 Files are being stored in Tauri's `app_data_dir` folder; different for each OS.

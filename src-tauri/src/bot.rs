@@ -1,10 +1,11 @@
 // Helpers
 use std::sync::Mutex;
+use serde::ser::SerializeStruct;
 use tauri::{self, Emitter, Manager};
 
 // IRC
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::ServerMessage;
+use twitch_irc::message::{RGBColor, ServerMessage};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
@@ -14,6 +15,23 @@ use crate::commands::bot_api::get_bot_info;
 pub struct TwitchMessage {
     username: String,
     message: String,
+    color: Option<SerializeRBGColor>
+}
+
+#[derive(Clone, Debug)]
+pub struct SerializeRBGColor(RGBColor);
+
+impl serde::Serialize for SerializeRBGColor {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+                let mut state = serializer.serialize_struct("RGBColor", 3)?;
+                state.serialize_field("r", &self.0.r)?;
+                state.serialize_field("g", &self.0.g)?;
+                state.serialize_field("b", &self.0.b)?;
+                state.end()
+        
+    }
 }
 
 // BOT
@@ -37,6 +55,13 @@ impl Bot {
         let _ = app_handle.emit("alert", "Connecting to Twitch");
         // default configuration is to join chat as anonymous.
 
+        // let current_client = *self.client.lock().unwrap();
+
+        // if let Some(client) = &self.client.lock().expect("Failed to get lock on bot client").0 {
+        //     println!("Dropped client that was already there.");
+        //     let _ = drop(*client);
+        // }
+
         let bot_info = get_bot_info(app_handle.state::<Bot>());
 
         let config = if bot_info.bot_name == "" || bot_info.oauth_token == "" {
@@ -44,7 +69,6 @@ impl Bot {
         } else {
             ClientConfig::new_simple(StaticLoginCredentials::new(bot_info.bot_name, Some(bot_info.oauth_token)))
         };
-
 
         let (mut incoming_messages, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
@@ -54,29 +78,36 @@ impl Bot {
             while let Some(message) = incoming_messages.recv().await {
                 match message {
                     ServerMessage::Privmsg(msg) => {
-                        println!("Received message: {:?}", msg);
+                        // println!("Received message: {:?}", msg);
                         
                         let twitch_message = TwitchMessage {
                             username: msg.sender.name,
                             message: msg.message_text,
+                            color: match msg.name_color {
+                                Some(rgb) => Some(SerializeRBGColor(rgb)),
+                                None => None
+                            }
                         };
 
                         // TODO: Need a lifetime here to be able to hold onto messages.
                         // self.chat_messages.lock().expect("Failed to get lock for chat messages.").push(twitch_message.clone());
 
                         app_handle.emit("message", twitch_message).unwrap();
-                    }
+                    },
+                    ServerMessage::GlobalUserState(user_state) => {
+                        ()
+                    },
                     ServerMessage::Pong(_) => {
                         // println!("Pong received...")
                         ()
-                    }
+                    },
                     ServerMessage::Join(msg) => {
                         let _ = app_handle.emit("channel_join", msg.channel_login);
-                    }
+                    },
                     ServerMessage::Part(msg) => {
                         // TODO: Emit part event for the channel as been left.
                         let _ = app_handle.emit("channel_part", msg.channel_login);
-                    }
+                    },
                     ServerMessage::Generic(_) => (),
                     ServerMessage::Notice(notice) => {
                         let _ = app_handle.emit("error", notice.message_text);

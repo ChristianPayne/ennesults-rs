@@ -4,26 +4,34 @@
   import { onDestroy, onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
 
+  const maxChatMessages = 100;
+
   type MessageDetails = {
     username: string,
-    message: string
+    message: string,
+    color: any
   }
-
-  let color = "#4E89FF"
 
   let messages: MessageDetails[] = [];
   let unlisten: UnlistenFn;
+
+  let chatElement: Element;
+
+  $: messages, scrollToBottom(chatElement);
 
   onMount(async () => {
     console.log("Messages:", messages)
     unlisten = await listen('message', (event: {payload: MessageDetails}) => {
       // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
       // event.payload is the payload object
-      console.log("event", event.payload, messages)
-      messages = [...messages, {
+      // console.log("event", event.payload)
+      messages.push({
         username: event.payload.username,
-        message: event.payload.message
-      }]
+        message: event.payload.message,
+        color: event.payload.color
+      });
+      messages = messages.slice(-maxChatMessages);
+
       return event
     });
   })
@@ -31,6 +39,8 @@
   onDestroy(() => {
     unlisten();
   })
+
+  const scrollToBottom = async (node: Element) => node?.scroll({ top: node.scrollHeight, behavior: 'instant' })
 </script>
 
 <h1>Dashboard</h1>
@@ -47,8 +57,8 @@
     <p class="text-muted-foreground">Reactions to users @-ing her</p>
   </a>
   <a href='/users' class="border hover:border-primary rounded-xl p-6 hover:bg-accent">
-    <p class="text-lg font-semibold">Users Consented</p>
-    <p class="text-4xl font-bold mb-8">42 <span class="text-muted-foreground text-sm">/ 84</span></p>
+    <p class="text-lg font-semibold">Active Users</p>
+    <p class="text-4xl font-bold mb-8">42 <span class="text-muted-foreground text-sm">/ 84 Consented</span></p>
     <p class="text-muted-foreground">Users waiting to be insulted</p>
   </a>
 </div>
@@ -57,13 +67,14 @@
   <Button on:click={() => invoke("print_bot_data")}>Print Bot Data</Button>
 </div>
 
-<h1>Chat</h1>
-<ul class="space-y-2 select-text border rounded-md grow p-2">
-  {#if messages.length == 0}
-    <li class="w-full text-center text-muted-foreground">No chat messages yet...</li>
-  {:else}
+<div class="flex space-x-4">
+  <h1>Chat</h1>
+  <Button variant="ghost" on:click={() => messages = []}>Clear Chat</Button>
+</div>
+<div class="overflow-y-scroll h-[600px] select-text border rounded-md p-2" bind:this={chatElement}>
+  <ul class="space-y-1">
     {#each messages as message}
-      <li><span style="color: {color};">{message.username}</span>: {message.message}</li>
+      <li><span style="color: rgb({message.color?.r},{message.color?.g},{message.color?.b});" class="text-primary">{message.username}</span>: {message.message}</li>
     {/each}
-  {/if}
-</ul>
+  </ul>
+</div>

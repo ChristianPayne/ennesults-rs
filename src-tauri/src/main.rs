@@ -35,7 +35,6 @@ async fn main() {
         .setup(|app| {
             println!("Setting up bot!");
             let bot_info = read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
-            dbg!(&bot_info);
             let bot = Bot::new(bot_info);
             app.manage(bot);
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import "../styles.css";
-  import { emit, listen } from '@tauri-apps/api/event'
+  import { listen } from '@tauri-apps/api/event'
   import { Badge } from "$lib/components/ui/badge";
   import * as Popover from "$lib/components/ui/popover";
   import { ModeWatcher } from "mode-watcher";
@@ -26,31 +26,43 @@
   
   onMount(async () => {
     tauriVersion = await getVersion();
+    let botInfo = await invoke<BotInfo>("get_bot_info").catch(e => console.error(e))
+    if(botInfo) {
+      channelName = botInfo.channel_name;
+      if(botInfo.auto_connect_on_startup) {
+        await connect_to_channel()
+      }
+    }
   });
 
   listen('channel_join', (event) => {
-    console.log('🪵 ~ unlisten ~ event:', event);
+    console.log('🛠 channel_join event:', event);
     // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
     // event.payload is the payload object
     channelName = event.payload as string;
     connectionStatus = true;
-    toast("Connected to " + event.payload as string)
+    toast("Connected to " + event.payload as string, {
+      dismissable: true
+    })
   })
+
   listen('channel_part', (event) => {
-    console.log('🪵 ~ unlisten ~ event:', event);
+    console.log('🛠 channel_part event:', event);
     // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
     // event.payload is the payload object
     channelName = event.payload as string;
     connectionStatus = false;
-    toast("Left " + event.payload as string)
+    toast.warning("Left " + event.payload as string)
   })
+
   listen('error', (event) => {
     toast.error(event.payload as string, {
       duration: 10000
     })
   })
+
   listen('alert', (event) => {
-    toast(event.payload as string)
+    toast.info(event.payload as string)
   })
 
   async function leave_channel () {
@@ -74,52 +86,52 @@
   }
 
   async function connect_to_channel () {
-    let status = await invoke("connect_to_channel");
+    let status = await invoke("connect_to_channel").catch(err => {
+      toast.error(err);
+    });
     console.log('🛠 Connect To Channel', status);
   }
 </script>
 
+<ModeWatcher />
+<Toaster position="bottom-left"/>
 <div class="flex flex-col h-full p-2">
-  <div class="flex flex-col grow">
-    <ModeWatcher />
-    <!-- Title -->
-    <div class="flex justify-between mb-2">
-      <Button variant="ghost" href="/" class="text-2xl font-bold space-x-2">
-        Ennesults
+  <!-- Title -->
+  <div class="flex justify-between mb-2">
+    <Button variant="ghost" href="/" class="text-2xl font-bold space-x-2">
+      Ennesults
+    </Button>
+    <div class="flex space-x-2 items-center">
+      <Button variant="ghost" href="/commands">
+        Commands
       </Button>
-      <div class="flex space-x-2 items-center">
-        <Button variant="ghost" href="/commands">
-          Commands
-        </Button>
-        <Button variant="ghost" href="/insults">
-          Insults
-        </Button>
-        <Button variant="ghost" href="/comebacks">
-          Comebacks
-        </Button>
-        <Button variant="ghost" href="/users">
-          Users
-        </Button>
-        <Button variant="ghost" href="/settings">
-          Settings
-        </Button>
-        <Button on:click={toggleMode} variant="ghost" size="icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-          </svg>
-        </Button>
-      </div>
-    </div>
-    <Separator/>
-    <!-- Main Content -->
-    <div class="grow mx-4 xl:mx-auto xl:w-1/2 my-2 overflow-y-scroll">
-      <Toaster position="bottom-left"/>
-      <slot/>
+      <Button variant="ghost" href="/insults">
+        Insults
+      </Button>
+      <Button variant="ghost" href="/comebacks">
+        Comebacks
+      </Button>
+      <Button variant="ghost" href="/users">
+        Users
+      </Button>
+      <Button variant="ghost" href="/settings">
+        Settings
+      </Button>
+      <Button on:click={toggleMode} variant="ghost" size="icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+        </svg>
+      </Button>
     </div>
   </div>
-  <!-- Footer -->
   <Separator/>
-  <div class="p-2 flex  align-middle items-center h-8">
+  <!-- Main Content -->
+  <div class="grow mx-4 xl:mx-auto xl:w-1/2 my-2 overflow-y-scroll">
+    <slot/>
+  </div>
+  <Separator/>
+  <!-- Footer -->
+  <div class="p-2 flex align-middle items-center h-8">
     {#if tauriVersion}
     <Tooltip.Root>
       <Tooltip.Trigger>
@@ -160,10 +172,10 @@
         <Popover.Trigger>
           <Badge variant="{connectionStatus ? 'secondary' : 'destructive'}">
             {#if connectionStatus}
-              <p class="mr-2">{channelName}</p>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+              <p>{channelName}</p>
+              <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-              </svg>
+              </svg> -->
               
             {:else}
               <p class="mr-2">Disconnected</p>
