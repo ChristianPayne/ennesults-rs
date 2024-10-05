@@ -3,9 +3,10 @@ use crate::bot::{Bot, BotData};
 #[tauri::command]
 pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
     let channel_name = state.bot_info.lock().expect("Failed to get lock for bot info").channel_name.clone();
+    let client = state.client.lock().unwrap();
     match &channel_name.is_empty() {
         false => {
-            match state.get_client() {
+            match &client.0 {
                 None => Err("Could not get client.".into()),
                 Some(client) => {
                     let channel_status = client.get_channel_status(channel_name.clone()).await;
@@ -23,7 +24,7 @@ pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, 
                             match client.join(channel_name.clone()) {
                                 Ok(x) => {
                                     println!("Connected to channel! {:?}", x);
-                                    Ok(channel_name)
+                                    Ok(channel_name.clone())
                                 }
                                 Err(e) => Err(format!("Could not join channel! {}", e)),
                             }

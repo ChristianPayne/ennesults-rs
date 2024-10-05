@@ -48,23 +48,25 @@
   });
 
   listen('channel_join', (event) => {
-    console.log('🛠 channel_join event:', event);
-    // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
-    // event.payload is the payload object
-    channelName = event.payload as string;
-    connectionStatus = true;
-    toast("Connected to " + event.payload as string, {
-      dismissable: true
-    })
+    if(connectionStatus == false) {
+      console.log('🛠 channel_join event:', event);
+      // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
+      // event.payload is the payload object
+      channelName = event.payload as string;
+      connectionStatus = true;
+      toast.success(`Connected to ${channelName}!`, {
+        dismissable: true
+      })
+    }
   })
 
   listen('channel_part', (event) => {
-    console.log('🛠 channel_part event:', event);
-    // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
-    // event.payload is the payload object
-    channelName = event.payload as string;
-    connectionStatus = false;
-    toast.warning("Left " + event.payload as string)
+    if(connectionStatus == true) {
+      console.log('🛠 channel_part event:', event);
+      // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
+      // event.payload is the payload object
+      leave_channel()
+    }
   })
 
   listen('error', (event) => {
@@ -78,8 +80,15 @@
   })
 
   async function leave_channel () {
-    let status = await invoke("leave_channel");
-    console.log('🛠 Leave Channel', status);
+    let status = await invoke<string>("leave_channel").catch(e => {
+      toast.error(e)
+      return;
+    });
+    if(status) {
+      channelName = status as string;
+      connectionStatus = false;
+      toast.warning(`Left ${channelName}!`)
+    }
   }
 
   async function speakAsEnnesults () {
@@ -189,10 +198,6 @@
           <Badge variant="{connectionStatus ? 'secondary' : 'destructive'}">
             {#if connectionStatus}
               <p>{channelName}</p>
-              <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-              </svg> -->
-              
             {:else}
               <p class="mr-2">Disconnected</p>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">

@@ -53,10 +53,6 @@ async fn main() {
                 println!("{}", error)
             }
 
-            // Not in an async block, we can't kick this off here.
-            // More knowledge needed.
-            // connect_to_channel(state);
-
             Ok(())
         })
         .run(tauri::generate_context!())

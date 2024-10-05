@@ -1,8 +1,10 @@
 // Helpers
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use serde::ser::SerializeStruct;
 use tauri::{self, Emitter, Manager};
 
+use tokio::task::JoinHandle;
+// use tokio::sync::Mutex;
 // IRC
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{RGBColor, ServerMessage};
@@ -31,26 +33,37 @@ impl serde::Serialize for SerializeRBGColor {
                 state.serialize_field("g", &self.0.g)?;
                 state.serialize_field("b", &self.0.b)?;
                 state.end()
-        
     }
 }
 
 // BOT
 #[derive(Debug)]
 pub struct Bot {
-    pub bot_info: Mutex<BotInfo>,
-    pub client: Mutex<Client>,
-    pub chat_messages: Mutex<Vec<TwitchMessage>>
+    pub bot_info: Arc<Mutex<BotInfo>>,
+    pub client: Arc<Mutex<Client>>,
+    pub chat_messages: Arc<Mutex<Vec<TwitchMessage>>>,
 }
 
 impl Bot {
     pub fn new(bot_info: BotInfo) -> Self {
         Self {
-            bot_info: Mutex::new(bot_info),
-            client: Mutex::new(Client::default()),
-            chat_messages: Mutex::new(Vec::new())
+            bot_info: Arc::new(Mutex::new(bot_info)),
+            client: Arc::new(Mutex::new(Client::default())),
+            chat_messages: Arc::new(Mutex::new(Vec::new())),
         }
     }
+    pub async fn get_channel_name(&self) -> String {
+        self.bot_info.lock().unwrap().channel_name.clone()
+    }
+    pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
+        let client = self.client.lock().unwrap();
+        let channel_name = self.get_channel_name().await;
+        match &client.0 {
+            None => None,
+            Some(client) => Some(client.get_channel_status(channel_name).await)
+        }
+    }
+
     pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) -> Result<(), &str> {
         println!("Connecting to Twitch!");
         let _ = app_handle.emit("alert", "Connecting to Twitch");
@@ -75,7 +88,7 @@ impl Bot {
 
         // first thing you should do: start consuming incoming messages,
         // otherwise they will back up.
-        let _join_handle = tokio::spawn(async move {
+        let join_handle = tokio::spawn(async move {
             while let Some(message) = incoming_messages.recv().await {
                 match message {
                     ServerMessage::Privmsg(msg) => {
@@ -141,20 +154,15 @@ impl Bot {
             }
         });
 
-        *self.client.lock().unwrap() = Client::new(client);
+        *self.client.lock().unwrap() = Client::new(client, join_handle);
         Ok(())
     }
 
-    pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
-        let mutex_result = &self.client.lock();
-        match mutex_result {
-            Ok(guard) => guard.0.clone(),
-            Err(_) => {
-                println!("Error getting client out of mutex!");
-                None
-            }
-        }
-    }
+    // pub fn get_client(&self) -> Option<Client> {
+    //     // LEFT OFF HERE TRYING TO FIGURE OUT MUTEX GUARDS AND HOW I CAN GET DATA OUT OF THEM.
+    //     let mutex_result = &self.client.lock().expect("Failed to get lock on client.");
+    //     mutex_result.0
+    // }
 
     // pub fn rs2js<R: tauri::Runtime>(message: String, manager: &impl Manager<R>) {
     //     dbg!(&message, "rs2js");
@@ -164,9 +172,9 @@ impl Bot {
 impl Default for Bot {
     fn default() -> Self {
         Self {
-            bot_info: Mutex::new(BotInfo::default()),
-            client: Mutex::new(Client::default()),
-            chat_messages: Mutex::new(Vec::new())
+            bot_info: Arc::new(Mutex::new(BotInfo::default())),
+            client: Arc::new(Mutex::new(Client::default())),
+            chat_messages: Arc::new(Mutex::new(Vec::new()))
         }
     }
 }
@@ -277,14 +285,14 @@ pub struct User {
 
 // CLIENT
 #[derive(Debug)]
-pub struct Client(pub Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>);
+pub struct Client(pub Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>, Option<JoinHandle<()>>);
 impl Client {
-    pub fn new(client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>) -> Self {
-        Client(Some(client))
+    pub fn new(client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>, join_handle: JoinHandle<()>) -> Self {
+        Client(Some(client), Some(join_handle))
     }
 }
 impl Default for Client {
     fn default() -> Self {
-        Client(None)
+        Client(None, None)
     }
 }

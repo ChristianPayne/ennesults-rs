@@ -6,7 +6,7 @@
   import * as Select from "$lib/components/ui/select";
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
-    import { Checkbox } from "$lib/components/ui/checkbox";
+  import { Checkbox } from "$lib/components/ui/checkbox";
   
   type Selected<Value> = {
     value: Value;
@@ -33,7 +33,7 @@
   let oauthTokenValue: string = "";
 
   onMount(async () => {
-    let botInfo: any = await invoke("get_bot_info");
+    let botInfo = await invoke<BotInfo>("get_bot_info");
     channelName = botInfo.channel_name;
     botName = botInfo.bot_name;
     oauthTokenValue = botInfo.oauth_token;
@@ -46,18 +46,16 @@
   })
 
   function onConnectionTypeChanged(event: {value: string, label: string, disabled: boolean}) {
-    console.log(event)
     selectedConnectionType = connectionTypeMap[event.value];
   }
 
   function onAutoConnectChanged(value: boolean) {
-    console.log(value)
     autoConnectOnStartup = value;
   }
 
   async function save () {
     await invoke("leave_channel");
-    let result = await invoke("save_bot_info", {
+    await invoke<BotInfo>("save_bot_info", {
       botInfo: {
         channel_name: channelName,
         bot_name: botName,
@@ -65,8 +63,6 @@
         auto_connect_on_startup: autoConnectOnStartup
       }
     })
-    console.table({autoConnectOnStartup, channelName, selectedConnectionType:selectedConnectionType.value, botName, oauthTokenValue})
-    console.log(result)
   }
 </script>
 
