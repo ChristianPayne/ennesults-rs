@@ -7,6 +7,7 @@
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { Checkbox } from "$lib/components/ui/checkbox";
+  import type { BotInfo } from "$lib/types";
   
   type Selected<Value> = {
     value: Value;

@@ -15,6 +15,7 @@
   import { getVersion } from '@tauri-apps/api/app';
   import { onMount } from 'svelte';
   import * as Tooltip from "$lib/components/ui/tooltip";
+  import type { BotInfo } from "$lib/types";
   
   let connectionStatus = false;
   let channelName = "";

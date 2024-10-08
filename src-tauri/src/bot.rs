@@ -1,7 +1,7 @@
-// Helpers
 use std::sync::{Arc, Mutex};
 use serde::ser::SerializeStruct;
 use tauri::{self, Emitter, Manager};
+use ts_rs::TS;
 
 use tokio::task::JoinHandle;
 // use tokio::sync::Mutex;
@@ -178,8 +178,9 @@ impl Default for Bot {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, TS)]
 #[serde(default = "Default::default")]
+#[ts(export, export_to="../../src/lib/types.ts")]
 pub struct BotInfo {
     pub channel_name: String,
     pub bot_name: String,

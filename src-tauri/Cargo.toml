@@ -1,6 +1,6 @@
 [package]
 name = "ennesults-rs"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Twitch bot created for Ennegineer to kindly insult her chat."
 authors = ["Christian Payne"]
 license = ""
@@ -26,6 +26,7 @@ tauri-plugin-window-state = { version = "2.0.0-rc" }
 tauri-plugin-store = { version = "2.0.0-rc" }
 tauri-plugin-fs = "2.0.0-rc"
 tauri-plugin-shell = "2.0.0-rc"
+ts-rs = "10.0"
 
 
 [features]
