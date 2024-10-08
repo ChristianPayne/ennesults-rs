@@ -11,7 +11,7 @@ use twitch_irc::message::{RGBColor, ServerMessage};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
-use crate::commands::bot_api::get_bot_info;
+use crate::commands::get_bot_info;
 
 #[derive(serde::Serialize, Clone, Debug)]
 pub struct TwitchMessage {

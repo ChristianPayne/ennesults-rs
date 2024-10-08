@@ -3,16 +3,15 @@
 
 extern crate dotenv_codegen;
 
-// Ennesults
-pub mod bot;
-pub mod commands;
-pub mod file;
-
-use bot::{BotData, Comebacks, Insults, Users};
+//Tauri
 use tauri::Manager;
+// Ennesults
+mod bot;
+mod commands;
+mod file;
 
-use crate::bot::{Bot, BotInfo};
-use crate::file::read_json_file;
+use bot::{Bot, BotInfo, BotData, Comebacks, Insults, Users};
+use file::read_json_file;
 
 #[tokio::main]
 async fn main() {
@@ -22,14 +21,14 @@ async fn main() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
-            crate::commands::say::say,
-            crate::commands::connect_to_channel::connect_to_channel,
-            crate::commands::leave_channel::leave_channel,
-            crate::commands::get_channel_status::get_channel_status,
-            crate::commands::bot_api::get_channel_name,
-            crate::commands::bot_api::save_bot_info,
-            crate::commands::bot_api::get_bot_info,
-            crate::commands::print_bot_data::print_bot_data,
+            crate::commands::say,
+            crate::commands::connect_to_channel,
+            crate::commands::leave_channel,
+            crate::commands::get_channel_status,
+            crate::commands::get_channel_name,
+            crate::commands::save_bot_info,
+            crate::commands::get_bot_info,
+            crate::commands::print_bot_data,
         ])
         .setup(|app| {
             println!("Setting up bot!");
