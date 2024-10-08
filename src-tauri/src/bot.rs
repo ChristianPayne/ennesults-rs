@@ -12,7 +12,6 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 use crate::commands::bot_api::get_bot_info;
-use crate::commands::say::say;
 
 #[derive(serde::Serialize, Clone, Debug)]
 pub struct TwitchMessage {
@@ -286,9 +285,16 @@ pub struct User {
 // CLIENT
 #[derive(Debug)]
 pub struct Client(pub Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>, Option<JoinHandle<()>>);
+
 impl Client {
     pub fn new(client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>, join_handle: JoinHandle<()>) -> Self {
         Client(Some(client), Some(join_handle))
+    }
+    pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
+        match &self.0 {
+            None => None,
+            Some(client) => Some(client.clone())
+        }
     }
 }
 impl Default for Client {

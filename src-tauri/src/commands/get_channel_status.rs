@@ -3,15 +3,22 @@ use crate::bot::Bot;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 pub async fn get_channel_status(state: tauri::State<'_, Bot>) -> Result<(bool, bool), String> {
-    // Is this the best way to get the client? Should we just ignore this command if we don't have a client?
     let channel_name = state.bot_info.lock().expect("Failed to get lock").channel_name.clone();
-    let client = state.client.lock().unwrap();
-    match &client.0 {
-        Some(client) => {
-            let channel_status = client.get_channel_status(channel_name).await;
-            dbg!(channel_status);
-            Ok(channel_status)
-        }
-        None => Err("Failed to connect to channel.".to_owned()),
+
+    if channel_name.is_empty() {
+        return Err("Channel name not found.".into())
     }
+
+    let client;
+    {
+        client = state.client.lock().unwrap().get_client();
+    }
+
+    let Some(client) = client else {
+        return Err("Could not get client.".into())
+    };
+
+    let channel_status = client.get_channel_status(channel_name).await;
+    dbg!(channel_status);
+    Ok(channel_status)
 }
