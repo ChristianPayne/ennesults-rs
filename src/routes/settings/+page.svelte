@@ -8,6 +8,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { Checkbox } from "$lib/components/ui/checkbox";
   import type { BotInfo } from "$lib/types";
+  import { toast } from "svelte-sonner";
   
   type Selected<Value> = {
     value: Value;
@@ -60,7 +61,10 @@
   }
 
   async function save () {
-    await invoke("leave_channel");
+    await toast.info("Saving settings...")
+    await invoke<string>("leave_channel").catch(async e => {
+      await toast.info(e)
+    });
     await invoke<BotInfo>("save_bot_info", {
       botInfo: {
         channel_name: channelName,
@@ -70,7 +74,7 @@
       }
     })
     let saveUsersAllowedToWhisperResult = await invoke<string[]>("save_users_allowed_to_whisper", {
-      usersAllowedToWhisper: usersAllowedToWhisper.split(",").map(user => user.trim()).filter(Boolean)
+      usersAllowedToWhisper: usersAllowedToWhisper.split(",").filter(Boolean).map(user => user.trim().toLowerCase())
     })
     console.log('🪵 ~ save ~ saveUsersAllowedToWhisperResult:', saveUsersAllowedToWhisperResult);
   }

@@ -17,7 +17,7 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct Client(
     pub Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>,
-    Option<JoinHandle<()>>,
+    pub Option<JoinHandle<()>>,
 );
 
 impl Client {
@@ -83,6 +83,7 @@ pub async fn process_twitch_messages(
                 let _ = app_handle.emit("error", notice.message_text);
             }
             ServerMessage::Whisper(msg) => {
+                println!("{} whispered {}", msg.sender.name, msg.message_text);
                 let bot_data = app_handle.state::<BotData>();
                 let mut matched_user: Option<String> = None;
                 {
@@ -90,13 +91,19 @@ pub async fn process_twitch_messages(
                         .users_allowed_to_whisper
                         .lock()
                         .expect("Failed to get lock for bot data.");
-                    if users.contains(&msg.sender.id) {
-                        matched_user = Some(msg.sender.id);
+                    if users.contains(&msg.sender.name.to_lowercase()) {
+                        matched_user = Some(msg.sender.name);
+                    } else {
+                        dbg!(&users);
+                        dbg!(&msg.sender.name);
                     }
                 }
 
+                dbg!(&matched_user);
+
                 if matched_user.is_some() {
                     let _ = say(msg.message_text.as_str(), app_handle.state::<Bot>()).await;
+                    println!("Said a message in chat!")
                 }
             }
             other => {

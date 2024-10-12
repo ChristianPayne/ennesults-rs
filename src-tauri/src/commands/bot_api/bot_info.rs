@@ -1,7 +1,7 @@
 use tauri::Manager;
 
 use crate::bot::{Bot, BotInfo};
-use crate::commands::leave_channel;
+use crate::commands::{connect_to_channel, leave_channel};
 use crate::file::{write_file, WriteFileError};
 
 #[tauri::command]
@@ -25,7 +25,10 @@ pub fn get_bot_info(state: tauri::State<'_, Bot>) -> BotInfo {
 }
 
 #[tauri::command]
-pub fn save_bot_info(app_handle: tauri::AppHandle, bot_info: BotInfo) -> Result<BotInfo, String> {
+pub async fn save_bot_info(
+    app_handle: tauri::AppHandle,
+    bot_info: BotInfo,
+) -> Result<BotInfo, String> {
     let state = app_handle.state::<Bot>();
     let mut bot_info = bot_info;
     bot_info.channel_name = bot_info.channel_name.to_lowercase();
@@ -36,8 +39,8 @@ pub fn save_bot_info(app_handle: tauri::AppHandle, bot_info: BotInfo) -> Result<
             .expect("Failed to get lock for bot info") = bot_info.clone();
     }
 
-    let _ = leave_channel(app_handle.state::<Bot>());
     let _ = state.connect_to_twitch(app_handle.clone());
+    let _ = connect_to_channel(app_handle.state::<Bot>()).await;
 
     let write_result = write_file::<BotInfo>(&app_handle, "bot_info.json", bot_info.clone());
 

@@ -56,15 +56,22 @@ impl Bot {
             let existing_client = &mut self
                 .client
                 .lock()
-                .expect("Failed to get lock on bot client")
-                .0;
+                .expect("Failed to get lock on bot client");
 
-            if existing_client.is_some() {
+            if existing_client.0.is_some() {
                 println!("Dropped client that was already there.");
                 existing_client
+                    .0
                     .take()
-                    .expect("Failed to take the client")
+                    .expect("Failed to take existing client")
                     .part(bot_info.channel_name.clone());
+
+                let existing_handle = existing_client
+                    .1
+                    .take()
+                    .expect("Failed to take existing client handle.");
+
+                existing_handle.abort();
             }
         }
 
@@ -88,6 +95,8 @@ impl Bot {
         ));
 
         *self.client.lock().unwrap() = Client::new(client, join_handle);
+
+        dbg!(&self);
         Ok(())
     }
 }
