@@ -42,6 +42,12 @@
     let chatMessages = await invoke<TwitchMessage[]>("get_chat_messages")
     messages = chatMessages;
   }
+
+  async function getChatMessagesCount() {
+    let count = await invoke("get_chat_messages_count");
+    console.log('🪵 ~ getChatMessagesCount ~ count:', count);
+    
+  }
 </script>
 
 <h1>Dashboard</h1>
@@ -64,8 +70,9 @@
   </a>
 </div>
 
-<div class="flex justify-around my-4">
+<div class="flex justify-around my-4 gap-2">
   <Button on:click={getChatMessages}>Get Chat Messages</Button>
+  <Button on:click={getChatMessagesCount}>Get Chat Messages Count</Button>
 </div>
 
 <div class="flex space-x-4">
@@ -75,7 +82,7 @@
 <div class="overflow-y-scroll h-[600px] select-text border rounded-md p-2" bind:this={chatElement}>
   <ul class="space-y-1">
     {#each messages as message}
-      <li><span style="color: rgb({message.color[0]},{message.color[1]},{message.color[2]});" class="text-primary">{message.username}</span>: {message.message}</li>
+      <li><span style="color: rgb({message.color?.[0]},{message.color?.[1]},{message.color?.[2]});" class="text-primary">{message.username}</span>: {message.message}</li>
     {/each}
   </ul>
 </div>

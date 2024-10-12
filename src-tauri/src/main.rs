@@ -9,7 +9,6 @@ use tauri::Manager;
 mod bot;
 mod commands;
 mod file;
-mod twitch_worker;
 
 use bot::{Bot, BotInfo, BotData, Comebacks, Insults, Users};
 use file::read_json_file;
@@ -28,9 +27,12 @@ async fn main() {
             crate::commands::get_channel_status,
             crate::commands::get_channel_name,
             crate::commands::save_bot_info,
+            crate::commands::get_users_allowed_to_whisper,
+            crate::commands::save_users_allowed_to_whisper,
             crate::commands::get_bot_info,
             crate::commands::print_bot_data,
-            crate::commands::get_chat_messages
+            crate::commands::get_chat_messages,
+            crate::commands::get_chat_messages_count
         ])
         .setup(|app| {
             println!("Setting up bot!");
@@ -41,7 +43,7 @@ async fn main() {
             let comebacks = read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
             let insults = read_json_file::<Insults>(app.handle(), "insults.json").unwrap_or_default();
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
-            let users_allowed_to_whisper = read_json_file::<Users>(app.handle(), "users_allowed_to_whisper.json").unwrap_or_default();
+            let users_allowed_to_whisper = read_json_file::<Vec<String>>(app.handle(), "users_allowed_to_whisper.json").unwrap_or_default();
 
             let bot_data = BotData::new(comebacks, insults, users, users_allowed_to_whisper);
             app.manage(bot_data);

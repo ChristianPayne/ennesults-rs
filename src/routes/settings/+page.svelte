@@ -32,6 +32,7 @@
   let selectedConnectionType: Selected<string> = connectionTypeMap['anonymous'];
   let botName: string = "";
   let oauthTokenValue: string = "";
+  let usersAllowedToWhisper = "";
 
   onMount(async () => {
     let botInfo = await invoke<BotInfo>("get_bot_info");
@@ -39,6 +40,10 @@
     botName = botInfo.bot_name;
     oauthTokenValue = botInfo.oauth_token;
     autoConnectOnStartup = botInfo.auto_connect_on_startup;
+
+    let usersAllowedToWhisperResult = await invoke<string[]>("get_users_allowed_to_whisper");
+    console.log('🪵 ~ onMount ~ usersAllowedToWhisperResult:', usersAllowedToWhisperResult);
+    usersAllowedToWhisper = usersAllowedToWhisperResult.join(", ")
 
     if(botName && oauthTokenValue) {
       selectedConnectionType = connectionTypeMap['oauth']
@@ -64,23 +69,27 @@
         auto_connect_on_startup: autoConnectOnStartup
       }
     })
+    let saveUsersAllowedToWhisperResult = await invoke<string[]>("save_users_allowed_to_whisper", {
+      usersAllowedToWhisper: usersAllowedToWhisper.split(",").map(user => user.trim()).filter(Boolean)
+    })
+    console.log('🪵 ~ save ~ saveUsersAllowedToWhisperResult:', saveUsersAllowedToWhisperResult);
   }
 </script>
 
 <div class="flex flex-col">
   <h1>Settings</h1>
-  <div class="ml-2 space-y-4">
+  <div class="ml-2 space-y-8">
     <div class="ml-2 px-4 space-y-2">
       <div class="space-y-1">
         <Checkbox checked={autoConnectOnStartup} onCheckedChange={onAutoConnectChanged} />
         <Label>Auto-connect on Startup</Label>
       </div>
       <div>
-        <Label class="block mb-2">Channel Name</Label>
+        <Label class="block mb-2">Channel name</Label>
         <Input placeholder="Ennegineer" type="text" bind:value={channelName} />
       </div>
       <div>
-        <Label class="block mb-2">Connection Type</Label>
+        <Label class="block mb-2">Connection type</Label>
         <Select.Root selected={selectedConnectionType} onSelectedChange={onConnectionTypeChanged}>
           <Select.Trigger class="w-[180px]">
             <Select.Value placeholder="Connection Type" />
@@ -94,16 +103,27 @@
       </div>
       {#if selectedConnectionType.value === "oauth"}
         <div>
-          <Label class="block mb-2">Bot Name</Label>
+          <Label class="block mb-2">Bot name</Label>
           <Input placeholder="Ennesults" type="text" bind:value={botName}/>
         </div>
         <div>
-          <Label class="block mb-2">OAuth Token</Label>
+          <Label class="block mb-2">OAuth token</Label>
           <Input type="password" placeholder="01J924W48ACP2FDDR7Y6FW88PQ" bind:value={oauthTokenValue}/>
         </div>
       {/if}
-      
-      <Button on:click={save}>Save</Button>
+    </div>
+    <div class="ml-2 px-4 space-y-2">
+      <h2 class="text-2xl">Whispers</h2>
+      <div class="space-y-1">
+        <Checkbox checked={true} onCheckedChange={() => true} />
+        <Label>Enable Whispers</Label>
+        <p class="text-sm text-muted-foreground">Enables Ennesults to say in chat what users whisper to her.</p>
+      </div>
+      <div>
+        <Label>Users allowed to whisper</Label>
+        <p class="text-sm text-muted-foreground">Each user's name that can whisper (comma separated).</p>
+        <Input placeholder="chrisgriffin522" type="text" bind:value={usersAllowedToWhisper}/>
+      </div>
     </div>
     <h2 class="text-2xl">Insults</h2>
     <div class="ml-2 px-4 space-y-2">
@@ -130,6 +150,9 @@
         <Label>Enable Comebacks</Label>
         <p class="text-sm text-muted-foreground">Enables comebacks to be said in reply to people @-ing her.</p>
       </div>
+    </div>
+    <div class="flex w-full justify-center">
+      <Button on:click={save} class="w-1/3">Save</Button>
     </div>
   </div>
 </div>

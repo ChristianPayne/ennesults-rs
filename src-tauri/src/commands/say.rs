@@ -1,6 +1,5 @@
 use crate::bot::Bot;
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 pub async fn say(message: &str, state: tauri::State<'_, Bot>) -> Result<bool, String> {
     let channel_name = state.bot_info.lock().expect("Failed to get lock").channel_name.clone();
