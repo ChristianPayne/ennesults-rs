@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/core"
   import { onDestroy, onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
-  import { TwitchMessage } from '$lib/types';
+    import { TwitchMessage } from '$lib/types';
 
   const maxChatMessages = 100;
 
@@ -15,6 +15,7 @@
   $: messages, scrollToBottom(chatElement);
 
   onMount(async () => {
+    await getChatMessages();
     console.log("Messages:", messages)
     unlisten = await listen('message', (event: {payload: TwitchMessage}) => {
       // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
@@ -39,7 +40,7 @@
 
   async function getChatMessages() {
     let chatMessages = await invoke<TwitchMessage[]>("get_chat_messages")
-    console.log('🪵 ~ getChatMessages ~ chatMessages:', chatMessages);
+    messages = chatMessages;
   }
 </script>
 
