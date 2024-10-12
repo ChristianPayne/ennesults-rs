@@ -77,7 +77,7 @@ impl Bot {
 
         let bot_info = get_bot_info(app_handle.state::<Bot>());
 
-        let config = if bot_info.bot_name == "" || bot_info.oauth_token == "" {
+        let config = if bot_info.bot_name.is_empty() || bot_info.oauth_token.is_empty() {
             ClientConfig::default()
         } else {
             ClientConfig::new_simple(StaticLoginCredentials::new(bot_info.bot_name, Some(bot_info.oauth_token)))
@@ -96,10 +96,7 @@ impl Bot {
                         let twitch_message = TwitchMessage {
                             username: msg.sender.name,
                             message: msg.message_text,
-                            color: match msg.name_color {
-                                Some(rgb) => Some(SerializeRBGColor(rgb)),
-                                None => None
-                            }
+                            color: msg.name_color.map(SerializeRBGColor)
                         };
 
                         // TODO: Need a lifetime here to be able to hold onto messages.
@@ -107,13 +104,8 @@ impl Bot {
 
                         app_handle.emit("message", twitch_message).unwrap();
                     },
-                    ServerMessage::GlobalUserState(user_state) => {
-                        ()
-                    },
-                    ServerMessage::Pong(_) => {
-                        // println!("Pong received...")
-                        ()
-                    },
+                    ServerMessage::GlobalUserState(_) => {},
+                    ServerMessage::Pong(_) => {},
                     ServerMessage::Join(msg) => {
                         let _ = app_handle.emit("channel_join", msg.channel_login);
                     },
@@ -234,47 +226,29 @@ impl Default for BotData {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
 pub struct Comebacks(pub Vec<Comeback>);
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 pub struct Comeback {
     pub id: u16,
     pub value: String
 }
 
-impl Default for Comebacks {
-    fn default() -> Self {
-        Self (Vec::new())
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
 pub struct Insults(Vec<Insult>);
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 pub struct Insult {
     id: u16,
     value: String
 }
 
-impl Default for Insults {
-    fn default() -> Self {
-        Self (Vec::new())
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
 pub struct Users(Vec<User>);
-
-impl Default for Users {
-    fn default() -> Self {
-        Self (Vec::new())
-    }
-}
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct User {
@@ -284,7 +258,7 @@ pub struct User {
 }
 
 // CLIENT
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Client(pub Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>, Option<JoinHandle<()>>);
 
 impl Client {
@@ -292,14 +266,6 @@ impl Client {
         Client(Some(client), Some(join_handle))
     }
     pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
-        match &self.0 {
-            None => None,
-            Some(client) => Some(client.clone())
-        }
-    }
-}
-impl Default for Client {
-    fn default() -> Self {
-        Client(None, None)
+        self.0.clone()
     }
 }

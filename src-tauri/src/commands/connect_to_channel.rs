@@ -1,4 +1,4 @@
-use crate::bot::{Bot, BotData};
+use crate::bot::Bot;
 
 #[tauri::command]
 pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
@@ -21,10 +21,10 @@ pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, 
 
     match channel_status {
         (true, false) => {
-            return Err("Already joining a channel.".into());
+            Err("Already joining a channel.".into())
         },
         (true, true) => {
-            return Err("Already connected to a channel.".into())
+            Err("Already connected to a channel.".into())
         },
         _ => {
             // join a channel
