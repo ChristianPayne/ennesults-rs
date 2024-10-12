@@ -2,7 +2,7 @@ use ts_rs::TS;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, TS)]
 #[serde(default = "Default::default")]
-#[ts(export, export_to="../../../src/lib/types.ts")]
+#[ts(export, export_to = "../../../src/lib/types.ts")]
 pub struct BotInfo {
     pub channel_name: String,
     pub bot_name: String,

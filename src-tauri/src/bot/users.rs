@@ -5,7 +5,7 @@ use ts_rs::TS;
 pub struct Users(pub Vec<User>);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, TS)]
-#[ts(export, export_to="../../../src/lib/types.ts")]
+#[ts(export, export_to = "../../../src/lib/types.ts")]
 pub struct User {
     pub id: String,
     pub username: String,
