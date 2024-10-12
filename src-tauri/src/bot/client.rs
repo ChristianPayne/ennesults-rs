@@ -9,7 +9,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 use twitch_irc::message::ServerMessage;
 
 use crate::{
-    bot::{Bot, BotData, SerializeRBGColor, TwitchMessage, User},
+    bot::{Bot, BotData, BotInfo, SerializeRBGColor, TwitchMessage, User},
     commands::say,
 };
 
@@ -37,10 +37,12 @@ pub async fn process_twitch_messages(
     mut incoming_messages: UnboundedReceiver<ServerMessage>,
 ) {
     while let Some(message) = incoming_messages.recv().await {
+        let bot = app_handle.state::<Bot>();
+        let bot_data = app_handle.state::<BotData>();
+
         match message {
             ServerMessage::Privmsg(msg) => {
                 // println!("Received message: {:?}", msg);
-                let bot = app_handle.state::<Bot>();
 
                 let mut chat_messages = bot
                     .chat_messages
@@ -60,7 +62,6 @@ pub async fn process_twitch_messages(
                 app_handle.emit("message", twitch_message).unwrap();
             }
             ServerMessage::GlobalUserState(user) => {
-                let bot_data = app_handle.state::<BotData>();
                 let mut users = bot_data.users.lock().unwrap();
                 users.0.push(User {
                     id: user.user_id,
@@ -84,26 +85,45 @@ pub async fn process_twitch_messages(
             }
             ServerMessage::Whisper(msg) => {
                 println!("{} whispered {}", msg.sender.name, msg.message_text);
-                let bot_data = app_handle.state::<BotData>();
-                let mut matched_user: Option<String> = None;
+
                 {
+                    let bot_info = bot
+                        .bot_info
+                        .lock()
+                        .expect("Failed to get lock for bot info.");
+
+                    if !bot_info.enable_whispers {
+                        return;
+                    }
+                }
+
+                let user_allowed_to_whisper = {
                     let users = bot_data
                         .users_allowed_to_whisper
                         .lock()
                         .expect("Failed to get lock for bot data.");
-                    if users.contains(&msg.sender.name.to_lowercase()) {
-                        matched_user = Some(msg.sender.name);
-                    } else {
-                        dbg!(&users);
-                        dbg!(&msg.sender.name);
-                    }
-                }
 
-                dbg!(&matched_user);
+                    users.contains(&msg.sender.name.to_lowercase())
+                };
 
-                if matched_user.is_some() {
-                    let _ = say(msg.message_text.as_str(), app_handle.state::<Bot>()).await;
-                    println!("Said a message in chat!")
+                if user_allowed_to_whisper {
+                    let _ = say(msg.message_text.as_str(), bot).await;
+                    app_handle
+                        .emit(
+                            "alert",
+                            format!("{} sent a message through whisper.", msg.sender.name),
+                        )
+                        .unwrap();
+                } else {
+                    app_handle
+                        .emit(
+                            "alert",
+                            format!(
+                                "{} tried to whisper but was not on the list.",
+                                msg.sender.name
+                            ),
+                        )
+                        .unwrap();
                 }
             }
             other => {

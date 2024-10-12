@@ -9,7 +9,7 @@ use super::{process_twitch_messages, BotInfo, Client};
 use crate::commands::get_bot_info;
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
-#[ts(export, export_to = "../../../src/lib/types.ts")]
+#[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct TwitchMessage {
     pub username: String,
     pub message: String,
@@ -96,7 +96,6 @@ impl Bot {
 
         *self.client.lock().unwrap() = Client::new(client, join_handle);
 
-        dbg!(&self);
         Ok(())
     }
 }

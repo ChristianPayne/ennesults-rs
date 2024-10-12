@@ -33,6 +33,9 @@
   let selectedConnectionType: Selected<string> = connectionTypeMap['anonymous'];
   let botName: string = "";
   let oauthTokenValue: string = "";
+  let enableWhispers = false;
+  let enableInsults = false;
+  let enableComebacks = false;
   let usersAllowedToWhisper = "";
 
   onMount(async () => {
@@ -41,6 +44,10 @@
     botName = botInfo.bot_name;
     oauthTokenValue = botInfo.oauth_token;
     autoConnectOnStartup = botInfo.auto_connect_on_startup;
+
+    enableWhispers = botInfo.enable_whispers;
+    enableInsults = botInfo.enable_insults;
+    enableComebacks = botInfo.enable_comebacks;
 
     let usersAllowedToWhisperResult = await invoke<string[]>("get_users_allowed_to_whisper");
     console.log('🪵 ~ onMount ~ usersAllowedToWhisperResult:', usersAllowedToWhisperResult);
@@ -60,6 +67,16 @@
     autoConnectOnStartup = value;
   }
 
+  function onEnableWhisper (value: boolean) {
+    enableWhispers = value
+  }
+  function onEnableInsults (value: boolean) {
+    enableInsults = value
+  }
+  function onEnableComebacks (value: boolean) {
+    enableComebacks = value
+  }
+
   async function save () {
     await toast.info("Saving settings...")
     await invoke<string>("leave_channel").catch(async e => {
@@ -70,7 +87,10 @@
         channel_name: channelName,
         bot_name: botName,
         oauth_token: oauthTokenValue,
-        auto_connect_on_startup: autoConnectOnStartup
+        auto_connect_on_startup: autoConnectOnStartup,
+        enable_whispers: enableWhispers,
+        enable_insults: enableInsults,
+        enable_comebacks: enableComebacks
       }
     })
     let saveUsersAllowedToWhisperResult = await invoke<string[]>("save_users_allowed_to_whisper", {
@@ -119,7 +139,7 @@
     <div class="ml-2 px-4 space-y-2">
       <h2 class="text-2xl">Whispers</h2>
       <div class="space-y-1">
-        <Checkbox checked={true} onCheckedChange={() => true} />
+        <Checkbox checked={enableWhispers} onCheckedChange={value => onEnableWhisper(Boolean(value))}/>
         <Label>Enable Whispers</Label>
         <p class="text-sm text-muted-foreground">Enables Ennesults to say in chat what users whisper to her.</p>
       </div>
@@ -129,10 +149,10 @@
         <Input placeholder="chrisgriffin522" type="text" bind:value={usersAllowedToWhisper}/>
       </div>
     </div>
-    <h2 class="text-2xl">Insults</h2>
     <div class="ml-2 px-4 space-y-2">
+      <h2 class="text-2xl">Insults</h2>
       <div class="space-y-1">
-        <Checkbox checked={true} onCheckedChange={() => true} />
+        <Checkbox checked={enableInsults} onCheckedChange={value => onEnableInsults(Boolean(value))}/>
         <Label>Enable Insults</Label>
         <p class="text-sm text-muted-foreground">Enables insults to be said in chat by Ennesults.</p>
       </div>
@@ -147,10 +167,10 @@
         <Input id="insult-interval" type="number" placeholder="300"/>
       </div>
     </div>
-    <h2 class="text-2xl">Comebacks</h2>
     <div class="ml-2 px-4 space-y-2">
+      <h2 class="text-2xl">Comebacks</h2>
       <div class="space-y-1">
-        <Checkbox checked={true} onCheckedChange={() => true} />
+        <Checkbox checked={enableComebacks} onCheckedChange={value => onEnableComebacks(Boolean(value))}/>
         <Label>Enable Comebacks</Label>
         <p class="text-sm text-muted-foreground">Enables comebacks to be said in reply to people @-ing her.</p>
       </div>
