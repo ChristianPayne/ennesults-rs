@@ -3,16 +3,11 @@
   import { invoke } from "@tauri-apps/api/core"
   import { onDestroy, onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
+  import { TwitchMessage } from '$lib/types';
 
   const maxChatMessages = 100;
 
-  type MessageDetails = {
-    username: string,
-    message: string,
-    color: any
-  }
-
-  let messages: MessageDetails[] = [];
+  let messages: TwitchMessage[] = [];
   let unlisten: UnlistenFn;
 
   let chatElement: Element;
@@ -21,7 +16,7 @@
 
   onMount(async () => {
     console.log("Messages:", messages)
-    unlisten = await listen('message', (event: {payload: MessageDetails}) => {
+    unlisten = await listen('message', (event: {payload: TwitchMessage}) => {
       // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
       // event.payload is the payload object
       // console.log("event", event.payload)
@@ -41,6 +36,11 @@
   })
 
   const scrollToBottom = async (node: Element) => node?.scroll({ top: node.scrollHeight, behavior: 'instant' })
+
+  async function getChatMessages() {
+    let chatMessages = await invoke<TwitchMessage[]>("get_chat_messages")
+    console.log('🪵 ~ getChatMessages ~ chatMessages:', chatMessages);
+  }
 </script>
 
 <h1>Dashboard</h1>
@@ -64,7 +64,7 @@
 </div>
 
 <div class="flex justify-around my-4">
-  <Button on:click={() => invoke("print_bot_data")}>Print Bot Data</Button>
+  <Button on:click={getChatMessages}>Get Chat Messages</Button>
 </div>
 
 <div class="flex space-x-4">
@@ -74,7 +74,7 @@
 <div class="overflow-y-scroll h-[600px] select-text border rounded-md p-2" bind:this={chatElement}>
   <ul class="space-y-1">
     {#each messages as message}
-      <li><span style="color: rgb({message.color?.r},{message.color?.g},{message.color?.b});" class="text-primary">{message.username}</span>: {message.message}</li>
+      <li><span style="color: rgb({message.color[0]},{message.color[1]},{message.color[2]});" class="text-primary">{message.username}</span>: {message.message}</li>
     {/each}
   </ul>
 </div>

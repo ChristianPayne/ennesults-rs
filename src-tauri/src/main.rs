@@ -9,6 +9,7 @@ use tauri::Manager;
 mod bot;
 mod commands;
 mod file;
+mod twitch_worker;
 
 use bot::{Bot, BotInfo, BotData, Comebacks, Insults, Users};
 use file::read_json_file;
@@ -29,6 +30,7 @@ async fn main() {
             crate::commands::save_bot_info,
             crate::commands::get_bot_info,
             crate::commands::print_bot_data,
+            crate::commands::get_chat_messages
         ])
         .setup(|app| {
             println!("Setting up bot!");

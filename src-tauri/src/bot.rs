@@ -12,29 +12,18 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 use crate::commands::get_bot_info;
+use crate::twitch_worker::process_twitch_messages;
 
-#[derive(serde::Serialize, Clone, Debug)]
+#[derive(serde::Serialize, Clone, Debug, TS)]
+#[ts(export, export_to="../../src/lib/types.ts")]
 pub struct TwitchMessage {
-    username: String,
-    message: String,
-    color: Option<SerializeRBGColor>
+    pub username: String,
+    pub message: String,
+    pub color: Option<SerializeRBGColor>
 }
 
-#[derive(Clone, Debug)]
-pub struct SerializeRBGColor(RGBColor);
-
-impl serde::Serialize for SerializeRBGColor {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer {
-                let mut state = serializer.serialize_struct("RGBColor", 3)?;
-                state.serialize_field("r", &self.0.r)?;
-                state.serialize_field("g", &self.0.g)?;
-                state.serialize_field("b", &self.0.b)?;
-                state.end()
-    }
-}
-
+#[derive(serde::Serialize, Clone, Debug, TS)]
+pub struct SerializeRBGColor(pub u8,pub u8,pub u8);
 // BOT
 #[derive(Debug)]
 pub struct Bot {
@@ -67,15 +56,16 @@ impl Bot {
         println!("Connecting to Twitch!");
         let _ = app_handle.emit("alert", "Connecting to Twitch");
         // default configuration is to join chat as anonymous.
-
-        // let current_client = *self.client.lock().unwrap();
-
-        // if let Some(client) = &self.client.lock().expect("Failed to get lock on bot client").0 {
-        //     println!("Dropped client that was already there.");
-        //     let _ = drop(*client);
-        // }
-
         let bot_info = get_bot_info(app_handle.state::<Bot>());
+
+        {
+            let existing_client = &mut self.client.lock().expect("Failed to get lock on bot client").0;
+
+            if existing_client.is_some() {
+                println!("Dropped client that was already there.");
+                existing_client.take().expect("Failed to take the client").part(bot_info.channel_name.clone());
+            }
+        }
 
         let config = if bot_info.bot_name.is_empty() || bot_info.oauth_token.is_empty() {
             ClientConfig::default()
@@ -83,82 +73,15 @@ impl Bot {
             ClientConfig::new_simple(StaticLoginCredentials::new(bot_info.bot_name, Some(bot_info.oauth_token)))
         };
 
-        let (mut incoming_messages, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+        let (incoming_messages, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
         // first thing you should do: start consuming incoming messages,
         // otherwise they will back up.
-        let join_handle = tokio::spawn(async move {
-            while let Some(message) = incoming_messages.recv().await {
-                match message {
-                    ServerMessage::Privmsg(msg) => {
-                        // println!("Received message: {:?}", msg);
-                        
-                        let twitch_message = TwitchMessage {
-                            username: msg.sender.name,
-                            message: msg.message_text,
-                            color: msg.name_color.map(SerializeRBGColor)
-                        };
-
-                        // TODO: Need a lifetime here to be able to hold onto messages.
-                        // self.chat_messages.lock().expect("Failed to get lock for chat messages.").push(twitch_message.clone());
-
-                        app_handle.emit("message", twitch_message).unwrap();
-                    },
-                    ServerMessage::GlobalUserState(_) => {},
-                    ServerMessage::Pong(_) => {},
-                    ServerMessage::Join(msg) => {
-                        let _ = app_handle.emit("channel_join", msg.channel_login);
-                    },
-                    ServerMessage::Part(msg) => {
-                        // TODO: Emit part event for the channel as been left.
-                        let _ = app_handle.emit("channel_part", msg.channel_login);
-                    },
-                    ServerMessage::Generic(_) => (),
-                    ServerMessage::Notice(notice) => {
-                        let _ = app_handle.emit("error", notice.message_text);
-                    },
-                    ServerMessage::Whisper(msg) => {
-                        // TODO: Figure out how to implement Sync for a Mutex.
-                        // let bot_data = app_handle.state::<BotData>();
-                        // let users = &bot_data.users_allowed_to_whisper.lock().expect("Failed to get lock for bot data.");
-
-                        // let mut matched_user: Option<User> = None;
-                        // users.0.iter().map(|user| {
-                        //     if user.id.to_string() == msg.sender.id {
-                        //         matched_user = Some(user.clone())
-                        //     }
-                        // });
-
-                        // match matched_user {
-                        //     None => (),
-                        //     Some(user) => {
-                        //         say(msg.message_text.as_str(), app_handle.state::<Bot>()).await;
-                        //         ()
-                        //     }
-                        // }
-                        
-                    }
-                    other => {
-                        println!("Other message type: {:?}", other)
-                    }
-                }
-            }
-        });
+        let join_handle = tokio::spawn(process_twitch_messages(app_handle.clone(), incoming_messages));
 
         *self.client.lock().unwrap() = Client::new(client, join_handle);
         Ok(())
     }
-
-    // pub fn get_client(&self) -> Option<Client> {
-    //     // LEFT OFF HERE TRYING TO FIGURE OUT MUTEX GUARDS AND HOW I CAN GET DATA OUT OF THEM.
-    //     let mutex_result = &self.client.lock().expect("Failed to get lock on client.");
-    //     mutex_result.0
-    // }
-
-    // pub fn rs2js<R: tauri::Runtime>(message: String, manager: &impl Manager<R>) {
-    //     dbg!(&message, "rs2js");
-    //     manager.emit_all("rs2js", message).unwrap();
-    // }
 }
 impl Default for Bot {
     fn default() -> Self {
@@ -248,11 +171,11 @@ pub struct Insult {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
-pub struct Users(Vec<User>);
+pub struct Users(pub Vec<User>);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct User {
-    pub id: u16, // Max 65535 users
+    pub id: String,
     pub username: String,
     pub consented: bool,
 }

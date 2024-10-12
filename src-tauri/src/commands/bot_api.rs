@@ -3,6 +3,7 @@ use tauri::Manager;
 use crate::bot::BotData;
 use crate::bot::BotInfo;
 use crate::bot::Bot;
+use crate::bot::TwitchMessage;
 use crate::commands::leave_channel::leave_channel;
 
 use crate::bot::Comebacks;
@@ -12,6 +13,11 @@ use crate::file::{write_file, WriteFileError};
 #[tauri::command]
 pub fn get_channel_name(state: tauri::State<'_, Bot>) -> Result<String, String> {
   Ok(state.bot_info.lock().expect("Failed to get lock for bot info").channel_name.clone())
+}
+
+#[tauri::command]
+pub fn get_chat_messages(state: tauri::State<'_, Bot>) -> Result<Vec<TwitchMessage>, String> {
+  Ok(state.chat_messages.lock().expect("Failed to get lock for chat messages.").clone())
 }
 
 #[tauri::command]
