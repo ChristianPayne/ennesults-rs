@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/core"
   import { onDestroy, onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
-    import { TwitchMessage } from '$lib/types';
+  import { type TwitchMessage } from '$lib/types';
 
   const maxChatMessages = 100;
 
