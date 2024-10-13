@@ -9,6 +9,7 @@
   }
 }
 
+/* ennesults-teal */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -70,6 +71,65 @@
     --border: 168 8% 12%;
     --input: 165 9% 18%;
     --ring: 170 85% 40%;
+  }
+}
+
+/* tropical-paradise */
+@layer base {
+  :root[data-theme="tropical-paradise"] {
+    --background: 180 50% 97%;
+    --foreground: 180 50% 10%;
+    --card: 180 50% 98%;
+    --card-foreground: 180 50% 10%;
+    --popover: 180 50% 98%;
+    --popover-foreground: 180 50% 10%;
+    --primary: 150 80% 40%;
+    --primary-foreground: 150 80% 98%;
+    --secondary: 35 90% 50%;
+    --secondary-foreground: 35 90% 10%;
+    --muted: 180 30% 90%;
+    --muted-foreground: 180 30% 40%;
+    --accent: 330 70% 60%;
+    --accent-foreground: 330 70% 10%;
+    --destructive: 0 90% 60%;
+    --destructive-foreground: 0 90% 98%;
+    --border: 180 50% 85%;
+    --input: 180 50% 85%;
+    --ring: 150 80% 40%;
+    --radius: 1rem;
+    --chart-1: 150 80% 40%;
+    --chart-2: 35 90% 50%;
+    --chart-3: 330 70% 60%;
+    --chart-4: 200 90% 50%;
+    --chart-5: 50 90% 50%;
+  }
+ 
+  .dark[data-theme="tropical-paradise"] {
+    --background: 200 70% 10%;
+    --foreground: 180 50% 97%;
+    --card: 200 70% 12%;
+    --card-foreground: 180 50% 97%;
+    --popover: 200 70% 12%;
+    --popover-foreground: 180 50% 97%;
+    --primary: 150 80% 50%;
+    --primary-foreground: 150 80% 10%;
+    --secondary: 35 90% 60%;
+    --secondary-foreground: 35 90% 10%;
+    --muted: 200 50% 20%;
+    --muted-foreground: 180 30% 80%;
+    --accent: 330 70% 70%;
+    --accent-foreground: 330 70% 10%;
+    --destructive: 0 90% 70%;
+    --destructive-foreground: 0 90% 10%;
+    --border: 200 70% 30%;
+    --input: 200 70% 30%;
+    --ring: 150 80% 50%;
+    --radius: 0.75rem;
+    --chart-1: 150 80% 50%;
+    --chart-2: 35 90% 60%;
+    --chart-3: 330 70% 70%;
+    --chart-4: 200 90% 60%;
+    --chart-5: 50 90% 60%;
   }
 }
 

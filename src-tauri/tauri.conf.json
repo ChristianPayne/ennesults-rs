@@ -16,7 +16,7 @@
       "icons/icon.ico"
     ]
   },
-  "productName": "ennesults-rs",
+  "productName": "ennesults",
   "mainBinaryName": "ennesults-rs",
   "version": "0.2.0",
   "identifier": "com.christianpayne.ennesults",

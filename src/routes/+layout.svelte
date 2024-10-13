@@ -172,28 +172,6 @@
     <div class="grow"></div>
     <!-- Badges -->
     <div class="flex space-x-2 items-center">
-      
-      {#if connectionStatus}
-        <Dialog.Root bind:open={speakAsEnnesultsDialog}>
-          <Dialog.Trigger class="text-sm align-middle">
-            <Button class="py-0" variant="ghost" size="sm">
-              Chat
-            </Button>
-          </Dialog.Trigger>
-          <Dialog.Content>
-            <Dialog.Header> 
-              <Dialog.Title>Make Ennesults speak in chat!</Dialog.Title>
-              <Dialog.Description>
-                <div class="grid w-full gap-1.5">
-                  <Textarea bind:value={speakAsEnnesultsMessage} placeholder="Type your message here." />
-                  <Button on:click={speakAsEnnesults}>Send</Button>
-                </div>
-              </Dialog.Description>
-            </Dialog.Header>
-          </Dialog.Content>
-        </Dialog.Root>
-      {/if}
-
       <Popover.Root>
         <Popover.Trigger>
           <Badge variant="{connectionStatus ? 'secondary' : 'destructive'}">
@@ -208,12 +186,42 @@
           </Badge>
         </Popover.Trigger>
         
-        <Popover.Content class="space-y-2">
+        <Popover.Content class="space-y-2 w-96">
           {#if connectionStatus}
-            <p>Connected to {channelName}.</p>
-            <Button variant="destructive" on:click={leave_channel}>
-              Leave Channel
-            </Button>
+            <h1>Channel</h1>
+            <p class="flex gap-1">Connected to 
+              <a href="https://twitch.tv/{channelName}" target="_blank" class="text-primary flex gap-1 items-center">
+                {channelName}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>              
+              </a>
+            </p>
+
+            <div class="flex gap-2">
+              <Button variant="destructive" on:click={leave_channel}>
+                Leave Channel
+              </Button>
+  
+              <Dialog.Root bind:open={speakAsEnnesultsDialog}>
+                <Dialog.Trigger class="text-sm">
+                  <Button class="py-0" variant="default">
+                    Send Message
+                  </Button>
+                </Dialog.Trigger>
+                <Dialog.Content>
+                  <Dialog.Header> 
+                    <Dialog.Title>Make Ennesults speak in chat!</Dialog.Title>
+                    <Dialog.Description>
+                      <div class="grid w-full gap-1.5">
+                        <Textarea bind:value={speakAsEnnesultsMessage} placeholder="Type your message here." />
+                        <Button on:click={speakAsEnnesults}>Send</Button>
+                      </div>
+                    </Dialog.Description>
+                  </Dialog.Header>
+                </Dialog.Content>
+              </Dialog.Root>
+            </div>
           {:else}
           <p>Not connected to a channel.</p>
           <Button on:click={connect_to_channel}>

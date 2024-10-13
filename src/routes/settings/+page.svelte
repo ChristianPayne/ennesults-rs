@@ -9,6 +9,8 @@
   import { Checkbox } from "$lib/components/ui/checkbox";
   import type { BotInfo } from "$lib/types";
   import { toast } from "svelte-sonner";
+  import { colorPalettes } from "$lib/colorPalettes";
+  import { theme, setTheme } from "mode-watcher";
   
   type Selected<Value> = {
     value: Value;
@@ -98,12 +100,37 @@
     })
     console.log('🪵 ~ save ~ saveUsersAllowedToWhisperResult:', saveUsersAllowedToWhisperResult);
   }
+
+  function onColorPaletteChange (value: any) {
+    console.log("onColorPaletteChange", value)
+    setTheme(value.value)
+  }
+
+  function getCurrentColorPalette() {
+    if(colorPalettes[$theme] !== undefined) {
+      return colorPalettes[$theme]
+    } else {
+      setTheme("")
+      return colorPalettes["ennesults"]
+    }
+  }
 </script>
 
 <div class="flex flex-col">
-  <h1>Settings</h1>
+  <h1 class="mb-4">Settings</h1>
   <div class="ml-2 space-y-8">
     <div class="ml-2 px-4 space-y-2">
+      <Label>Theme</Label>
+      <Select.Root selected={getCurrentColorPalette()} onSelectedChange={onColorPaletteChange}>
+        <Select.Trigger class="w-[180px]">
+          <Select.Value placeholder="Color Palette" />
+        </Select.Trigger>
+        <Select.Content>
+          {#each Object.keys(colorPalettes) as paletteKey}
+            <Select.Item value={colorPalettes[paletteKey].value}>{colorPalettes[paletteKey].label}</Select.Item>
+          {/each}
+        </Select.Content>
+      </Select.Root>
       <div class="space-y-1">
         <Checkbox checked={autoConnectOnStartup} onCheckedChange={onAutoConnectChanged} />
         <Label>Auto-connect on Startup</Label>
