@@ -53,17 +53,17 @@
 <h1>Dashboard</h1>
 
 <div class="md:flex justify-between my-4 gap-4">
-  <a href='/insults' class="border hover:border-primary rounded-xl p-6 hover:bg-accent">
+  <a href='/insults' class="border rounded-xl p-6 hover:bg-muted">
     <p class="text-lg font-semibold">Insults</p>
     <p class="text-4xl font-bold mb-8">50</p>
     <p class="text-muted-foreground">Insults loaded into the bot</p>
   </a>
-  <a href='/comebacks' class="border hover:border-primary rounded-xl p-6 hover:bg-accent">
+  <a href='/comebacks' class="border rounded-xl p-6 hover:bg-muted">
     <p class="text-lg font-semibold">Comebacks</p>
     <p class="text-4xl font-bold mb-8">12</p>
     <p class="text-muted-foreground">Reactions to users @-ing her</p>
   </a>
-  <a href='/users' class="border hover:border-primary rounded-xl p-6 hover:bg-accent">
+  <a href='/users' class="border rounded-xl p-6 hover:bg-muted">
     <p class="text-lg font-semibold">Active Users</p>
     <p class="text-4xl font-bold mb-8">42 <span class="text-muted-foreground text-sm">/ 84 Consented</span></p>
     <p class="text-muted-foreground">Users waiting to be insulted</p>
