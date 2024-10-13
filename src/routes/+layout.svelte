@@ -4,7 +4,6 @@
   import { Badge } from "$lib/components/ui/badge";
   import * as Popover from "$lib/components/ui/popover";
   import { ModeWatcher } from "mode-watcher";
-  import { toggleMode } from "mode-watcher";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Separator } from "$lib/components/ui/separator";
   import { invoke } from "@tauri-apps/api/core";
@@ -16,6 +15,9 @@
   import { onMount } from 'svelte';
   import * as Tooltip from "$lib/components/ui/tooltip";
   import type { BotInfo } from "$lib/types";
+  import * as Sheet from "$lib/components/ui/sheet/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
   
   let connectionStatus = false;
   let channelName = "";
@@ -143,11 +145,30 @@
       <Button variant="ghost" href="/settings">
         Settings
       </Button>
-      <Button on:click={toggleMode} variant="ghost" size="icon">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-        </svg>
-      </Button>
+      <Sheet.Root>
+        <Sheet.Trigger asChild let:builder>
+          <Button builders={[builder]} variant="ghost">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </Button>
+          
+        </Sheet.Trigger>
+        <Sheet.Content side="right" class="">
+          <Sheet.Header>
+            <Sheet.Title>Notifications</Sheet.Title>
+            <Sheet.Description>
+              See notifications from the bot here.
+            </Sheet.Description>
+          </Sheet.Header>
+
+          <Sheet.Footer>
+            <Sheet.Close asChild let:builder>
+              <Button builders={[builder]} type="submit">Clear all notifications</Button>
+            </Sheet.Close>
+          </Sheet.Footer>
+        </Sheet.Content>
+      </Sheet.Root>
     </div>
   </div>
   <Separator/>
@@ -161,7 +182,7 @@
     {#if tauriVersion}
     <Tooltip.Root>
       <Tooltip.Trigger>
-        <p class="font-light italic text-sm text-gray-400">ennesults-rs <span class="select-text">v{tauriVersion}</span></p>
+        <p class="font-light italic text-sm text-gray-400 select-text">ennesults-rs v{tauriVersion}</p>
       </Tooltip.Trigger>
       <Tooltip.Content>
         <p>Current development build of the bot</p>
