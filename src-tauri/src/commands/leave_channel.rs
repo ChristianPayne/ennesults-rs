@@ -1,7 +1,12 @@
+use tauri::{AppHandle, Emitter};
+
 use crate::bot::Bot;
 
 #[tauri::command]
-pub fn leave_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
+pub fn leave_channel(
+    app_handle: AppHandle,
+    state: tauri::State<'_, Bot>,
+) -> Result<String, String> {
     let channel_name = state
         .bot_info
         .lock()
@@ -12,6 +17,7 @@ pub fn leave_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
     match &client.0 {
         Some(client) => {
             client.part(channel_name.clone());
+            let _ = app_handle.emit("channel_part", channel_name.clone());
             Ok(channel_name)
         }
         None => Err(format!(

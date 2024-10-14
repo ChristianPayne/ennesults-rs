@@ -66,9 +66,9 @@
   listen('channel_part', (event) => {
     if(connectionStatus == true) {
       console.log('🛠 channel_part event:', event);
-      // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
-      // event.payload is the payload object
-      leave_channel()
+      event.payload as string;
+      connectionStatus = false;
+      toast.warning(`Left ${channelName}!`)
     }
   })
 
@@ -83,15 +83,9 @@
   })
 
   async function leave_channel () {
-    let status = await invoke<string>("leave_channel").catch(e => {
+    await invoke<string>("leave_channel").catch(e => {
       toast.error(e)
-      return;
     });
-    if(status) {
-      channelName = status as string;
-      connectionStatus = false;
-      toast.warning(`Left ${channelName}!`)
-    }
   }
 
   async function speakAsEnnesults () {

@@ -74,10 +74,7 @@ pub async fn process_twitch_messages(
             ServerMessage::Join(msg) => {
                 let _ = app_handle.emit("channel_join", msg.channel_login);
             }
-            ServerMessage::Part(msg) => {
-                // TODO: Emit part event for the channel as been left.
-                let _ = app_handle.emit("channel_part", msg.channel_login);
-            }
+            ServerMessage::Part(_) => (),
             ServerMessage::Generic(_) => (),
             ServerMessage::UserNotice(_) => (),
             ServerMessage::Notice(notice) => {
