@@ -84,9 +84,9 @@
   }
 
   async function save () {
-    await toast.info("Saving settings...")
+    toast.info("Saving settings...")
     await invoke<string>("leave_channel").catch(async e => {
-      await toast.info(e)
+      toast.info(e)
     });
     await invoke<BotInfo>("save_bot_info", {
       botInfo: {

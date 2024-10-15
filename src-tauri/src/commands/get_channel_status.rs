@@ -24,6 +24,5 @@ pub async fn get_channel_status(state: tauri::State<'_, Bot>) -> Result<(bool, b
     };
 
     let channel_status = client.get_channel_status(channel_name).await;
-    dbg!(channel_status);
     Ok(channel_status)
 }

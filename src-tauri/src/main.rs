@@ -8,6 +8,7 @@ use tauri::Manager;
 // Ennesults
 mod bot;
 mod commands;
+mod date;
 mod file;
 
 use bot::{Bot, BotData, BotInfo, Comebacks, Insults, Users};
