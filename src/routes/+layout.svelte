@@ -29,15 +29,20 @@
   
   onMount(async () => {
     tauriVersion = await getVersion();
-    let botInfo = await invoke<BotInfo>("get_bot_info").catch(e => console.error(e))
-    if(botInfo) {
-      channelName = botInfo.channel_name;
-      if(botInfo.auto_connect_on_startup) {
+    await getBotInfo();
+  });
+
+  async function getBotInfo(botInfo?: BotInfo) {
+    let currentInfo = botInfo ?? await invoke<BotInfo>("get_bot_info").catch(e => console.error(e))
+    
+    if(currentInfo) {
+      channelName = currentInfo.channel_name;
+      if(currentInfo.auto_connect_on_startup) {
         let [ wanted, joined ] = await invoke<[boolean, boolean]>('get_channel_status');
         
-        if(wanted == false && joined == false) {
-          await connect_to_channel()
-        }
+        // if(wanted == false && joined == false) {
+        //   await connectToChannel()
+        // }
 
         if(wanted == true && joined == true) {
           connectionStatus = true;
@@ -48,7 +53,12 @@
         }
       }
     }
-  });
+  }
+
+  listen('bot_info_save', async event => {
+    let botInfo = event.payload as BotInfo;
+    await getBotInfo(botInfo);
+  })
 
   listen('channel_join', (event) => {
     if(connectionStatus == false) {
@@ -103,7 +113,7 @@
     }
   }
 
-  async function connect_to_channel () {
+  async function connectToChannel () {
     let channel = await invoke<string>("connect_to_channel").catch(err => {
       toast.error(err);
     });
@@ -239,7 +249,7 @@
             </div>
           {:else}
           <p>Not connected to a channel.</p>
-          <Button on:click={connect_to_channel}>
+          <Button on:click={connectToChannel}>
             Connect to {channelName || "Channel"}
           </Button>
           {/if}

@@ -1,4 +1,4 @@
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 use crate::bot::{Bot, BotInfo};
 use crate::commands::{connect_to_channel, leave_channel};
@@ -40,7 +40,9 @@ pub async fn save_bot_info(
     }
 
     let _ = state.connect_to_twitch(app_handle.clone());
-    let _ = connect_to_channel(app_handle.state::<Bot>()).await;
+    if bot_info.auto_connect_on_startup {
+        let _ = connect_to_channel(app_handle.state::<Bot>()).await;
+    }
 
     let write_result = write_file::<BotInfo>(&app_handle, "bot_info.json", bot_info.clone());
 
@@ -51,6 +53,8 @@ pub async fn save_bot_info(
             WriteFileError::FailedWriteFile => Err("Failed to write contents in file.".to_string()),
         };
     }
+
+    let _ = app_handle.emit("bot_info_save", bot_info.clone());
 
     Ok(bot_info)
 }

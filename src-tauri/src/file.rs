@@ -7,6 +7,7 @@ use tauri::{AppHandle, Manager};
 
 // const BASE_FILE_PATH: &str = "./data";
 
+#[derive(Debug)]
 pub enum WriteFileError {
     FailedCreateFile,
     FailedConvertJSON,
