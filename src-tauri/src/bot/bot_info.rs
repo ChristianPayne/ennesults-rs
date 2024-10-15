@@ -12,9 +12,6 @@ pub struct BotInfo {
     pub enable_whispers: bool,
     pub enable_insults: bool,
     pub enable_comebacks: bool,
-
-    pub last_comeback_id: u16,
-    pub last_insult_id: u16,
 }
 
 impl Default for BotInfo {
@@ -27,8 +24,6 @@ impl Default for BotInfo {
             enable_whispers: true,
             enable_comebacks: true,
             enable_insults: true,
-            last_comeback_id: 0,
-            last_insult_id: 0,
         }
     }
 }

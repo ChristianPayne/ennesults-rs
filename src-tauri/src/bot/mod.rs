@@ -5,6 +5,7 @@ mod client;
 mod comebacks;
 mod insults;
 mod users;
+mod whispers;
 
 pub use bot::*;
 pub use bot_data::*;
@@ -13,3 +14,4 @@ pub use client::*;
 pub use comebacks::*;
 pub use insults::*;
 pub use users::*;
+pub use whispers::*;

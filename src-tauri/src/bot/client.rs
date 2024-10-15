@@ -1,18 +1,17 @@
+use tauri::{AppHandle, Emitter, Manager};
+use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
-
 use twitch_irc::login::StaticLoginCredentials;
+use twitch_irc::message::ServerMessage;
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
-use tauri::{AppHandle, Emitter, Manager};
-use tokio::sync::mpsc::UnboundedReceiver;
-use twitch_irc::message::ServerMessage;
-
-use crate::bot::process_user_state;
 use crate::{
-    bot::{Bot, BotData, BotInfo, SerializeRBGColor, TwitchMessage, User},
+    bot::{process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage},
     commands::say,
 };
+
+use super::handle_whisper;
 
 // CLIENT
 #[derive(Debug, Default)]
@@ -43,8 +42,6 @@ pub async fn process_twitch_messages(
 
         match message {
             ServerMessage::Privmsg(msg) => {
-                // println!("Received message: {:?}", msg);
-
                 let mut chat_messages = bot
                     .chat_messages
                     .lock()
@@ -76,49 +73,7 @@ pub async fn process_twitch_messages(
             ServerMessage::Notice(notice) => {
                 let _ = app_handle.emit("error", notice.message_text);
             }
-            ServerMessage::Whisper(msg) => {
-                println!("{} whispered {}", msg.sender.name, msg.message_text);
-
-                {
-                    let bot_info = bot
-                        .bot_info
-                        .lock()
-                        .expect("Failed to get lock for bot info.");
-
-                    if !bot_info.enable_whispers {
-                        return;
-                    }
-                }
-
-                let user_allowed_to_whisper = {
-                    let users = bot_data
-                        .users_allowed_to_whisper
-                        .lock()
-                        .expect("Failed to get lock for bot data.");
-
-                    users.contains(&msg.sender.name.to_lowercase())
-                };
-
-                if user_allowed_to_whisper {
-                    let _ = say(msg.message_text.as_str(), bot).await;
-                    app_handle
-                        .emit(
-                            "alert",
-                            format!("{} sent a message through whisper.", msg.sender.name),
-                        )
-                        .unwrap();
-                } else {
-                    app_handle
-                        .emit(
-                            "alert",
-                            format!(
-                                "{} tried to whisper but was not on the list.",
-                                msg.sender.name
-                            ),
-                        )
-                        .unwrap();
-                }
-            }
+            ServerMessage::Whisper(msg) => handle_whisper(app_handle.clone(), msg).await,
             ServerMessage::RoomState(_) => (),
             other => {
                 println!("Other message type: {:?}", other)
