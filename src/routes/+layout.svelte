@@ -1,35 +1,74 @@
 <script lang="ts">
   import "../styles.css";
+  import { onMount } from 'svelte';
+  import { getVersion } from '@tauri-apps/api/app';
   import { listen } from '@tauri-apps/api/event'
+  import { invoke } from "@tauri-apps/api/core";
+  import { toast } from "svelte-sonner";
+  import { ModeWatcher } from "mode-watcher";
+
   import { Badge } from "$lib/components/ui/badge";
   import * as Popover from "$lib/components/ui/popover";
-  import { ModeWatcher } from "mode-watcher";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Separator } from "$lib/components/ui/separator";
-  import { invoke } from "@tauri-apps/api/core";
-  import * as Dialog from "$lib/components/ui/dialog";
-  import { Textarea } from "$lib/components/ui/textarea";
   import { Toaster } from "$lib/components/ui/sonner";
-  import { toast } from "svelte-sonner";
-  import { getVersion } from '@tauri-apps/api/app';
-  import { onMount } from 'svelte';
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import type { BotInfo } from "$lib/types";
-  import * as Sheet from "$lib/components/ui/sheet/index.js";
-  import { Input } from "$lib/components/ui/input/index.js";
-  import { Label } from "$lib/components/ui/label/index.js";
   
+  import type { BotInfo } from "$lib/types";
+  import SpeakAsEnnesults from "$lib/speakAsEnnesults.svelte";
+    import NotificationsPanel from "$lib/notificationsPanel.svelte";
+
   let connectionStatus = false;
   let channelName = "";
-  
-  let speakAsEnnesultsMessage = "";
-  let speakAsEnnesultsDialog: boolean = false;
-
   let tauriVersion = ""
+  let notificationsPanelElement: NotificationsPanel;
   
   onMount(async () => {
     tauriVersion = await getVersion();
     await getBotInfo();
+
+    listen('bot_info_save', async event => {
+      let botInfo = event.payload as BotInfo;
+      await getBotInfo(botInfo);
+    })
+
+    listen('channel_join', (event) => {
+      if(connectionStatus == false) {
+        console.log('🛠 channel_join event:', event);
+        // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
+        // event.payload is the payload object
+        channelName = event.payload as string;
+        connectionStatus = true;
+        toast.success(`Connected to ${channelName}!`, {
+          dismissable: true
+        })
+      }
+    })
+
+    listen('channel_part', (event) => {
+      if(connectionStatus == true) {
+        console.log('🛠 channel_part event:', event);
+        event.payload as string;
+        connectionStatus = false;
+        toast.warning(`Left ${channelName}!`)
+      }
+    })
+
+    listen('error', (event) => {
+      toast.error(event.payload as string, {
+        duration: 10000
+      })
+    })
+
+    listen('alert', (event) => {
+      toast.info(event.payload as string)
+      notificationsPanelElement?.addNotification({
+        title: event.event,
+        seen: false,
+        description: event.payload as string
+      })
+      console.log('🪵 ~ listen ~ notificationsPanelElement:', notificationsPanelElement);
+    })
   });
 
   async function getBotInfo(botInfo?: BotInfo) {
@@ -55,62 +94,10 @@
     }
   }
 
-  listen('bot_info_save', async event => {
-    let botInfo = event.payload as BotInfo;
-    await getBotInfo(botInfo);
-  })
-
-  listen('channel_join', (event) => {
-    if(connectionStatus == false) {
-      console.log('🛠 channel_join event:', event);
-      // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
-      // event.payload is the payload object
-      channelName = event.payload as string;
-      connectionStatus = true;
-      toast.success(`Connected to ${channelName}!`, {
-        dismissable: true
-      })
-    }
-  })
-
-  listen('channel_part', (event) => {
-    if(connectionStatus == true) {
-      console.log('🛠 channel_part event:', event);
-      event.payload as string;
-      connectionStatus = false;
-      toast.warning(`Left ${channelName}!`)
-    }
-  })
-
-  listen('error', (event) => {
-    toast.error(event.payload as string, {
-      duration: 10000
-    })
-  })
-
-  listen('alert', (event) => {
-    toast.info(event.payload as string)
-  })
-
   async function leave_channel () {
     await invoke<string>("leave_channel").catch(e => {
       toast.error(e)
     });
-  }
-
-  async function speakAsEnnesults () {
-    if(speakAsEnnesultsMessage === "") return;
-    if(connectionStatus === false) return;
-
-    let result = await invoke("say", {message: speakAsEnnesultsMessage}).catch(e => {
-      toast.error("Something went wrong!", {
-        description: "Failed to send chat message!" + e,
-      })
-    });
-    if(result === true) {
-      speakAsEnnesultsMessage = ""
-      speakAsEnnesultsDialog = false;
-    }
   }
 
   async function connectToChannel () {
@@ -149,29 +136,7 @@
       <Button variant="ghost" href="/settings">
         Settings
       </Button>
-      <Sheet.Root>
-        <Sheet.Trigger asChild let:builder>
-          <Button builders={[builder]} variant="ghost">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="size-5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-            </svg>
-          </Button>
-        </Sheet.Trigger>
-        <Sheet.Content side="right" class="">
-          <Sheet.Header>
-            <Sheet.Title>Notifications</Sheet.Title>
-            <Sheet.Description>
-              See notifications from the bot here.
-            </Sheet.Description>
-          </Sheet.Header>
-
-          <Sheet.Footer>
-            <Sheet.Close asChild let:builder>
-              <Button builders={[builder]} type="submit">Clear all notifications</Button>
-            </Sheet.Close>
-          </Sheet.Footer>
-        </Sheet.Content>
-      </Sheet.Root>
+      <NotificationsPanel bind:this={notificationsPanelElement}/>
     </div>
   </div>
   <Separator/>
@@ -227,24 +192,7 @@
                 Leave Channel
               </Button>
   
-              <Dialog.Root bind:open={speakAsEnnesultsDialog}>
-                <Dialog.Trigger class="text-sm">
-                  <Button class="py-0" variant="default">
-                    Send Message
-                  </Button>
-                </Dialog.Trigger>
-                <Dialog.Content>
-                  <Dialog.Header> 
-                    <Dialog.Title>Make Ennesults speak in chat!</Dialog.Title>
-                    <Dialog.Description>
-                      <div class="grid w-full gap-1.5">
-                        <Textarea bind:value={speakAsEnnesultsMessage} placeholder="Type your message here." />
-                        <Button on:click={speakAsEnnesults}>Send</Button>
-                      </div>
-                    </Dialog.Description>
-                  </Dialog.Header>
-                </Dialog.Content>
-              </Dialog.Root>
+              <SpeakAsEnnesults connectionStatus={connectionStatus}/>
             </div>
           {:else}
           <p>Not connected to a channel.</p>
