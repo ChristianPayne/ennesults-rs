@@ -7,6 +7,8 @@ mod insults;
 mod users;
 mod whispers;
 
+pub mod api;
+
 pub use bot::*;
 pub use bot_data::*;
 pub use bot_info::*;

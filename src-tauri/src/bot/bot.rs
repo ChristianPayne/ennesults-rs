@@ -5,8 +5,8 @@ use ts_rs::TS;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
-use super::{process_twitch_messages, BotInfo, Client};
-use crate::commands::get_bot_info;
+use super::api::get_bot_info;
+use super::{handle_incoming_chat, BotInfo, Client};
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -103,10 +103,7 @@ impl Bot {
 
         // first thing you should do: start consuming incoming messages,
         // otherwise they will back up.
-        let join_handle = tokio::spawn(process_twitch_messages(
-            app_handle.clone(),
-            incoming_messages,
-        ));
+        let join_handle = tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
 
         *self.client.lock().unwrap() = Client::new(client, join_handle);
 

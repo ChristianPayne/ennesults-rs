@@ -21,7 +21,6 @@
   let connectionStatus = false;
   let channelName = "";
   let tauriVersion = ""
-  let notificationsPanelElement: NotificationsPanel;
   
   onMount(async () => {
     tauriVersion = await getVersion();
@@ -143,7 +142,7 @@
       <Button variant="ghost" href="/settings">
         Settings
       </Button>
-      <NotificationsPanel bind:this={notificationsPanelElement}/>
+      <NotificationsPanel/>
     </div>
   </div>
   <Separator/>

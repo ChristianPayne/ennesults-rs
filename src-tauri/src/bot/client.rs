@@ -2,14 +2,11 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::ServerMessage;
+use twitch_irc::message::{PrivmsgMessage, ServerMessage};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
-use crate::{
-    bot::{process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage},
-    commands::say,
-};
+use crate::bot::{process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage};
 
 use super::handle_whisper;
 
@@ -32,7 +29,42 @@ impl Client {
     }
 }
 
-pub async fn process_twitch_messages(
+#[tauri::command]
+pub async fn say(message: &str, state: tauri::State<'_, Bot>) -> Result<bool, String> {
+    let channel_name = state
+        .bot_info
+        .lock()
+        .expect("Failed to get lock")
+        .channel_name
+        .clone();
+
+    if channel_name.is_empty() {
+        return Err("Channel name not found.".into());
+    }
+
+    let client;
+    {
+        client = state.client.lock().unwrap().get_client();
+    }
+
+    let Some(client) = client else {
+        return Err("Could not get client.".into());
+    };
+
+    let channel_name = state
+        .bot_info
+        .lock()
+        .expect("Failed to get lock for bot info")
+        .channel_name
+        .clone();
+    let say_result = client.say(channel_name, message.to_string()).await;
+    match say_result {
+        Ok(_) => Ok(true),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+pub async fn handle_incoming_chat(
     app_handle: AppHandle,
     mut incoming_messages: UnboundedReceiver<ServerMessage>,
 ) {
@@ -59,7 +91,8 @@ pub async fn process_twitch_messages(
 
                 app_handle.emit("message", twitch_message).unwrap();
 
-                process_user_state(app_handle.clone(), &msg.sender)
+                process_user_state(app_handle.clone(), &msg.sender);
+                parse_for_command(msg);
             }
             ServerMessage::GlobalUserState(_) => (),
             ServerMessage::Pong(_) => (),
@@ -79,5 +112,11 @@ pub async fn process_twitch_messages(
                 println!("Other message type: {:?}", other)
             }
         }
+    }
+}
+
+pub fn parse_for_command(msg: PrivmsgMessage) {
+    if msg.message_text.starts_with('!') {
+        println!("This is a command! {:?}", msg.message_text);
     }
 }

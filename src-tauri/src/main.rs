@@ -3,7 +3,6 @@
 
 extern crate dotenv_codegen;
 
-use commands::connect_to_channel;
 //Tauri
 use tauri::Manager;
 // Ennesults
@@ -23,18 +22,18 @@ async fn main() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
-            crate::commands::say,
-            crate::commands::connect_to_channel,
-            crate::commands::leave_channel,
-            crate::commands::get_channel_status,
-            crate::commands::get_channel_name,
-            crate::commands::save_bot_info,
-            crate::commands::get_users_allowed_to_whisper,
-            crate::commands::save_users_allowed_to_whisper,
-            crate::commands::get_bot_info,
-            crate::commands::print_bot_data,
-            crate::commands::get_chat_messages,
-            crate::commands::get_chat_messages_count
+            crate::bot::say,
+            crate::bot::api::connect_to_channel,
+            crate::bot::api::leave_channel,
+            crate::bot::api::get_channel_status,
+            crate::bot::api::print_bot_data,
+            crate::bot::api::get_channel_name,
+            crate::bot::api::save_bot_info,
+            crate::bot::api::get_users_allowed_to_whisper,
+            crate::bot::api::save_users_allowed_to_whisper,
+            crate::bot::api::get_bot_info,
+            crate::bot::api::get_chat_messages,
+            crate::bot::api::get_chat_messages_count
         ])
         .setup(|app| {
             println!("Setting up bot!");

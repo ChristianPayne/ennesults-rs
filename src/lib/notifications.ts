@@ -27,7 +27,7 @@ export function addNotification(type: Alert, notif: NotificationBase) {
     seen: false,
     ...notif
   }
-  notifications$.update(existing => [notification, ...existing])
+  notifications$.update(existing => [...existing, notification])
 }
 
 
@@ -55,7 +55,7 @@ export function alertNotification(type: Alert, notification: NotificationBase) {
       toast(notification.title, {
         ...(notification?.description && {description: notification.description})
       })
-      addNotification(type, notification);
+      // addNotification(type, notification);
       break;
     }
     case "Info": {

@@ -1,7 +1,22 @@
+mod chat_messages;
+mod comebacks;
+mod connect_to_channel;
+mod get_channel_status;
+mod leave_channel;
+mod print_bot_data;
+mod whispers;
+
+pub use chat_messages::*;
+pub use comebacks::*;
+pub use connect_to_channel::*;
+pub use get_channel_status::*;
+pub use leave_channel::*;
+pub use print_bot_data::*;
+pub use whispers::*;
+
 use tauri::{Emitter, Manager};
 
 use crate::bot::{Bot, BotInfo};
-use crate::commands::{connect_to_channel, leave_channel};
 use crate::file::{write_file, WriteFileError};
 
 #[tauri::command]
