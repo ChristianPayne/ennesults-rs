@@ -18,6 +18,20 @@ pub struct TwitchMessage {
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 pub struct SerializeRBGColor(pub u8, pub u8, pub u8);
+
+#[derive(serde::Serialize, Clone, Debug, TS)]
+#[ts(export, export_to = "../../src/lib/types.ts")]
+pub enum Alert {
+    /// System messages that are ephemeral
+    System,
+    /// Normal messages given to the streamer.
+    Info,
+    /// Warnings that something happened.
+    Warn,
+    /// Recoverable errors that happened in the app.
+    Error,
+}
+
 // BOT
 #[derive(Debug)]
 pub struct Bot {

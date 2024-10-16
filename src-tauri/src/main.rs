@@ -3,6 +3,7 @@
 
 extern crate dotenv_codegen;
 
+use commands::connect_to_channel;
 //Tauri
 use tauri::Manager;
 // Ennesults
@@ -39,7 +40,7 @@ async fn main() {
             println!("Setting up bot!");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
-            let bot = Bot::new(bot_info);
+            let bot = Bot::new(bot_info.clone());
             app.manage(bot);
 
             let comebacks =

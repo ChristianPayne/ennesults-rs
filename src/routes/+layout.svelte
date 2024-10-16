@@ -4,7 +4,6 @@
   import { getVersion } from '@tauri-apps/api/app';
   import { listen } from '@tauri-apps/api/event'
   import { invoke } from "@tauri-apps/api/core";
-  import { toast } from "svelte-sonner";
   import { ModeWatcher } from "mode-watcher";
 
   import { Badge } from "$lib/components/ui/badge";
@@ -16,7 +15,8 @@
   
   import type { BotInfo } from "$lib/types";
   import SpeakAsEnnesults from "$lib/speakAsEnnesults.svelte";
-    import NotificationsPanel from "$lib/notificationsPanel.svelte";
+  import NotificationsPanel from "$lib/notificationsPanel.svelte";
+  import { alertNotification } from "$lib/notifications";
 
   let connectionStatus = false;
   let channelName = "";
@@ -26,6 +26,7 @@
   onMount(async () => {
     tauriVersion = await getVersion();
     await getBotInfo();
+    await connectToChannel();
 
     listen('bot_info_save', async event => {
       let botInfo = event.payload as BotInfo;
@@ -39,8 +40,8 @@
         // event.payload is the payload object
         channelName = event.payload as string;
         connectionStatus = true;
-        toast.success(`Connected to ${channelName}!`, {
-          dismissable: true
+        alertNotification("System", {
+          title: `Connected to ${channelName}!`
         })
       }
     })
@@ -50,24 +51,22 @@
         console.log('🛠 channel_part event:', event);
         event.payload as string;
         connectionStatus = false;
-        toast.warning(`Left ${channelName}!`)
+        alertNotification("Warn", {
+          title: `Left ${channelName}!`
+        })
       }
     })
 
     listen('error', (event) => {
-      toast.error(event.payload as string, {
-        duration: 10000
+      alertNotification("Error", {
+        title: event.payload as string
       })
     })
 
     listen('alert', (event) => {
-      toast.info(event.payload as string)
-      notificationsPanelElement?.addNotification({
-        title: event.event,
-        seen: false,
-        description: event.payload as string
+      alertNotification("Info", {
+        title: event.payload as string
       })
-      console.log('🪵 ~ listen ~ notificationsPanelElement:', notificationsPanelElement);
     })
   });
 
@@ -88,7 +87,9 @@
         }
 
         if(wanted == true && joined == false) {
-          toast.warning(`Still connecting to ${channelName}...`)
+          alertNotification("Warn", {
+            title: `Still connecting to ${channelName}...`
+          })
         }
       }
     }
@@ -96,19 +97,25 @@
 
   async function leave_channel () {
     await invoke<string>("leave_channel").catch(e => {
-      toast.error(e)
+      alertNotification("Error", {
+        title: "Failed to leave channel",
+        description: e
+      })
     });
   }
 
   async function connectToChannel () {
     let channel = await invoke<string>("connect_to_channel").catch(err => {
-      toast.error(err);
+      alertNotification("Error", {
+        title: "Failed to connect to channel",
+        description: err
+      })
     });
     if(channel) {
-      toast.info(`Connecting to ${channel}...`,)
+      alertNotification("System", {
+        title: `Connecting to ${channel}...`
+      })
     }
-
-    console.log('🛠 Connect To Channel', channel);
   }
 </script>
 
