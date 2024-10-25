@@ -4254,19 +4254,20 @@ dependencies = [
 
 [[package]]
 name = "twitch_api"
-version = "0.7.0-rc.7"
+version = "0.7.0-rc.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08be17cac4dd00fc643cb21adc349573a4b882e07d296ca5b4b0178343d48b42"
+checksum = "488122b30ae05a8a737ea33b9130cb1dc473d5e47b918e3a22e99532123ea037"
 dependencies = [
  "aliri_braid",
  "async-trait",
  "displaydoc",
  "futures",
  "hmac",
- "http 0.2.12",
- "hyper 0.14.30",
+ "http 1.1.0",
+ "hyper 1.4.1",
  "once_cell",
  "serde",
+ "serde_derive",
  "serde_json",
  "serde_path_to_error",
  "sha2",
@@ -4281,15 +4282,15 @@ dependencies = [
 
 [[package]]
 name = "twitch_oauth2"
-version = "0.12.9"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "473ca0517fa9510cdf1bfb0d6eba53a7cdd30cfa0ebf870e7cea403387512ada"
+checksum = "afe0e74e5e648344b71a69ed6e79df17bca3954fc1332c4d02c46abe8fec7fc0"
 dependencies = [
  "aliri_braid",
  "async-trait",
- "base64 0.21.7",
+ "base64 0.22.1",
  "displaydoc",
- "http 0.2.12",
+ "http 1.1.0",
  "once_cell",
  "rand 0.8.5",
  "serde",

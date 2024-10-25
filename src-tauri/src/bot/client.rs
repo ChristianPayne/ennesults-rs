@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
@@ -6,9 +8,11 @@ use twitch_irc::message::{PrivmsgMessage, ServerMessage};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
-use crate::bot::{process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage};
+// use crate::commands::Commands;
 
-use super::handle_whisper;
+use crate::commands::{command_from_str, Command};
+
+use super::{handle_whisper, process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage};
 
 // CLIENT
 #[derive(Debug, Default)]
@@ -74,25 +78,43 @@ pub async fn handle_incoming_chat(
 
         match message {
             ServerMessage::Privmsg(msg) => {
-                let mut chat_messages = bot
-                    .chat_messages
-                    .lock()
-                    .expect("Failed to get lock for chat_messages on bot state.");
+                {
+                    let mut chat_messages = bot
+                        .chat_messages
+                        .lock()
+                        .expect("Failed to get lock for chat_messages on bot state.");
 
-                let twitch_message = TwitchMessage {
-                    username: msg.sender.name.clone(),
-                    message: msg.message_text.clone(),
-                    color: msg
-                        .name_color
-                        .map(|color| SerializeRBGColor(color.r, color.g, color.b)),
-                };
+                    let twitch_message = TwitchMessage {
+                        username: msg.sender.name.clone(),
+                        message: msg.message_text.clone(),
+                        color: msg
+                            .name_color
+                            .map(|color| SerializeRBGColor(color.r, color.g, color.b)),
+                    };
 
-                chat_messages.push(twitch_message.clone());
+                    chat_messages.push(twitch_message.clone());
 
-                app_handle.emit("message", twitch_message).unwrap();
+                    app_handle.emit("message", twitch_message).unwrap();
+                }
 
                 process_user_state(app_handle.clone(), &msg.sender);
-                parse_for_command(msg);
+
+                let parse_command_result = parse_for_command(msg);
+
+                match parse_command_result {
+                    Err(_) => (),
+                    Ok(command) => {
+                        let command_result = command.run();
+
+                        match command_result {
+                            None => (),
+                            Some(reply) => {
+                                // say back the reply.
+                                let _ = say(reply.as_str(), app_handle.state::<Bot>()).await;
+                            }
+                        }
+                    }
+                }
             }
             ServerMessage::GlobalUserState(_) => (),
             ServerMessage::Pong(_) => (),
@@ -115,8 +137,38 @@ pub async fn handle_incoming_chat(
     }
 }
 
-pub fn parse_for_command(msg: PrivmsgMessage) {
-    if msg.message_text.starts_with('!') {
-        println!("This is a command! {:?}", msg.message_text);
-    }
+pub enum ParseCommandError {
+    NotACommand,
+    CommandNotFound,
+    CommandArgsError,
+}
+
+pub fn parse_for_command(msg: PrivmsgMessage) -> Result<Box<dyn Command>, ParseCommandError> {
+    println!("{}", &msg.message_text);
+    if !msg.message_text.starts_with('!') {
+        println!("Not a command");
+        return Err(ParseCommandError::NotACommand);
+    };
+
+    let mut raw_message = msg.message_text.clone();
+    let command = raw_message.split_off(1);
+    let msg_split: Vec<String> = command
+        .split_whitespace()
+        .take(3)
+        .map(|x| x.to_string())
+        .collect();
+
+    let [command_name, args @ ..] = &msg_split[..] else {
+        return Err(ParseCommandError::CommandArgsError);
+    };
+
+    println!("Raw command, split: {}, {:?}", command_name, args);
+
+    let Some(command) = command_from_str(command_name) else {
+        return Err(ParseCommandError::CommandNotFound);
+    };
+
+    println!("Found command: {:?}", command.as_ref().get_aliases());
+
+    Ok(command)
 }
