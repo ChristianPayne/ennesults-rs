@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
   import { type TwitchMessage } from '$lib/types';
+    import NumberTicker from '$lib/components/NumberTicker.svelte';
 
   const maxChatMessages = 100;
 
@@ -15,8 +16,7 @@
   $: messages, scrollToBottom(chatElement);
 
   onMount(async () => {
-    await getChatMessages();
-    console.log("Messages:", messages)
+    messages = await invoke<TwitchMessage[]>("get_chat_messages");
     unlisten = await listen('message', (event: {payload: TwitchMessage}) => {
       // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
       // event.payload is the payload object
@@ -37,17 +37,6 @@
   })
 
   const scrollToBottom = async (node: Element) => node?.scroll({ top: node.scrollHeight, behavior: 'instant' })
-
-  async function getChatMessages() {
-    let chatMessages = await invoke<TwitchMessage[]>("get_chat_messages")
-    messages = chatMessages;
-  }
-
-  async function getChatMessagesCount() {
-    let count = await invoke("get_chat_messages_count");
-    console.log('🪵 ~ getChatMessagesCount ~ count:', count);
-    
-  }
 </script>
 
 <h1>Dashboard</h1>
@@ -55,25 +44,23 @@
 <div class="md:flex justify-between my-4 gap-4">
   <a href='/insults' class="border rounded-xl p-6 hover:bg-muted">
     <p class="text-lg font-semibold">Insults</p>
-    <p class="text-4xl font-bold mb-8">50</p>
+    <NumberTicker class="text-4xl font-bold mb-8" value={50}></NumberTicker>
     <p class="text-muted-foreground">Insults loaded into the bot</p>
   </a>
   <a href='/comebacks' class="border rounded-xl p-6 hover:bg-muted">
     <p class="text-lg font-semibold">Comebacks</p>
-    <p class="text-4xl font-bold mb-8">12</p>
+    <NumberTicker class="text-4xl font-bold mb-8" value={12}></NumberTicker>
     <p class="text-muted-foreground">Reactions to users @-ing her</p>
   </a>
   <a href='/users' class="border rounded-xl p-6 hover:bg-muted">
     <p class="text-lg font-semibold">Active Users</p>
-    <p class="text-4xl font-bold mb-8">42 <span class="text-muted-foreground text-sm">/ 84 Consented</span></p>
+    <NumberTicker class="text-4xl font-bold mb-8" value={42}><span class="text-muted-foreground text-sm">/ 84 Consented</span></NumberTicker>
     <p class="text-muted-foreground">Users waiting to be insulted</p>
   </a>
 </div>
 
-<div class="flex justify-around my-4 gap-2">
-  <Button on:click={getChatMessages}>Get Chat Messages</Button>
-  <Button on:click={getChatMessagesCount}>Get Chat Messages Count</Button>
-</div>
+<!-- <div class="flex justify-around my-4 gap-2">
+</div> -->
 
 <div class="flex space-x-4">
   <h1>Chat</h1>

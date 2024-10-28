@@ -14,9 +14,9 @@
   import * as Tooltip from "$lib/components/ui/tooltip";
   
   import type { BotInfo } from "$lib/types";
-  import SpeakAsEnnesults from "$lib/speakAsEnnesults.svelte";
-  import NotificationsPanel from "$lib/notificationsPanel.svelte";
-  import { alertNotification } from "$lib/notifications";
+  import SpeakAsEnnesults from "$lib/components/speakAsEnnesults.svelte";
+  import NotificationsPanel from "$lib/components/notifications/notificationsPanel.svelte";
+  import { alertNotification } from "$lib/components/notifications/notifications";
 
   let connectionStatus = false;
   let channelName = "";

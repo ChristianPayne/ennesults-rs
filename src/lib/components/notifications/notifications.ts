@@ -1,5 +1,5 @@
 import { toast } from "svelte-sonner";
-import type { Alert } from "./types";
+import type { Alert } from "../../types";
 import { nanoid } from 'nanoid';
 import { writable, type Writable } from 'svelte/store';
 
