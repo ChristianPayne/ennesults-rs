@@ -10,7 +10,7 @@ use twitch_irc::TwitchIRCClient;
 
 // use crate::commands::Commands;
 
-use crate::commands::{command_from_str, Command};
+use crate::commands::{command_from_str, Command, UserLevel};
 
 use super::{handle_whisper, process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage};
 
@@ -75,7 +75,6 @@ pub async fn handle_incoming_chat(
     while let Some(message) = incoming_messages.recv().await {
         let bot = app_handle.state::<Bot>();
         let bot_data = app_handle.state::<BotData>();
-
         match message {
             ServerMessage::Privmsg(msg) => {
                 {
@@ -99,14 +98,23 @@ pub async fn handle_incoming_chat(
 
                 process_user_state(app_handle.clone(), &msg.sender);
 
-                let parse_command_result = parse_for_command(msg);
-
-                match parse_command_result {
+                match parse_for_command(&msg) {
                     Err(_) => (),
                     Ok(command) => {
-                        let command_result = command.run();
+                        if !meets_minimum_user_level(
+                            parse_msg_for_user_level(&msg),
+                            command.get_required_user_level(),
+                        ) {
+                            let _ = say(
+                                "You do not have access to that command.",
+                                app_handle.state::<Bot>(),
+                            )
+                            .await;
 
-                        match command_result {
+                            continue;
+                        }
+
+                        match command.run() {
                             None => (),
                             Some(reply) => {
                                 // say back the reply.
@@ -143,7 +151,7 @@ pub enum ParseCommandError {
     CommandArgsError,
 }
 
-pub fn parse_for_command(msg: PrivmsgMessage) -> Result<Box<dyn Command>, ParseCommandError> {
+pub fn parse_for_command(msg: &PrivmsgMessage) -> Result<Box<dyn Command>, ParseCommandError> {
     println!("{}", &msg.message_text);
     if !msg.message_text.starts_with('!') {
         println!("Not a command");
@@ -168,7 +176,30 @@ pub fn parse_for_command(msg: PrivmsgMessage) -> Result<Box<dyn Command>, ParseC
         return Err(ParseCommandError::CommandNotFound);
     };
 
-    println!("Found command: {:?}", command.as_ref().get_aliases());
-
     Ok(command)
+}
+
+fn parse_msg_for_user_level(msg: &PrivmsgMessage) -> UserLevel {
+    for badge in &msg.badges {
+        let badge_name = badge.name.as_str();
+
+        if badge_name == "broadcaster" {
+            return UserLevel::Broadcaster;
+        }
+        if badge_name == "moderator" {
+            return UserLevel::Moderator;
+        }
+        if badge_name == "vip" {
+            return UserLevel::Vip;
+        }
+        if badge_name == "subscriber" {
+            return UserLevel::Subscriber;
+        }
+    }
+
+    UserLevel::Viewer
+}
+
+fn meets_minimum_user_level(incoming_user_level: UserLevel, command_user_level: UserLevel) -> bool {
+    incoming_user_level.index() >= command_user_level.index()
 }
