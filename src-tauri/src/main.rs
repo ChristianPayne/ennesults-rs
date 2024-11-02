@@ -33,7 +33,8 @@ async fn main() {
             crate::bot::api::save_users_allowed_to_whisper,
             crate::bot::api::get_bot_info,
             crate::bot::api::get_chat_messages,
-            crate::bot::api::get_chat_messages_count
+            crate::bot::api::get_chat_messages_count,
+            crate::bot::api::get_users
         ])
         .setup(|app| {
             println!("Setting up bot!");

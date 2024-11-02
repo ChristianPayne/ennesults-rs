@@ -3,26 +3,11 @@
   import { readable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import DataTableActions from "./data-table-actions.svelte";
-    import Badge from "$lib/components/ui/badge/badge.svelte";
-    import { Checkbox } from "$lib/components/ui/checkbox";
+  import Badge from "$lib/components/ui/badge/badge.svelte";
+  import { Checkbox } from "$lib/components/ui/checkbox";
+  import type { User } from "$lib/types";
 
-
-
-
-  type EnnesultsTableItem = {
-    id: number,
-    user: string,
-    type: string,
-    consented: boolean
-  }
-
-  let data: EnnesultsTableItem[] = [
-    { id: 1, user: 'ChrisGriffin522', type: 'Moderator', consented: true },
-    { id: 2, user: 'Ennegineer', type: 'Streamer', consented: true },
-    { id: 3, user: 'JinJix', type: 'Viewer', consented: false },
-    { id: 4, user: 'jaypez04', type: 'Viewer', consented: false },
-    { id: 5, user: 'mcgyver0302', type: 'Viewer', consented: true },
-  ];
+  export let data: User[];
 
   const table = createTable(readable(data));
 
@@ -32,18 +17,18 @@
       header: "ID",
     }),
     table.column({
-      accessor: "user",
-      header: "User",
+      accessor: "username",
+      header: "Username",
     }),
     table.column({
-      accessor: "type",
-      header: "Type",
+      accessor: "last_seen",
+      header: "Last Seen",
     }),
     table.column({
       accessor: "consented",
       header: "Consented",
       cell: ({value}) => {
-        return createRender(Checkbox, {checked: value})
+        return createRender(Checkbox, {checked: value, disabled: true})
       }
     }),
     table.column({
