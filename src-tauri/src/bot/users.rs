@@ -33,11 +33,11 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
         .lock()
         .expect("Failed to get lock for users state.");
 
-    match users.0.get_mut(&user.id) {
+    match users.0.get_mut(&user.name) {
         // Create a new user
         None => {
             users.0.insert(
-                user.id.clone(),
+                user.name.clone(),
                 User {
                     id: user.id.clone(),
                     username: user.name.clone(),

@@ -1,18 +1,13 @@
-use std::str::FromStr;
-
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::{PrivmsgMessage, ServerMessage};
+use twitch_irc::message::ServerMessage;
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
-// use crate::commands::Commands;
-
-use crate::commands::{command_from_str, Command, UserLevel};
-
 use super::{handle_whisper, process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage};
+use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
 
 // CLIENT
 #[derive(Debug, Default)]
@@ -74,7 +69,6 @@ pub async fn handle_incoming_chat(
 ) {
     while let Some(message) = incoming_messages.recv().await {
         let bot = app_handle.state::<Bot>();
-        let bot_data = app_handle.state::<BotData>();
         match message {
             ServerMessage::Privmsg(msg) => {
                 {
@@ -100,7 +94,7 @@ pub async fn handle_incoming_chat(
 
                 match parse_for_command(&msg) {
                     Err(_) => (),
-                    Ok(command) => {
+                    Ok((command, args)) => {
                         if !meets_minimum_user_level(
                             parse_msg_for_user_level(&msg),
                             command.get_required_user_level(),
@@ -114,7 +108,7 @@ pub async fn handle_incoming_chat(
                             continue;
                         }
 
-                        match command.run() {
+                        match command.run(args, &msg, app_handle.clone()) {
                             None => (),
                             Some(reply) => {
                                 // say back the reply.
@@ -143,63 +137,4 @@ pub async fn handle_incoming_chat(
             }
         }
     }
-}
-
-pub enum ParseCommandError {
-    NotACommand,
-    CommandNotFound,
-    CommandArgsError,
-}
-
-pub fn parse_for_command(msg: &PrivmsgMessage) -> Result<Box<dyn Command>, ParseCommandError> {
-    println!("{}", &msg.message_text);
-    if !msg.message_text.starts_with('!') {
-        println!("Not a command");
-        return Err(ParseCommandError::NotACommand);
-    };
-
-    let mut raw_message = msg.message_text.clone();
-    let command = raw_message.split_off(1);
-    let msg_split: Vec<String> = command
-        .split_whitespace()
-        .take(3)
-        .map(|x| x.to_string())
-        .collect();
-
-    let [command_name, args @ ..] = &msg_split[..] else {
-        return Err(ParseCommandError::CommandArgsError);
-    };
-
-    println!("Raw command, split: {}, {:?}", command_name, args);
-
-    let Some(command) = command_from_str(command_name) else {
-        return Err(ParseCommandError::CommandNotFound);
-    };
-
-    Ok(command)
-}
-
-fn parse_msg_for_user_level(msg: &PrivmsgMessage) -> UserLevel {
-    for badge in &msg.badges {
-        let badge_name = badge.name.as_str();
-
-        if badge_name == "broadcaster" {
-            return UserLevel::Broadcaster;
-        }
-        if badge_name == "moderator" {
-            return UserLevel::Moderator;
-        }
-        if badge_name == "vip" {
-            return UserLevel::Vip;
-        }
-        if badge_name == "subscriber" {
-            return UserLevel::Subscriber;
-        }
-    }
-
-    UserLevel::Viewer
-}
-
-fn meets_minimum_user_level(incoming_user_level: UserLevel, command_user_level: UserLevel) -> bool {
-    incoming_user_level.index() >= command_user_level.index()
 }
