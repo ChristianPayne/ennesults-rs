@@ -12,6 +12,9 @@
   });
   let className: any = "";
   export { className as class };
+
+  $: num.set(value);
+  
   onMount(() => {
     num.set(value);
   });

@@ -1,15 +1,15 @@
 <script lang="ts">
   import { createTable, Render, Subscribe, createRender } from "svelte-headless-table";
-  import { readable } from "svelte/store";
+  import { type Writable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import DataTableActions from "./data-table-actions.svelte";
   import Badge from "$lib/components/ui/badge/badge.svelte";
   import { Checkbox } from "$lib/components/ui/checkbox";
   import type { User } from "$lib/types";
 
-  export let data: User[];
+  export let usersStore: Writable<User[]>;
 
-  const table = createTable(readable(data));
+  const table = createTable(usersStore);
 
   const columns = table.createColumns([
     table.column({

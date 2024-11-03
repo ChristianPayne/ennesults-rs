@@ -13,6 +13,11 @@
 
   let chatElement: Element;
 
+  let activeUserStats: [totalUsers: number, activeUsers: number] = [0,0];
+
+  $: totalUsers = activeUserStats[0];
+  $: activeUsers = activeUserStats[1];
+
   $: messages, scrollToBottom(chatElement);
 
   onMount(async () => {
@@ -30,6 +35,8 @@
 
       return event
     });
+
+    activeUserStats = await invoke<[totalUsers: number, activeUsers: number]>("get_active_users");
   })
 
   onDestroy(() => {
@@ -54,7 +61,9 @@
   </a>
   <a href='/users' class="border rounded-xl p-6 hover:bg-muted">
     <p class="text-lg font-semibold">Active Users</p>
-    <NumberTicker class="text-4xl font-bold mb-8" value={42}><span class="text-muted-foreground text-sm">/ 84 Consented</span></NumberTicker>
+    <NumberTicker class="text-4xl font-bold mb-8" value={totalUsers}>
+      <span class="text-muted-foreground text-sm">/ {activeUsers} Consented</span>
+    </NumberTicker>
     <p class="text-muted-foreground">Users waiting to be insulted</p>
   </a>
 </div>
