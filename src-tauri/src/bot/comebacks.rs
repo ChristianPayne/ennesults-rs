@@ -1,3 +1,4 @@
+use rand::Rng;
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 use twitch_irc::message::PrivmsgMessage;
@@ -43,7 +44,8 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) {
     {
         // Random chance to say a comeback.
         // Use the settings value for the max chance value.
-        percent_chance_of_comeback;
+        let rand_percent_chance = rand::thread_rng().gen_ratio(percent_chance_of_comeback, 100);
+        dbg!(rand_percent_chance);
 
         // Random comeback.
         let _ = say(bot_state.clone(), "Yes? Can I help you?").await;

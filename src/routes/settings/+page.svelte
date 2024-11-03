@@ -39,6 +39,8 @@
   let enableInsults = false;
   let enableComebacks = false;
   let enableCorrections = false;
+
+  let percentChanceOfComeback = 0;
   let usersAllowedToWhisper = "";
   let correctionExceptions = "";
 
@@ -53,8 +55,9 @@
     enableInsults = botInfo.enable_insults;
     enableComebacks = botInfo.enable_comebacks;
 
+    percentChanceOfComeback = botInfo.percent_chance_of_comeback;
+
     let usersAllowedToWhisperResult = await invoke<string[]>("get_users_allowed_to_whisper");
-    console.log('🪵 ~ onMount ~ usersAllowedToWhisperResult:', usersAllowedToWhisperResult);
     usersAllowedToWhisper = usersAllowedToWhisperResult.join(", ")
 
     if(botName && oauthTokenValue) {
@@ -83,6 +86,11 @@
     enableCorrections = value
   }
 
+  function onPercentChanceOfComeback(value: number) {
+    console.log('🪵 ~ onPercentChanceOfComeback ~ value:', value);
+    percentChanceOfComeback = value;
+  }
+
   async function save () {
     toast.info("Saving settings...")
     await invoke<string>("leave_channel").catch(async e => {
@@ -96,7 +104,8 @@
         auto_connect_on_startup: autoConnectOnStartup,
         enable_whispers: enableWhispers,
         enable_insults: enableInsults,
-        enable_comebacks: enableComebacks
+        enable_comebacks: enableComebacks,
+        percent_chance_of_comeback: percentChanceOfComeback,
       }
     })
     let saveUsersAllowedToWhisperResult = await invoke<string[]>("save_users_allowed_to_whisper", {
@@ -119,7 +128,7 @@
   }
 </script>
 
-<div class="flex flex-col">
+<form class="flex flex-col">
   <h1 class="mb-4">Settings</h1>
   <div class="ml-2 space-y-8">
     <div class="ml-2 px-4 space-y-4">
@@ -228,7 +237,8 @@
       <div>
         <Label for="percent-correction">Percent chance of comeback</Label>
         <p class="text-sm text-muted-foreground">Replying every time would get tiring. What percent (%) should we snap back?</p>
-        <Input id="percent-correction" type="number"/>
+        <Input id="percent-correction" type="number" bind:value={percentChanceOfComeback}/>
+        {percentChanceOfComeback}
       </div>
     </div>
 
@@ -256,4 +266,4 @@
       <Button on:click={save} class="w-1/3">Save</Button>
     </div>
   </div>
-</div>
+</form>

@@ -13,7 +13,7 @@ pub struct BotInfo {
     pub enable_insults: bool,
 
     pub enable_comebacks: bool,
-    pub percent_chance_of_comeback: u8,
+    pub percent_chance_of_comeback: u32,
 }
 
 impl Default for BotInfo {
