@@ -1,8 +1,14 @@
 <script lang="ts">
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "$lib/components/ui/button";
+  import { invoke } from "@tauri-apps/api/core";
   
   export let id: string;
+  export let username: string;
+
+  async function deleteUser(username: string) {
+    await invoke("delete_user", { username })
+  }
  </script>
   
  <DropdownMenu.Root>
@@ -11,7 +17,7 @@
     variant="ghost"
     builders={[builder]}
     size="icon"
-    class="relative h-8 w-8 p-0"
+    class="relative h-8 w-8 p-0 hover:text-primary-foreground"
    >
     <span class="sr-only">Open menu</span>
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -26,10 +32,13 @@
     <DropdownMenu.Item on:click={() => navigator.clipboard.writeText(id.toString())}>
      Copy ID
     </DropdownMenu.Item>
-   </DropdownMenu.Group>
-   <DropdownMenu.Separator />
-   <DropdownMenu.Item>Toggle consent</DropdownMenu.Item>
-   <DropdownMenu.Item>Allow whispers</DropdownMenu.Item>
-   <DropdownMenu.Item class="text-destructive">Delete user</DropdownMenu.Item>
+    </DropdownMenu.Group>
+    <DropdownMenu.Separator />
+    <DropdownMenu.Item>Allow whispers</DropdownMenu.Item>
+    <DropdownMenu.Item 
+      class="text-destructive"
+      on:click={() => deleteUser(username)}>
+      Delete user
+    </DropdownMenu.Item>
   </DropdownMenu.Content>
  </DropdownMenu.Root>

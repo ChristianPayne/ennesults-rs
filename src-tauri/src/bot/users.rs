@@ -55,5 +55,10 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
     if let Err(error) = write_file(&app_handle, "users.json", users.clone()) {
         println!("Failed to write users.json file to disk! {:?}", error);
         let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
+    } else {
+        let _ = app_handle.emit(
+            "users_update",
+            users.0.clone().into_values().collect::<Vec<User>>(),
+        );
     }
 }

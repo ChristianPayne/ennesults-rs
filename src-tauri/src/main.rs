@@ -36,6 +36,7 @@ async fn main() {
             crate::bot::api::get_chat_messages_count,
             crate::bot::api::get_users,
             crate::bot::api::get_active_users,
+            crate::bot::api::delete_user,
         ])
         .setup(|app| {
             println!("Setting up bot!");

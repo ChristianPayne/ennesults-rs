@@ -28,16 +28,15 @@
       accessor: "consented",
       header: "Consented",
       cell: ({value}) => {
-        return createRender(Checkbox, {checked: value, disabled: true})
+        return createRender(Checkbox, { checked: value, disabled: true })
       }
     }),
     table.column({
-      accessor: ({ id }) => id,
+      accessor: (row) => row,
       header: "Actions",
       cell: ({ value }) => {
-        return createRender(DataTableActions, { id: value });
+        return createRender(DataTableActions, { id: value.id, username: value.username });
       },
-
     }),
   ]);
 
@@ -64,7 +63,7 @@
         </Subscribe>
       {/each}
     </Table.Header>
-    <Table.Body {...$tableBodyAttrs}>
+    <Table.Body {...$tableBodyAttrs} class="select-text selection:text-primary-foreground">
       {#each $pageRows as row (row.id)}
         <Subscribe rowAttrs={row.attrs()} let:rowAttrs>
           <Table.Row {...rowAttrs}>
