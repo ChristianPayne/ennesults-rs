@@ -30,7 +30,7 @@ pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
     };
 
     if user_allowed_to_whisper {
-        let _ = say(msg.message_text.as_str(), bot).await;
+        let _ = say(bot, msg.message_text.as_str()).await;
         app_handle
             .emit(
                 "alert",

@@ -28,8 +28,6 @@ impl Command for UnconsentCommand {
             .lock()
             .expect("Failed to get lock for bot data.");
 
-        dbg!(&users);
-
         let consent_target = match args.len() {
             0 => Some(msg.sender.name.clone()),
             1 => {

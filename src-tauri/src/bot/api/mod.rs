@@ -3,7 +3,6 @@ mod comebacks;
 mod connect_to_channel;
 mod get_channel_status;
 mod leave_channel;
-mod print_bot_data;
 mod users;
 mod whispers;
 
@@ -12,7 +11,6 @@ pub use comebacks::*;
 pub use connect_to_channel::*;
 pub use get_channel_status::*;
 pub use leave_channel::*;
-pub use print_bot_data::*;
 pub use users::*;
 pub use whispers::*;
 

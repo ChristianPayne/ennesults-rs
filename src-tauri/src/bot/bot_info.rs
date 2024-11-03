@@ -11,7 +11,9 @@ pub struct BotInfo {
 
     pub enable_whispers: bool,
     pub enable_insults: bool,
+
     pub enable_comebacks: bool,
+    pub percent_chance_of_comeback: u8,
 }
 
 impl Default for BotInfo {
@@ -22,8 +24,9 @@ impl Default for BotInfo {
             oauth_token: "".into(),
             auto_connect_on_startup: false,
             enable_whispers: true,
-            enable_comebacks: true,
             enable_insults: true,
+            enable_comebacks: true,
+            percent_chance_of_comeback: 20,
         }
     }
 }

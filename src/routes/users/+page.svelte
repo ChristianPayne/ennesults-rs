@@ -18,8 +18,6 @@
     unlisten = await listen<User[]>("users_update", (event) => {
       updateUsers(event.payload)
     })
-
-    // Need a listener for when users is updated.
   })
 
   onDestroy(() => {

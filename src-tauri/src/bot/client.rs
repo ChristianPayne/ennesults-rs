@@ -6,7 +6,10 @@ use twitch_irc::message::ServerMessage;
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
-use super::{handle_whisper, process_user_state, Bot, BotData, SerializeRBGColor, TwitchMessage};
+use super::{
+    handle_whisper, process_comebacks, process_user_state, Bot, BotData, SerializeRBGColor,
+    TwitchMessage,
+};
 use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
 
 // CLIENT
@@ -29,38 +32,34 @@ impl Client {
 }
 
 #[tauri::command]
-pub async fn say(message: &str, state: tauri::State<'_, Bot>) -> Result<bool, String> {
-    let channel_name = state
-        .bot_info
-        .lock()
-        .expect("Failed to get lock")
-        .channel_name
-        .clone();
+pub async fn say(state: tauri::State<'_, Bot>, message: &str) -> Result<(), String> {
+    let channel_name = {
+        let bot_info = state
+            .bot_info
+            .lock()
+            .expect("Failed to get lock for bot info.");
 
-    if channel_name.is_empty() {
-        return Err("Channel name not found.".into());
-    }
+        if bot_info.channel_name.is_empty() {
+            return Err("Channel name not found.".into());
+        }
+        bot_info.channel_name.clone()
+    };
 
-    let client;
-    {
-        client = state.client.lock().unwrap().get_client();
-    }
-
-    let Some(client) = client else {
+    let Some(client) = ({
+        state
+            .client
+            .lock()
+            .expect("Failed to get client lock.")
+            .get_client()
+    }) else {
         return Err("Could not get client.".into());
     };
 
-    let channel_name = state
-        .bot_info
-        .lock()
-        .expect("Failed to get lock for bot info")
-        .channel_name
-        .clone();
-    let say_result = client.say(channel_name, message.to_string()).await;
-    match say_result {
-        Ok(_) => Ok(true),
-        Err(e) => Err(e.to_string()),
+    if let Err(e) = client.say(channel_name, message.to_string()).await {
+        return Err(e.to_string());
     }
+
+    Ok(())
 }
 
 pub async fn handle_incoming_chat(
@@ -91,30 +90,23 @@ pub async fn handle_incoming_chat(
                 }
 
                 process_user_state(app_handle.clone(), &msg.sender);
+                process_comebacks(app_handle.clone(), &msg).await;
 
-                match parse_for_command(&msg) {
-                    Err(_) => (),
-                    Ok((command, args)) => {
-                        if !meets_minimum_user_level(
-                            parse_msg_for_user_level(&msg),
-                            command.get_required_user_level(),
-                        ) {
-                            let _ = say(
-                                "You do not have access to that command.",
-                                app_handle.state::<Bot>(),
-                            )
-                            .await;
-
-                            continue;
+                if let Ok((command, args)) = parse_for_command(&msg) {
+                    if meets_minimum_user_level(
+                        parse_msg_for_user_level(&msg),
+                        command.get_required_user_level(),
+                    ) {
+                        if let Some(reply) = command.run(args, &msg, app_handle.clone()) {
+                            // say back the reply.
+                            let _ = say(app_handle.state::<Bot>(), reply.as_str()).await;
                         }
-
-                        match command.run(args, &msg, app_handle.clone()) {
-                            None => (),
-                            Some(reply) => {
-                                // say back the reply.
-                                let _ = say(reply.as_str(), app_handle.state::<Bot>()).await;
-                            }
-                        }
+                    } else {
+                        let _ = say(
+                            app_handle.state::<Bot>(),
+                            "You do not have access to that command.",
+                        )
+                        .await;
                     }
                 }
             }

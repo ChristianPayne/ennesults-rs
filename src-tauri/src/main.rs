@@ -26,7 +26,6 @@ async fn main() {
             crate::bot::api::connect_to_channel,
             crate::bot::api::leave_channel,
             crate::bot::api::get_channel_status,
-            crate::bot::api::print_bot_data,
             crate::bot::api::get_channel_name,
             crate::bot::api::save_bot_info,
             crate::bot::api::get_users_allowed_to_whisper,
