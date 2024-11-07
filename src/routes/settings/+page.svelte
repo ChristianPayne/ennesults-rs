@@ -31,7 +31,7 @@
       minimumUsersInChatToInsult: botInfo.minimum_users_in_chat_to_insult,
       enableComebacks: botInfo.enable_comebacks,
       percentChanceOfComeback: botInfo.percent_chance_of_comeback,
-      enableCorrections: botInfo.enable_comebacks,
+      enableCorrections: botInfo.enable_corrections,
       usersAllowedToWhisper: usersAllowedToWhisperResult.join(", "),
       correctionExceptions: "",
     };
@@ -39,16 +39,15 @@
     validatedForm = await superValidate(settings, zod(formSchema));
   })
 
-  function onFormUpdate (event: { form: Readonly<SuperValidated<any, any, any>>; }) {
+  async function onFormUpdate (event: { form: Readonly<SuperValidated<any, any, any>>; }) {
     let { form: f } = event;
-    console.log("Got the event!", event);
     if(f.valid === false) {
       toast.error(Object.values(f.errors).flatMap(v => v).join("; "));
       return;
     }
 
     // Save info from validated form.
-    console.table(f.data);
+    await save(f.data as Infer<FormSchema>);
   }
 
   async function save (validatedData: Infer<FormSchema>) {
@@ -68,6 +67,8 @@
         enable_insults: validatedData.enableInsults,
         enable_comebacks: validatedData.enableComebacks,
         percent_chance_of_comeback: validatedData.percentChanceOfComeback,
+        enable_corrections: validatedData.enableCorrections,
+        comeback_exceptions: validatedData.comebackExceptions.split(",").filter(Boolean).map(user => user.trim().toLowerCase())
       }
     });
 

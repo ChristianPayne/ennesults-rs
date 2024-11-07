@@ -29,13 +29,13 @@ impl Default for BotInfo {
             bot_name: "".into(),
             oauth_token: "".into(),
             auto_connect_on_startup: false,
-            enable_whispers: true,
-            enable_insults: true,
+            enable_whispers: false,
+            enable_insults: false,
             minimum_users_in_chat_to_insult: 1,
-            enable_comebacks: true,
+            enable_comebacks: false,
             percent_chance_of_comeback: 20,
             comeback_exceptions: vec![],
-            enable_corrections: true,
+            enable_corrections: false,
             correction_exceptions: vec![],
         }
     }

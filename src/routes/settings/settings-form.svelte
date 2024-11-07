@@ -19,7 +19,8 @@
   let form: SuperForm<Infer<FormSchema>> = superForm(validatedForm, {
     clearOnSubmit: "none",
     validators: zodClient(formSchema),
-    onUpdated
+    resetForm: false,
+    onUpdated,
   });
 
   const { form: formData, enhance } = form;
@@ -58,6 +59,7 @@
     <Form.Control let:attrs>
       <div class="flex items-center space-x-2">
         <Checkbox {...attrs} bind:checked={$formData.autoConnectOnStartup} />
+        <input name={attrs.name} bind:value={$formData.autoConnectOnStartup} hidden />
         <Form.Label>Auto-connect on Startup</Form.Label>
       </div>
     </Form.Control>
@@ -110,6 +112,7 @@
     <Form.Control let:attrs>
       <div class="flex items-center space-x-2">
         <Checkbox {...attrs} bind:checked={$formData.enableWhispers} />
+        <input name={attrs.name} bind:value={$formData.enableWhispers} hidden />
         <Form.Label>Enable Whispers</Form.Label>
       </div>
     </Form.Control>
@@ -130,6 +133,7 @@
     <Form.Control let:attrs>
       <div class="flex items-center space-x-2">
         <Checkbox {...attrs} bind:checked={$formData.enableInsults} />
+        <input name={attrs.name} bind:value={$formData.enableInsults} hidden />
         <Form.Label>Enable Insults</Form.Label>
       </div>
     </Form.Control>
@@ -150,6 +154,7 @@
     <Form.Control let:attrs>
       <div class="flex items-center space-x-2">
         <Checkbox {...attrs} bind:checked={$formData.enableComebacks} />
+        <input name={attrs.name} bind:value={$formData.enableComebacks} hidden />
         <Form.Label>Enable Comebacks</Form.Label>
       </div>
     </Form.Control>
@@ -178,6 +183,7 @@
     <Form.Control let:attrs>
       <div class="flex items-center space-x-2">
         <Checkbox {...attrs} bind:checked={$formData.enableCorrections} />
+        <input name={attrs.name} bind:value={$formData.enableCorrections} hidden />
         <Form.Label>Enable Corrections</Form.Label>
       </div>
     </Form.Control>
