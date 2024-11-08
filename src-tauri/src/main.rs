@@ -29,7 +29,6 @@ async fn main() {
             crate::bot::api::get_channel_name,
             crate::bot::api::save_bot_info,
             crate::bot::api::get_users_allowed_to_whisper,
-            crate::bot::api::save_users_allowed_to_whisper,
             crate::bot::api::get_bot_info,
             crate::bot::api::get_chat_messages,
             crate::bot::api::get_chat_messages_count,
@@ -49,11 +48,8 @@ async fn main() {
             let insults =
                 read_json_file::<Insults>(app.handle(), "insults.json").unwrap_or_default();
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
-            let users_allowed_to_whisper =
-                read_json_file::<Vec<String>>(app.handle(), "users_allowed_to_whisper.json")
-                    .unwrap_or_default();
 
-            let bot_data = BotData::new(comebacks, insults, users, users_allowed_to_whisper);
+            let bot_data = BotData::new(comebacks, insults, users);
             app.manage(bot_data);
 
             // Connect the bot to Twitch on startup.

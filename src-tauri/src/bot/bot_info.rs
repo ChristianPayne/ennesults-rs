@@ -10,6 +10,7 @@ pub struct BotInfo {
     pub auto_connect_on_startup: bool,
 
     pub enable_whispers: bool,
+    pub users_allowed_to_whisper: Vec<String>,
 
     pub enable_insults: bool,
     pub minimum_users_in_chat_to_insult: u32,
@@ -30,6 +31,7 @@ impl Default for BotInfo {
             oauth_token: "".into(),
             auto_connect_on_startup: false,
             enable_whispers: false,
+            users_allowed_to_whisper: vec![],
             enable_insults: false,
             minimum_users_in_chat_to_insult: 1,
             enable_comebacks: false,

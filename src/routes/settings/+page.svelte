@@ -64,16 +64,13 @@
         oauth_token: validatedData.oauthTokenValue,
         auto_connect_on_startup: validatedData.autoConnectOnStartup,
         enable_whispers: validatedData.enableWhispers,
+        users_allowed_to_whisper: validatedData.usersAllowedToWhisper.trim().split(",").filter(Boolean).map(user => user.trim().toLowerCase()),
         enable_insults: validatedData.enableInsults,
         enable_comebacks: validatedData.enableComebacks,
         percent_chance_of_comeback: validatedData.percentChanceOfComeback,
         enable_corrections: validatedData.enableCorrections,
         comeback_exceptions: validatedData.comebackExceptions.split(",").filter(Boolean).map(user => user.trim().toLowerCase())
       }
-    });
-
-    await invoke<string[]>("save_users_allowed_to_whisper", {
-      usersAllowedToWhisper: validatedData.usersAllowedToWhisper.split(",").filter(Boolean).map(user => user.trim().toLowerCase())
     });
   }
 
