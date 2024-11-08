@@ -20,6 +20,7 @@
 
   let connectionStatus = false;
   let channelName = "";
+  let botName = "";
   let tauriVersion = ""
   
   onMount(async () => {
@@ -74,6 +75,7 @@
     
     if(currentInfo) {
       channelName = currentInfo.channel_name;
+      botName = currentInfo.bot_name;
       if(currentInfo.auto_connect_on_startup) {
         let [ wanted, joined ] = await invoke<[boolean, boolean]>('get_channel_status');
         
@@ -124,7 +126,7 @@
   <!-- Title -->
   <div class="flex justify-between mb-2">
     <Button variant="ghost" href="/" class="text-2xl font-bold space-x-2">
-      Ennesults
+      {botName || "Ennesults"}
     </Button>
     <div class="flex space-x-2 items-center">
       <Button variant="ghost" href="/commands">
