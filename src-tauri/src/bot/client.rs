@@ -130,3 +130,100 @@ pub async fn handle_incoming_chat(
         }
     }
 }
+
+pub mod api {
+    use crate::bot::Bot;
+    use tauri::{AppHandle, Emitter};
+
+    #[tauri::command]
+    pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
+        let channel_name = state
+            .bot_info
+            .lock()
+            .expect("Failed to get lock for bot info")
+            .channel_name
+            .clone();
+
+        if channel_name.is_empty() {
+            return Err("Channel name not found.".into());
+        }
+
+        let client;
+        {
+            client = state.client.lock().unwrap().get_client();
+        }
+
+        let Some(client) = client else {
+            return Err("Could not get client.".into());
+        };
+
+        let channel_status = client.get_channel_status(channel_name.clone()).await;
+
+        match channel_status {
+            (true, false) => Err("Already joining a channel.".into()),
+            (true, true) => Err("Already connected to a channel.".into()),
+            _ => {
+                // join a channel
+                match client.join(channel_name.clone()) {
+                    Ok(x) => {
+                        println!("Connected to channel! {:?}", x);
+                        Ok(channel_name.clone())
+                    }
+                    Err(e) => Err(format!("Could not join channel! {}", e)),
+                }
+            }
+        }
+    }
+
+    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+    #[tauri::command]
+    pub async fn get_channel_status(state: tauri::State<'_, Bot>) -> Result<(bool, bool), String> {
+        let channel_name = state
+            .bot_info
+            .lock()
+            .expect("Failed to get lock")
+            .channel_name
+            .clone();
+
+        if channel_name.is_empty() {
+            return Err("Channel name not found.".into());
+        }
+
+        let client;
+        {
+            client = state.client.lock().unwrap().get_client();
+        }
+
+        let Some(client) = client else {
+            return Err("Could not get client.".into());
+        };
+
+        let channel_status = client.get_channel_status(channel_name).await;
+        Ok(channel_status)
+    }
+
+    #[tauri::command]
+    pub fn leave_channel(
+        app_handle: AppHandle,
+        state: tauri::State<'_, Bot>,
+    ) -> Result<String, String> {
+        let channel_name = state
+            .bot_info
+            .lock()
+            .expect("Failed to get lock")
+            .channel_name
+            .clone();
+        let client = state.client.lock().unwrap();
+        match &client.0 {
+            Some(client) => {
+                client.part(channel_name.clone());
+                let _ = app_handle.emit("channel_part", channel_name.clone());
+                Ok(channel_name)
+            }
+            None => Err(format!(
+                "Failed to leave {}. No client configured.",
+                channel_name
+            )),
+        }
+    }
+}
