@@ -3,7 +3,7 @@ import type { SerializeRBGColor } from "../../src-tauri/bindings/SerializeRBGCol
 
 export type Alert = "System" | "Info" | "Warn" | "Error";
 
-export type BotInfo = { channel_name: string, bot_name: string, oauth_token: string, auto_connect_on_startup: boolean, enable_whispers: boolean, enable_insults: boolean, minimum_users_in_chat_to_insult: number, enable_comebacks: boolean, percent_chance_of_comeback: number, comeback_exceptions: Array<string>, enable_corrections: boolean, correction_exceptions: Array<string>, };
+export type BotInfo = { channel_name: string, bot_name: string, oauth_token: string, auto_connect_on_startup: boolean, enable_whispers: boolean, users_allowed_to_whisper: Array<string>, enable_insults: boolean, minimum_users_in_chat_to_insult: number, enable_comebacks: boolean, percent_chance_of_comeback: number, comeback_exceptions: Array<string>, enable_corrections: boolean, percent_chance_of_correction: number, correction_exceptions: Array<string>, };
 
 export type Comeback = { id: number, value: string, };
 

@@ -40,7 +40,7 @@ async fn main() {
             println!("Setting up bot!");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
-            let bot = Bot::new(bot_info.clone());
+            let bot = Bot::new(bot_info);
             app.manage(bot);
 
             let comebacks =

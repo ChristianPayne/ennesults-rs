@@ -20,6 +20,7 @@ pub struct BotInfo {
     pub comeback_exceptions: Vec<String>,
 
     pub enable_corrections: bool,
+    pub percent_chance_of_correction: u32,
     pub correction_exceptions: Vec<String>,
 }
 
@@ -38,6 +39,7 @@ impl Default for BotInfo {
             percent_chance_of_comeback: 20,
             comeback_exceptions: vec![],
             enable_corrections: false,
+            percent_chance_of_correction: 20,
             correction_exceptions: vec![],
         }
     }

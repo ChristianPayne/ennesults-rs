@@ -7,8 +7,8 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
 use super::{
-    handle_whisper, process_comebacks, process_user_state, Bot, BotData, SerializeRBGColor,
-    TwitchMessage,
+    handle_whisper, process_comebacks, process_corrections, process_user_state, Bot, BotData,
+    SerializeRBGColor, TwitchMessage,
 };
 use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
 
@@ -90,7 +90,12 @@ pub async fn handle_incoming_chat(
                 }
 
                 process_user_state(app_handle.clone(), &msg.sender);
-                process_comebacks(app_handle.clone(), &msg).await;
+
+                let comeback_said = process_comebacks(app_handle.clone(), &msg).await;
+
+                if !comeback_said {
+                    process_corrections(app_handle.clone(), &msg).await;
+                }
 
                 if let Ok((command, args)) = parse_for_command(&msg) {
                     if meets_minimum_user_level(

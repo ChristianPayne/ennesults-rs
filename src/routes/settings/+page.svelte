@@ -27,12 +27,13 @@
       botName: botInfo.bot_name,
       oauthTokenValue: botInfo.oauth_token,
       enableWhispers: botInfo.enable_whispers,
+      usersAllowedToWhisper: usersAllowedToWhisperResult.join(", "),
       enableInsults: botInfo.enable_insults,
       minimumUsersInChatToInsult: botInfo.minimum_users_in_chat_to_insult,
       enableComebacks: botInfo.enable_comebacks,
       percentChanceOfComeback: botInfo.percent_chance_of_comeback,
       enableCorrections: botInfo.enable_corrections,
-      usersAllowedToWhisper: usersAllowedToWhisperResult.join(", "),
+      percentChanceOfCorrection: botInfo.percent_chance_of_correction,
       correctionExceptions: "",
     };
 
@@ -69,7 +70,9 @@
         enable_comebacks: validatedData.enableComebacks,
         percent_chance_of_comeback: validatedData.percentChanceOfComeback,
         enable_corrections: validatedData.enableCorrections,
-        comeback_exceptions: validatedData.comebackExceptions.split(",").filter(Boolean).map(user => user.trim().toLowerCase())
+        percent_chance_of_correction: validatedData.percentChanceOfCorrection,
+        comeback_exceptions: validatedData.comebackExceptions.trim().split(",").filter(Boolean).map(user => user.trim().toLowerCase()),
+        correction_exceptions: validatedData.correctionExceptions.trim().split(",").filter(Boolean).map(user => user.trim().toLowerCase()),
       }
     });
   }

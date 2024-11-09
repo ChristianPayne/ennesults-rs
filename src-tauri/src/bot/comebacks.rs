@@ -16,7 +16,7 @@ pub struct Comeback {
     pub value: String,
 }
 
-pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) {
+pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> bool {
     let bot_state = app_handle.state::<Bot>();
 
     let (bot_name, percent_chance_of_comeback) = {
@@ -27,7 +27,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) {
 
         // Check to make sure comebacks are enabled in the settings.
         if !bot_info.enable_comebacks {
-            return;
+            return false;
         }
         // Get bot name
         (
@@ -44,12 +44,14 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) {
     {
         // Random chance to say a comeback.
         // Use the settings value for the max chance value.
-        let rand_percent_chance = rand::thread_rng().gen_ratio(percent_chance_of_comeback, 100);
-        dbg!(rand_percent_chance);
-
-        // Random comeback.
-        let _ = say(bot_state.clone(), "Yes? Can I help you?").await;
+        if (rand::thread_rng().gen_ratio(percent_chance_of_comeback, 100)) {
+            // Random comeback.
+            let _ = say(bot_state.clone(), "Yes? Can I help you?").await;
+            return true;
+        }
     }
+
+    false
 }
 
 pub mod api {

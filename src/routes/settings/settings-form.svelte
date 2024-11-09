@@ -171,7 +171,7 @@
   </Form.Field>
   <Form.Field {form} name="percentChanceOfComeback">
     <Form.Control let:attrs>
-      <Form.Label>Minimum Users In Chat To Insult</Form.Label>
+      <Form.Label>Percent Chance of Comeback</Form.Label>
       <Input {...attrs} type="number" bind:value={$formData.percentChanceOfComeback} />
     </Form.Control>
     <Form.Description>Replying every time would get tiring. What percent (%) should we snap back?</Form.Description>
@@ -196,6 +196,14 @@
       <Input {...attrs} bind:value={$formData.correctionExceptions} />
     </Form.Control>
     <Form.Description>Parts of a word that don't make sense to correct (comma separated).</Form.Description>
+    <Form.FieldErrors />
+  </Form.Field>
+  <Form.Field {form} name="percentChanceOfCorrection">
+    <Form.Control let:attrs>
+      <Form.Label>Percent Chance of Correction</Form.Label>
+      <Input {...attrs} type="number" bind:value={$formData.percentChanceOfCorrection} />
+    </Form.Control>
+    <Form.Description>What percent (%) of the time should we correct viewers?</Form.Description>
     <Form.FieldErrors />
   </Form.Field>
 
