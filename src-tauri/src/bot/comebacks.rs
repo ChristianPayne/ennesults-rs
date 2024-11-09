@@ -1,9 +1,12 @@
+use rand::seq::SliceRandom;
 use rand::Rng;
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 use twitch_irc::message::PrivmsgMessage;
 
 use crate::bot::{say, Bot, BotInfo};
+
+use super::BotData;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -18,8 +21,9 @@ pub struct Comeback {
 
 pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> bool {
     let bot_state = app_handle.state::<Bot>();
+    let bot_data_state = app_handle.state::<BotData>();
 
-    let (bot_name, percent_chance_of_comeback) = {
+    let (bot_name, percent_chance_of_comeback, comeback_options) = {
         let bot_info = bot_state
             .bot_info
             .lock()
@@ -29,10 +33,21 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
         if !bot_info.enable_comebacks {
             return false;
         }
+
+        let comeback_options = bot_data_state
+            .comebacks
+            .lock()
+            .expect("Failed to get lock for bot data");
+
+        if comeback_options.0.is_empty() {
+            return false;
+        }
+
         // Get bot name
         (
             bot_info.bot_name.clone(),
             bot_info.percent_chance_of_comeback,
+            comeback_options.0.clone(),
         )
     };
 
@@ -41,12 +56,12 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
         .message_text
         .to_lowercase()
         .contains(bot_name.to_lowercase().as_str())
+        && rand::thread_rng().gen_ratio(percent_chance_of_comeback, 100)
     {
-        // Random chance to say a comeback.
-        // Use the settings value for the max chance value.
-        if (rand::thread_rng().gen_ratio(percent_chance_of_comeback, 100)) {
-            // Random comeback.
-            let _ = say(bot_state.clone(), "Yes? Can I help you?").await;
+        let mut random_comeback = comeback_options.choose(&mut rand::thread_rng());
+
+        if let Some(comeback) = random_comeback.take() {
+            let _ = say(bot_state.clone(), comeback.value.as_str()).await;
             return true;
         }
     }
