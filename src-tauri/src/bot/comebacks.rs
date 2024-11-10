@@ -70,10 +70,29 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
 }
 
 pub mod api {
+    use std::ops::Not;
+
     use tauri::Manager;
 
     use crate::bot::{BotData, Comebacks};
     use crate::file::{write_file, WriteFileError};
+
+    use super::Comeback;
+
+    #[tauri::command]
+    pub fn get_comebacks(app_handle: tauri::AppHandle) -> Vec<Comeback> {
+        let bot_data_state = app_handle.state::<BotData>();
+        let comebacks = {
+            bot_data_state
+                .comebacks
+                .lock()
+                .expect("Failed to get lock for comebacks.")
+                .0
+                .clone()
+        };
+
+        comebacks
+    }
 
     #[tauri::command]
     pub fn save_comebacks(
@@ -101,6 +120,26 @@ pub mod api {
                 }
             }
         }
+
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub fn delete_comeback(app_handle: tauri::AppHandle, comeback_id: u16) -> Result<(), String> {
+        let state = app_handle.state::<BotData>();
+        let mut comebacks = state
+            .comebacks
+            .lock()
+            .expect("Failed to get lock for comebacks");
+
+        match comebacks
+            .0
+            .iter()
+            .position(|comeback| comeback.id == comeback_id)
+        {
+            None => return Err("Could not find index of comeback.".to_string()),
+            Some(index) => comebacks.0.remove(index),
+        };
 
         Ok(())
     }
