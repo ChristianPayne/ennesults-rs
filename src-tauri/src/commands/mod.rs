@@ -52,9 +52,8 @@ pub enum ParseCommandError {
 pub fn parse_for_command(
     msg: &PrivmsgMessage,
 ) -> Result<(Box<dyn Command>, Vec<String>), ParseCommandError> {
-    println!("{}", &msg.message_text);
+    // println!("{}", &msg.message_text);
     if !msg.message_text.starts_with('!') {
-        println!("Not a command");
         return Err(ParseCommandError::NotACommand);
     };
 

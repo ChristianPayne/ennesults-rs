@@ -15,7 +15,7 @@ pub struct Comebacks(pub Vec<Comeback>);
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct Comeback {
-    pub id: u16,
+    pub id: String,
     pub value: String,
 }
 
@@ -72,7 +72,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
 pub mod api {
     use std::ops::Not;
 
-    use tauri::Manager;
+    use tauri::{Emitter, Manager};
 
     use crate::bot::{BotData, Comebacks};
     use crate::file::{write_file, WriteFileError};
@@ -105,7 +105,8 @@ pub mod api {
             .lock()
             .expect("Failed to get lock for bot info") = comebacks.clone();
 
-        let write_result = write_file::<Comebacks>(&app_handle, "comebacks.json", comebacks);
+        let write_result =
+            write_file::<Comebacks>(&app_handle, "comebacks.json", comebacks.clone());
 
         if let Some(err) = write_result.err() {
             match err {
@@ -119,27 +120,38 @@ pub mod api {
                     return Err("Failed to write contents in file.".to_string())
                 }
             }
+        } else {
+            let _ = app_handle.emit("comebacks_update", comebacks);
         }
 
         Ok(())
     }
 
     #[tauri::command]
-    pub fn delete_comeback(app_handle: tauri::AppHandle, comeback_id: u16) -> Result<(), String> {
+    pub fn delete_comeback(
+        app_handle: tauri::AppHandle,
+        comeback_id: String,
+    ) -> Result<(), String> {
         let state = app_handle.state::<BotData>();
-        let mut comebacks = state
-            .comebacks
-            .lock()
-            .expect("Failed to get lock for comebacks");
+        let comebacks = {
+            let mut comebacks = state
+                .comebacks
+                .lock()
+                .expect("Failed to get lock for comebacks");
 
-        match comebacks
-            .0
-            .iter()
-            .position(|comeback| comeback.id == comeback_id)
-        {
-            None => return Err("Could not find index of comeback.".to_string()),
-            Some(index) => comebacks.0.remove(index),
+            match comebacks
+                .0
+                .iter()
+                .position(|comeback| comeback.id == comeback_id)
+            {
+                None => return Err("Could not find index of comeback.".to_string()),
+                Some(index) => comebacks.0.remove(index),
+            };
+
+            comebacks.clone()
         };
+
+        save_comebacks(app_handle.clone(), comebacks);
 
         Ok(())
     }

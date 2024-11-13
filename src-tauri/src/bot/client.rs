@@ -91,12 +91,7 @@ pub async fn handle_incoming_chat(
 
                 process_user_state(app_handle.clone(), &msg.sender);
 
-                let comeback_said = process_comebacks(app_handle.clone(), &msg).await;
-
-                if !comeback_said {
-                    process_corrections(app_handle.clone(), &msg).await;
-                }
-
+                // Chained if else statements so we only do one of the options.
                 if let Ok((command, args)) = parse_for_command(&msg) {
                     if meets_minimum_user_level(
                         parse_msg_for_user_level(&msg),
@@ -113,6 +108,10 @@ pub async fn handle_incoming_chat(
                         )
                         .await;
                     }
+                } else if process_comebacks(app_handle.clone(), &msg).await {
+                    // Should we do something?
+                } else if process_corrections(app_handle.clone(), &msg).await {
+                    // Should we do something?
                 }
             }
             ServerMessage::GlobalUserState(_) => (),
