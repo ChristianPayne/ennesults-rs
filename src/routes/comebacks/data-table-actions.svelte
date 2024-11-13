@@ -1,13 +1,14 @@
 <script lang="ts">
+  import { invoke } from "@tauri-apps/api/core";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "$lib/components/ui/button";
-    import { invoke } from "@tauri-apps/api/core";
   
-  export let id: number;
+  export let id: string;
 
-  async function deleteComeback(id: number) {
-    await invoke("delete_comeback", { comeback_id: id })
+  async function deleteComeback(id: string) {
+    await invoke("delete_comeback", { comebackId: id })
   }
+
  </script>
   
  <DropdownMenu.Root>
@@ -27,7 +28,7 @@
   <DropdownMenu.Content>
    <DropdownMenu.Group>
     <DropdownMenu.Label>Actions</DropdownMenu.Label>
-    <DropdownMenu.Item on:click={() => deleteComeback(id)}>
+    <DropdownMenu.Item on:click={() => deleteComeback(id)} class="text-destructive">
       Delete comeback
     </DropdownMenu.Item>
    </DropdownMenu.Group>

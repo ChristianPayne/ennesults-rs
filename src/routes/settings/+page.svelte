@@ -34,7 +34,7 @@
       percentChanceOfComeback: botInfo.percent_chance_of_comeback,
       enableCorrections: botInfo.enable_corrections,
       percentChanceOfCorrection: botInfo.percent_chance_of_correction,
-      correctionExceptions: "",
+      correctionExceptions: botInfo.correction_exceptions.join(", "),
     };
 
     validatedForm = await superValidate(settings, zod(formSchema));

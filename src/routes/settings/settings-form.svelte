@@ -166,7 +166,7 @@
       <Form.Label>Comeback Exceptions</Form.Label>
       <Input {...attrs} bind:value={$formData.comebackExceptions} />
     </Form.Control>
-    <Form.Description>Exceptions for people that may abuse @-ing Ennesults (comma separated).</Form.Description>
+    <Form.Description>Exceptions for people that may abuse @-ing Ennesults (comma separated usernames).</Form.Description>
     <Form.FieldErrors />
   </Form.Field>
   <Form.Field {form} name="percentChanceOfComeback">
@@ -207,5 +207,7 @@
     <Form.FieldErrors />
   </Form.Field>
 
-  <Form.Button>Save</Form.Button>
+  <div class="flex justify-center">
+    <Form.Button class="w-1/3">Save</Form.Button>
+  </div>
 </form>

@@ -1,15 +1,13 @@
 <script lang="ts">
   import type { Comeback } from "$lib/types";
-  import { readable } from "svelte/store";
+  import { readable, type Writable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import { createTable, Render, Subscribe, createRender } from "svelte-headless-table";
   import DataTableActions from "./data-table-actions.svelte";
 
+  export let comebacks: Writable<Comeback[]>;
 
-
-  export let comebacks: Comeback[];
-
-  const table = createTable(readable(comebacks));
+  const table = createTable(comebacks);
 
   const columns = table.createColumns([
     table.column({
@@ -27,14 +25,12 @@
         return createRender(DataTableActions, { id: value });
       },
     }),
-
   ]);
 
-  const { headerRows, pageRows, tableAttrs, tableBodyAttrs } =
-    table.createViewModel(columns);
+  const { headerRows, pageRows, tableAttrs, tableBodyAttrs } = table.createViewModel(columns);
 </script>
 
-<div class="rounded-md border">
+<div class="rounded-md">
   <Table.Root {...$tableAttrs}>
     <Table.Header>
       {#each $headerRows as headerRow}

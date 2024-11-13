@@ -1,33 +1,60 @@
 <script lang="ts">
-  import Button from "$lib/components/ui/button/button.svelte";
-  import type { Comeback } from "$lib/types";
+  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
+  import { writable, get } from "svelte/store";
+  import Button from "$lib/components/ui/button/button.svelte";
+  import Input from "$lib/components/ui/input/input.svelte";
+  import type { Comeback } from "$lib/types";
   import DataTable from "./data-table.svelte";
-  
-  let comebacks: Comeback[];
+  import { customAlphabet } from "nanoid";
+  const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 8)
+
+  let comebacks$ = writable<Comeback[]>([]);
+
+  let input: string;
+
+  let unlisten: UnlistenFn;
 
   onMount(async () => {
-    comebacks = await invoke("get_comebacks");
+    let comebacks = await invoke<Comeback[]>("get_comebacks");
+    comebacks$.set(comebacks);
+
+    unlisten = await listen<Comeback[]>("comebacks_update", event => {
+      comebacks$.set(event.payload);
+    })
+  })
+
+  onDestroy(() => {
+    unlisten?.();
   })
 
   async function saveComeback() {
-    console.log("saveComeback")
-    await invoke("save_comebacks", { comebacks: [
-        {
-          id: 0,
-          value: "Here is a comeback"
-        }
-      ] 
-    })
+    if(input.trim() === "") {
+      return
+    }
+
+    let currentComebacks = get(comebacks$);
+    let newComeback: Comeback = {
+      id: nanoid(),
+      value: input.trim()
+    }
+
+    await invoke("save_comebacks", { comebacks: [newComeback, ...currentComebacks] })
+
+    input = "";
   }
 </script>
 
-<h1>Comebacks</h1>
-
-<input type="text">
-<Button on:click={() => saveComeback()}>SAVE</Button>
-
-{#if comebacks}
-<DataTable comebacks={comebacks} />
-{/if}
+<div class="flex flex-col gap-4">
+  <h1>Comebacks</h1>
+  
+  <form on:submit={() => saveComeback()} class="flex gap-2">
+    <Input type="text" bind:value={input} />
+    <Button type="submit">Add</Button>
+  </form>
+  
+  {#if comebacks$}
+  <DataTable comebacks={comebacks$} />
+  {/if}
+</div>
