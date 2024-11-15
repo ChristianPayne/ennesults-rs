@@ -35,12 +35,6 @@ pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) ->
 
     // Get random percent chance.
     if !contains_exception && rand::thread_rng().gen_ratio(percent_chance_of_correction, 100) {
-        // Corrected message.
-
-        // for word in msg.message_text.split(' ') {
-        //     word.replace("en", "ENNE")
-        // }
-
         let corrected_message = msg.message_text.to_lowercase().replace("en", "ENNE");
 
         say(state, corrected_message.as_str()).await;

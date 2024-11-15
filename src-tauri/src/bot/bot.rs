@@ -1,9 +1,12 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
 use tauri::{self, Emitter, Manager};
 use ts_rs::TS;
 
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
+
+use crate::bot::insult_thread_loop;
 
 use super::api::get_bot_info;
 use super::{handle_incoming_chat, BotInfo, Client};
@@ -54,7 +57,7 @@ impl Bot {
     pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
         let client = self.client.lock().unwrap();
         let channel_name = self.get_channel_name().await;
-        match &client.0 {
+        match &client.twitch_client {
             None => None,
             Some(client) => Some(client.get_channel_status(channel_name).await),
         }
@@ -72,16 +75,16 @@ impl Bot {
                 .lock()
                 .expect("Failed to get lock on bot client");
 
-            if existing_client.0.is_some() {
+            if existing_client.twitch_client.is_some() {
                 println!("Dropped client that was already there.");
                 existing_client
-                    .0
+                    .twitch_client
                     .take()
                     .expect("Failed to take existing client")
                     .part(bot_info.channel_name.clone());
 
                 let existing_handle = existing_client
-                    .1
+                    .twitch_client_join_handle
                     .take()
                     .expect("Failed to take existing client handle.");
 
@@ -105,7 +108,21 @@ impl Bot {
         // otherwise they will back up.
         let join_handle = tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
 
-        *self.client.lock().unwrap() = Client::new(client, join_handle);
+        let (insult_thread_handle, insult_thread_sender) = if bot_info.enable_insults {
+            let (tx, rx) = mpsc::channel();
+            let app_handle = app_handle.clone();
+            let insult_thread = tokio::spawn(insult_thread_loop(app_handle, rx));
+
+            (Some(insult_thread), Some(tx))
+        } else {
+            (None, None)
+        };
+        *self.client.lock().unwrap() = Client::new(
+            client,
+            join_handle,
+            insult_thread_handle,
+            insult_thread_sender,
+        );
 
         Ok(())
     }

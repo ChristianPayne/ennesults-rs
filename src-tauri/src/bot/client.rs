@@ -14,20 +14,31 @@ use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for
 
 // CLIENT
 #[derive(Debug, Default)]
-pub struct Client(
-    pub Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>,
-    pub Option<JoinHandle<()>>,
-);
+pub struct Client {
+    pub twitch_client: Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>,
+    pub twitch_client_join_handle: Option<JoinHandle<()>>,
+    pub insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
+    pub insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
+}
+
+// Left off here trying to get a certain return type for a Future on the join handle.
 
 impl Client {
     pub fn new(
         client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
         join_handle: JoinHandle<()>,
+        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
+        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
     ) -> Self {
-        Client(Some(client), Some(join_handle))
+        Client {
+            twitch_client: Some(client),
+            twitch_client_join_handle: Some(join_handle),
+            insult_thread_handle,
+            insult_thread_sender,
+        }
     }
     pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
-        self.0.clone()
+        self.twitch_client.clone()
     }
 }
 
@@ -218,7 +229,7 @@ pub mod api {
             .channel_name
             .clone();
         let client = state.client.lock().unwrap();
-        match &client.0 {
+        match &client.twitch_client {
             Some(client) => {
                 client.part(channel_name.clone());
                 let _ = app_handle.emit("channel_part", channel_name.clone());

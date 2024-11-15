@@ -1,5 +1,7 @@
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
+
+use crate::bot::Bot;
 
 use super::{Command, UserLevel};
 
@@ -16,9 +18,18 @@ impl Command for TestCommand {
         msg: &PrivmsgMessage,
         app_handle: AppHandle,
     ) -> Option<String> {
-        Some(
-            "Hey! Thanks for testing out the new bot! ⚠️ Ennesults is still under construction! ⚠️"
-                .into(),
-        )
+        let bot = app_handle.state::<Bot>();
+
+        let client = bot.client.lock().expect("Failed to get lock for client");
+
+        match &client.insult_thread_sender {
+            None => (),
+            Some(tx) => {
+                let _ = tx.send(());
+                ()
+            }
+        }
+
+        Some("Shutting down insult thread! ⚠️".into())
     }
 }

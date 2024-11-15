@@ -5,13 +5,15 @@ extern crate dotenv_codegen;
 
 //Tauri
 use tauri::Manager;
+
+use std::{sync::mpsc, thread};
 // Ennesults
 mod bot;
 mod commands;
 mod date;
 mod file;
 
-use bot::{Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{insult_thread_loop, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
