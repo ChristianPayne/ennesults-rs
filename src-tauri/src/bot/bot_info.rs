@@ -13,6 +13,7 @@ pub struct BotInfo {
     pub users_allowed_to_whisper: Vec<String>,
 
     pub enable_insults: bool,
+    pub time_between_insults: u32,
     pub minimum_users_in_chat_to_insult: u32,
 
     pub enable_comebacks: bool,
@@ -34,6 +35,7 @@ impl Default for BotInfo {
             enable_whispers: false,
             users_allowed_to_whisper: vec![],
             enable_insults: false,
+            time_between_insults: 300,
             minimum_users_in_chat_to_insult: 1,
             enable_comebacks: false,
             percent_chance_of_comeback: 20,

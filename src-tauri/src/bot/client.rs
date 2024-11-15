@@ -1,3 +1,4 @@
+use api::get_channel_status;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
@@ -65,6 +66,12 @@ pub async fn say(state: tauri::State<'_, Bot>, message: &str) -> Result<(), Stri
     }) else {
         return Err("Could not get client.".into());
     };
+
+    let (_, channel_joined) = client.get_channel_status(channel_name.clone()).await;
+
+    if (!channel_joined) {
+        return Err("No channel joined".to_string());
+    }
 
     if let Err(e) = client.say(channel_name, message.to_string()).await {
         return Err(e.to_string());
@@ -190,7 +197,6 @@ pub mod api {
         }
     }
 
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     #[tauri::command]
     pub async fn get_channel_status(state: tauri::State<'_, Bot>) -> Result<(bool, bool), String> {
         let channel_name = state

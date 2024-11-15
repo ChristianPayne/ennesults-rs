@@ -140,6 +140,14 @@
     <Form.Description>Enables insults to be said in chat by the bot.</Form.Description>
     <Form.FieldErrors />
   </Form.Field>
+  <Form.Field {form} name="timeBetweenInsults">
+    <Form.Control let:attrs>
+      <Form.Label>Time Between Insults</Form.Label>
+      <Input {...attrs} type="number" bind:value={$formData.timeBetweenInsults} />
+    </Form.Control>
+    <Form.Description>How much time (s) do you want to pass before saying another random insult?</Form.Description>
+    <Form.FieldErrors />
+  </Form.Field>
   <Form.Field {form} name="minimumUsersInChatToInsult">
     <Form.Control let:attrs>
       <Form.Label>Minimum Users In Chat To Insult</Form.Label>

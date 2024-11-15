@@ -18,33 +18,31 @@ pub struct Insult {
 }
 
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
-    println!("Started Loop!");
+    println!("Starting new insult thread!");
     loop {
-        println!("Running loop!");
-        match rx.try_recv() {
-            Ok(_) | Err(TryRecvError::Disconnected) => {
-                println!("Terminating.");
-                break;
-            }
-            Err(TryRecvError::Empty) => {}
-        }
-
         let state = app_handle.state::<Bot>();
-
-        let enable_insults = {
+        let (enable_insults, time_between_insults) = {
             let bot_info = state
                 .bot_info
                 .lock()
                 .expect("Failed to get lock for bot_info");
 
-            bot_info.enable_insults
+            (bot_info.enable_insults, bot_info.time_between_insults)
         };
+
+        let sleep_time = Duration::from_secs(time_between_insults as u64);
+        thread::sleep(sleep_time);
+
+        match rx.try_recv() {
+            Ok(_) | Err(TryRecvError::Disconnected) => {
+                println!("Shutting down insult thread.");
+                break;
+            }
+            Err(TryRecvError::Empty) => {}
+        }
 
         if enable_insults {
             say(state, "Sending an insult.").await;
         }
-
-        let sleep_time = Duration::from_secs(5);
-        thread::sleep(sleep_time);
     }
 }
