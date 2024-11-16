@@ -4,7 +4,7 @@ use std::{thread, time::Duration};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
-use rand::seq::SliceRandom;
+use rand::seq::{IteratorRandom, SliceRandom};
 use rand::Rng;
 
 use crate::bot::BotData;
@@ -62,10 +62,40 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
             let mut random_insult = insults.choose(&mut rand::thread_rng());
 
             if let Some(insult) = random_insult.take() {
-                // Eventually do formatting.
+                let mut formatted_message = insult.value.clone();
+
+                if formatted_message.contains("{{streamer}}") {
+                    let channel_name = {
+                        let state = app_handle.state::<Bot>();
+                        let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
+                        bot_info.channel_name.clone()
+                    };
+
+                    formatted_message =
+                        formatted_message.replace("{{streamer}}", channel_name.as_str())
+                }
+
+                if formatted_message.contains("{{user}}") {
+                    let mut random_user = {
+                        let state = app_handle.state::<BotData>();
+                        let users = state.users.lock().expect("Failed to get lock for users.");
+
+                        users
+                            .0
+                            .clone()
+                            .into_values()
+                            .filter(|user| user.consented)
+                            .choose(&mut rand::thread_rng())
+                    };
+
+                    if let Some(user) = random_user.take() {
+                        formatted_message =
+                            formatted_message.replace("{{user}}", user.username.as_str())
+                    }
+                }
 
                 // Say it in chat.
-                let _ = say(bot_state.clone(), insult.value.as_str()).await;
+                let _ = say(bot_state.clone(), formatted_message.as_str()).await;
             }
         }
     }
