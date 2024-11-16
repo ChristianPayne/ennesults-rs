@@ -70,8 +70,6 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
 }
 
 pub mod api {
-    use std::ops::Not;
-
     use tauri::{Emitter, Manager};
 
     use crate::bot::{BotData, Comebacks};

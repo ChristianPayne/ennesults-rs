@@ -4,6 +4,11 @@ use std::{thread, time::Duration};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
+use rand::seq::SliceRandom;
+use rand::Rng;
+
+use crate::bot::BotData;
+
 use super::{say, Bot};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
@@ -13,16 +18,16 @@ pub struct Insults(Vec<Insult>);
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct Insult {
-    id: u16,
+    id: String,
     value: String,
 }
 
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
     loop {
-        let state = app_handle.state::<Bot>();
+        let bot_state = app_handle.state::<Bot>();
         let (enable_insults, time_between_insults) = {
-            let bot_info = state
+            let bot_info = bot_state
                 .bot_info
                 .lock()
                 .expect("Failed to get lock for bot_info");
@@ -42,7 +47,101 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
         }
 
         if enable_insults {
-            say(state, "Sending an insult.").await;
+            let bot_data_state = app_handle.state::<BotData>();
+
+            let insults = {
+                let insults = bot_data_state
+                    .insults
+                    .lock()
+                    .expect("Failed to get lock for insults.");
+
+                insults.0.clone()
+            };
+
+            // Pick a random insult.
+            let mut random_insult = insults.choose(&mut rand::thread_rng());
+
+            if let Some(insult) = random_insult.take() {
+                // Eventually do formatting.
+
+                // Say it in chat.
+                let _ = say(bot_state.clone(), insult.value.as_str()).await;
+            }
         }
+    }
+}
+
+pub mod api {
+    use tauri::{Emitter, Manager};
+
+    use crate::bot::{BotData, Insults};
+    use crate::file::{write_file, WriteFileError};
+
+    use super::Insult;
+
+    #[tauri::command]
+    pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {
+        let bot_data_state = app_handle.state::<BotData>();
+        let insults = {
+            bot_data_state
+                .insults
+                .lock()
+                .expect("Failed to get lock for insults.")
+                .0
+                .clone()
+        };
+
+        insults
+    }
+
+    #[tauri::command]
+    pub fn save_insults(app_handle: tauri::AppHandle, insults: Insults) -> Result<(), String> {
+        let state = app_handle.state::<BotData>();
+        *state
+            .insults
+            .lock()
+            .expect("Failed to get lock for bot info") = insults.clone();
+
+        let write_result = write_file::<Insults>(&app_handle, "insults.json", insults.clone());
+
+        if let Some(err) = write_result.err() {
+            match err {
+                WriteFileError::FailedConvertJSON => {
+                    return Err("Failed to convert to json.".to_string())
+                }
+                WriteFileError::FailedCreateFile => {
+                    return Err("Failed to create file.".to_string())
+                }
+                WriteFileError::FailedWriteFile => {
+                    return Err("Failed to write contents in file.".to_string())
+                }
+            }
+        } else {
+            let _ = app_handle.emit("insults_update", insults);
+        }
+
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub fn delete_insult(app_handle: tauri::AppHandle, insult_id: String) -> Result<(), String> {
+        let state = app_handle.state::<BotData>();
+        let insults = {
+            let mut insults = state
+                .insults
+                .lock()
+                .expect("Failed to get lock for insults");
+
+            match insults.0.iter().position(|insult| insult.id == insult_id) {
+                None => return Err("Could not find index of insult.".to_string()),
+                Some(index) => insults.0.remove(index),
+            };
+
+            insults.clone()
+        };
+
+        save_insults(app_handle.clone(), insults);
+
+        Ok(())
     }
 }

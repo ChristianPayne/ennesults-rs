@@ -129,9 +129,6 @@
       {botName || "Ennesults"}
     </Button>
     <div class="flex space-x-2 items-center">
-      <Button variant="ghost" href="/commands">
-        Commands
-      </Button>
       <Button variant="ghost" href="/insults">
         Insults
       </Button>

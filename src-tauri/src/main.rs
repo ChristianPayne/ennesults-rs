@@ -40,6 +40,9 @@ async fn main() {
             crate::bot::api::get_comebacks,
             crate::bot::api::save_comebacks,
             crate::bot::api::delete_comeback,
+            crate::bot::api::get_insults,
+            crate::bot::api::save_insults,
+            crate::bot::api::delete_insult,
         ])
         .setup(|app| {
             println!("Setting up bot!");
