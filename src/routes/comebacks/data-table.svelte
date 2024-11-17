@@ -10,10 +10,10 @@
   const table = createTable(comebacks);
 
   const columns = table.createColumns([
-    table.column({
-      accessor: "id",
-      header: "ID",
-    }),
+    // table.column({
+    //   accessor: "id",
+    //   header: "ID",
+    // }),
     table.column({
       accessor: "value",
       header: "Comeback",

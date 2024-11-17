@@ -28,17 +28,17 @@
   </DropdownMenu.Trigger>
   <DropdownMenu.Content>
    <DropdownMenu.Group>
-    <DropdownMenu.Label>Actions</DropdownMenu.Label>
-    <DropdownMenu.Item on:click={() => navigator.clipboard.writeText(id.toString())}>
+     <DropdownMenu.Label>Actions</DropdownMenu.Label>
+     <DropdownMenu.Item 
+       class="text-destructive"
+       on:click={() => deleteUser(username)}>
+       Delete user
+     </DropdownMenu.Item>
+    <!-- <DropdownMenu.Item on:click={() => navigator.clipboard.writeText(id.toString())}>
      Copy ID
-    </DropdownMenu.Item>
+    </DropdownMenu.Item> -->
     </DropdownMenu.Group>
-    <DropdownMenu.Separator />
-    <DropdownMenu.Item>Allow whispers</DropdownMenu.Item>
-    <DropdownMenu.Item 
-      class="text-destructive"
-      on:click={() => deleteUser(username)}>
-      Delete user
-    </DropdownMenu.Item>
+    <!-- <DropdownMenu.Separator /> -->
+    <!-- <DropdownMenu.Item>Allow whispers</DropdownMenu.Item> -->
   </DropdownMenu.Content>
  </DropdownMenu.Root>
