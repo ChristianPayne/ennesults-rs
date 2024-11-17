@@ -26,7 +26,6 @@
   onMount(async () => {
     tauriVersion = await getVersion();
     await getBotInfo();
-    await connectToChannel();
 
     listen('bot_info_save', async event => {
       let botInfo = event.payload as BotInfo;
@@ -79,9 +78,9 @@
       if(currentInfo.auto_connect_on_startup) {
         let [ wanted, joined ] = await invoke<[boolean, boolean]>('get_channel_status');
         
-        // if(wanted == false && joined == false) {
-        //   await connectToChannel()
-        // }
+        if(wanted == false && joined == false) {
+          await connectToChannel()
+        }
 
         if(wanted == true && joined == true) {
           connectionStatus = true;
