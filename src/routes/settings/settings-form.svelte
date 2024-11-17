@@ -18,6 +18,7 @@
   
   let form: SuperForm<Infer<FormSchema>> = superForm(validatedForm, {
     clearOnSubmit: "none",
+    SPA: true,
     validators: zodClient(formSchema),
     resetForm: false,
     onUpdated,
