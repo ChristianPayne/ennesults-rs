@@ -31,7 +31,7 @@ pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) ->
 
     let contains_exception = correction_exceptions
         .iter()
-        .any(|exception| msg.message_text.contains(exception));
+        .any(|exception| msg.message_text.to_lowercase().contains(exception));
 
     // Get random percent chance.
     if !contains_exception && rand::thread_rng().gen_ratio(percent_chance_of_correction, 100) {
