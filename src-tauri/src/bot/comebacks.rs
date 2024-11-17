@@ -23,7 +23,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
     let bot_state = app_handle.state::<Bot>();
     let bot_data_state = app_handle.state::<BotData>();
 
-    let (bot_name, percent_chance_of_comeback, comeback_options) = {
+    let (bot_name, percent_chance_of_comeback, comeback_options, channel_name) = {
         let bot_info = bot_state
             .bot_info
             .lock()
@@ -48,6 +48,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
             bot_info.bot_name.clone(),
             bot_info.percent_chance_of_comeback,
             comeback_options.0.clone(),
+            bot_info.channel_name.clone(),
         )
     };
 
@@ -60,8 +61,13 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
     {
         let mut random_comeback = comeback_options.choose(&mut rand::thread_rng());
 
-        if let Some(comeback) = random_comeback.take() {
-            let _ = say(bot_state.clone(), comeback.value.as_str()).await;
+        if let Some(comeback) = random_comeback {
+            let mut formatted_comeback = comeback.value.clone();
+
+            formatted_comeback = formatted_comeback.replace("{{user}}", msg.sender.name.as_str());
+            formatted_comeback = formatted_comeback.replace("{{streamer}}", channel_name.as_str());
+
+            let _ = say(bot_state.clone(), formatted_comeback.as_str()).await;
             return true;
         }
     }

@@ -4,7 +4,14 @@ use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 use twitch_irc::message::TwitchUserBasics;
 
-use super::BotData;
+use rand::seq::{IteratorRandom, SliceRandom};
+use rand::Rng;
+
+use crate::date::{
+    date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now, parse_date_time,
+};
+
+use super::{Bot, BotData};
 use crate::{date::get_local_now_formatted, file::write_file};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
@@ -61,6 +68,44 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
             users.0.clone().into_values().collect::<Vec<User>>(),
         );
     }
+}
+
+pub fn get_random_user(app_handle: AppHandle, streamer_inclusive: bool) -> Option<User> {
+    let bot_data_state = app_handle.state::<BotData>();
+    let users = bot_data_state
+        .users
+        .lock()
+        .expect("Failed to get lock for users.");
+
+    let bot_state = app_handle.state::<Bot>();
+    let bot_info = bot_state
+        .bot_info
+        .lock()
+        .expect("Failed to get lock for bot info");
+
+    users
+        .0
+        .clone()
+        .into_values()
+        .filter(|user| {
+            // If it is the streamer, check if we want to include them.
+            if user.username == bot_info.channel_name {
+                return streamer_inclusive;
+            }
+            // Check lurk status of all users.
+            let user_is_not_lurking = match parse_date_time(user.last_seen.as_str()) {
+                // If we error on parsing the last seen, let's not include the user as an option.
+                Err(_) => false,
+                // Calculate if the user's last seen date is within the lurk timer.
+                Ok(user_last_seen) => {
+                    let time_min_ago = get_date_time_minutes_ago(bot_info.lurk_time);
+                    date_time_is_greater_than_reference(time_min_ago, user_last_seen.into())
+                }
+            };
+
+            user_is_not_lurking && user.consented
+        })
+        .choose(&mut rand::thread_rng())
 }
 
 pub mod api {
