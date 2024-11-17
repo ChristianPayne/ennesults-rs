@@ -10,6 +10,7 @@ export const formSchema = z.object({
   enableInsults: z.boolean(),
   timeBetweenInsults: z.coerce.number().min(0),
   minimumUsersInChatToInsult: z.coerce.number().positive(),
+  lurkTime: z.coerce.number().positive(),
   enableComebacks: z.boolean(),
   percentChanceOfComeback: z.coerce.number().min(0).max(100),
   comebackExceptions: z.string(),

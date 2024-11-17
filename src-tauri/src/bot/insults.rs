@@ -8,8 +8,11 @@ use rand::seq::{IteratorRandom, SliceRandom};
 use rand::Rng;
 
 use crate::bot::BotData;
+use crate::date::{
+    date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now, parse_date_time,
+};
 
-use super::{say, Bot};
+use super::{say, Bot, User};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -25,6 +28,7 @@ pub struct Insult {
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
     loop {
+        println!("Looping insult thread.");
         let bot_state = app_handle.state::<Bot>();
         let (enable_insults, time_between_insults) = {
             let bot_info = bot_state
@@ -59,46 +63,89 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
             };
 
             // Pick a random insult.
-            let mut random_insult = insults.choose(&mut rand::thread_rng());
+            let random_insult = insults.choose(&mut rand::thread_rng());
 
-            if let Some(insult) = random_insult.take() {
-                let mut formatted_message = insult.value.clone();
+            match random_insult {
+                Some(insult) => {
+                    let mut formatted_message = insult.value.clone();
 
-                if formatted_message.contains("{{streamer}}") {
-                    let channel_name = {
-                        let state = app_handle.state::<Bot>();
-                        let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
-                        bot_info.channel_name.clone()
-                    };
+                    if formatted_message.contains("{{streamer}}") {
+                        let channel_name = {
+                            let state = app_handle.state::<Bot>();
+                            let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
+                            bot_info.channel_name.clone()
+                        };
 
-                    formatted_message =
-                        formatted_message.replace("{{streamer}}", channel_name.as_str())
-                }
-
-                if formatted_message.contains("{{user}}") {
-                    let mut random_user = {
-                        let state = app_handle.state::<BotData>();
-                        let users = state.users.lock().expect("Failed to get lock for users.");
-
-                        users
-                            .0
-                            .clone()
-                            .into_values()
-                            .filter(|user| user.consented)
-                            .choose(&mut rand::thread_rng())
-                    };
-
-                    if let Some(user) = random_user.take() {
                         formatted_message =
-                            formatted_message.replace("{{user}}", user.username.as_str())
+                            formatted_message.replace("{{streamer}}", channel_name.as_str())
                     }
-                }
 
-                // Say it in chat.
-                let _ = say(bot_state.clone(), formatted_message.as_str()).await;
+                    if formatted_message.contains("{{user}}") {
+                        let random_user = get_random_user(
+                            app_handle.clone(),
+                            !insult.value.contains("{{streamer}}"),
+                        );
+
+                        match random_user {
+                            Some(user) => {
+                                formatted_message =
+                                    formatted_message.replace("{{user}}", user.username.as_str());
+                            }
+                            None => {
+                                // Could not successfully get a random user to insult.
+                                println!("Could not find a random user to insult.");
+                                continue;
+                            }
+                        }
+                    }
+
+                    // Say it in chat.
+                    let _ = say(bot_state.clone(), formatted_message.as_str()).await;
+                }
+                None => {
+                    println!("Could not get a random insult.")
+                }
             }
         }
     }
+}
+
+fn get_random_user(app_handle: AppHandle, streamer_inclusive: bool) -> Option<User> {
+    let bot_data_state = app_handle.state::<BotData>();
+    let users = bot_data_state
+        .users
+        .lock()
+        .expect("Failed to get lock for users.");
+
+    let bot_state = app_handle.state::<Bot>();
+    let bot_info = bot_state
+        .bot_info
+        .lock()
+        .expect("Failed to get lock for bot info");
+
+    users
+        .0
+        .clone()
+        .into_values()
+        .filter(|user| {
+            // If it is the streamer, check if we want to include them.
+            if user.username == bot_info.channel_name {
+                return streamer_inclusive;
+            }
+            // Check lurk status of all users.
+            let user_is_not_lurking = match parse_date_time(user.last_seen.as_str()) {
+                // If we error on parsing the last seen, let's not include the user as an option.
+                Err(_) => false,
+                // Calculate if the user's last seen date is within the lurk timer.
+                Ok(user_last_seen) => {
+                    let time_min_ago = get_date_time_minutes_ago(bot_info.lurk_time);
+                    date_time_is_greater_than_reference(time_min_ago, user_last_seen.into())
+                }
+            };
+
+            user_is_not_lurking && user.consented
+        })
+        .choose(&mut rand::thread_rng())
 }
 
 pub mod api {

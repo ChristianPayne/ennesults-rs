@@ -145,7 +145,7 @@
       <Form.Label>Time Between Insults</Form.Label>
       <Input {...attrs} type="number" bind:value={$formData.timeBetweenInsults} />
     </Form.Control>
-    <Form.Description>How much time (s) do you want to pass before saying another random insult?</Form.Description>
+    <Form.Description>How much time (seconds) do you want to pass before saying another random insult?</Form.Description>
     <Form.FieldErrors />
   </Form.Field>
   <Form.Field {form} name="minimumUsersInChatToInsult">
@@ -154,6 +154,14 @@
       <Input {...attrs} type="number" bind:value={$formData.minimumUsersInChatToInsult} />
     </Form.Control>
     <Form.Description>What is the lowest amount of users in chat needed to say an insult. Helps with not insulting the same people repeatedly.</Form.Description>
+    <Form.FieldErrors />
+  </Form.Field>
+  <Form.Field {form} name="lurkTime">
+    <Form.Control let:attrs>
+      <Form.Label>Lurk Time</Form.Label>
+      <Input {...attrs} type="number" bind:value={$formData.lurkTime} />
+    </Form.Control>
+    <Form.Description>How long (minutes) since someone chatted until we flag them as lurking.</Form.Description>
     <Form.FieldErrors />
   </Form.Field>
 

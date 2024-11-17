@@ -15,6 +15,7 @@ pub struct BotInfo {
     pub enable_insults: bool,
     pub time_between_insults: u32,
     pub minimum_users_in_chat_to_insult: u32,
+    pub lurk_time: u32,
 
     pub enable_comebacks: bool,
     pub percent_chance_of_comeback: u32,
@@ -37,6 +38,7 @@ impl Default for BotInfo {
             enable_insults: false,
             time_between_insults: 300,
             minimum_users_in_chat_to_insult: 1,
+            lurk_time: 5,
             enable_comebacks: false,
             percent_chance_of_comeback: 20,
             comeback_exceptions: vec![],
