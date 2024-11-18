@@ -99,6 +99,17 @@ pub mod api {
     }
 
     #[tauri::command]
+    pub fn get_comebacks_count(app_handle: tauri::AppHandle) -> u32 {
+        let bot_data_state = app_handle.state::<BotData>();
+        let comebacks = bot_data_state
+            .comebacks
+            .lock()
+            .expect("Failed to get lock for insults.");
+
+        comebacks.0.len() as u32
+    }
+
+    #[tauri::command]
     pub fn save_comebacks(
         app_handle: tauri::AppHandle,
         comebacks: Comebacks,

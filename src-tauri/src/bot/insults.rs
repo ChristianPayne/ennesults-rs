@@ -133,6 +133,17 @@ pub mod api {
     }
 
     #[tauri::command]
+    pub fn get_insults_count(app_handle: tauri::AppHandle) -> u32 {
+        let bot_data_state = app_handle.state::<BotData>();
+        let insults = bot_data_state
+            .insults
+            .lock()
+            .expect("Failed to get lock for insults.");
+
+        insults.0.len() as u32
+    }
+
+    #[tauri::command]
     pub fn save_insults(app_handle: tauri::AppHandle, insults: Insults) -> Result<(), String> {
         let state = app_handle.state::<BotData>();
         *state
