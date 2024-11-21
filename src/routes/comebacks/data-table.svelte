@@ -2,7 +2,12 @@
   import type { Comeback } from "$lib/types";
   import { readable, type Writable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
-  import { createTable, Render, Subscribe, createRender } from "svelte-headless-table";
+  import {
+    createTable,
+    Render,
+    Subscribe,
+    createRender,
+  } from "svelte-headless-table";
   import DataTableActions from "./data-table-actions.svelte";
 
   export let comebacks: Writable<Comeback[]>;
@@ -27,7 +32,8 @@
     }),
   ]);
 
-  const { headerRows, pageRows, tableAttrs, tableBodyAttrs } = table.createViewModel(columns);
+  const { headerRows, pageRows, tableAttrs, tableBodyAttrs } =
+    table.createViewModel(columns);
 </script>
 
 <div class="rounded-md">
@@ -47,7 +53,7 @@
         </Subscribe>
       {/each}
     </Table.Header>
-    <Table.Body {...$tableBodyAttrs}>
+    <Table.Body {...$tableBodyAttrs} class="select-auto">
       {#each $pageRows as row (row.id)}
         <Subscribe rowAttrs={row.attrs()} let:rowAttrs>
           <Table.Row {...rowAttrs}>
@@ -64,4 +70,3 @@
     </Table.Body>
   </Table.Root>
 </div>
-

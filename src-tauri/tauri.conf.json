@@ -39,7 +39,7 @@
     "security": {
       "csp": null,
       "capabilities": [
-        "desktop", "migrated"
+        "default"
       ]
     }
   }

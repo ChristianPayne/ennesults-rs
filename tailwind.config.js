@@ -5,6 +5,11 @@ const config = {
 	darkMode: ["class"],
 	content: ["./src/**/*.{html,js,svelte,ts}"],
 	safelist: ["dark"],
+	plugins: [
+		function ({ addVariant }) {
+			addVariant('children', '& > *');
+		}
+	],
 	theme: {
 		container: {
 			center: true,
