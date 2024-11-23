@@ -4,9 +4,9 @@
   import Label from "$lib/components/ui/label/label.svelte";
   import * as Select from "$lib/components/ui/select";
   import { onMount } from "svelte";
-  import { invoke } from "@tauri-apps/api/core";
+  import { invoke, Channel } from "@tauri-apps/api/core";
   import { Checkbox } from "$lib/components/ui/checkbox";
-  import type { BotInfo } from "$lib/types";
+  import type { BotInfo, DownloadEvent } from "$lib/types";
   import { toast } from "svelte-sonner";
   import { colorPalettes } from "$lib/colorPalettes";
   import { theme, setTheme, toggleMode } from "mode-watcher";
@@ -20,6 +20,10 @@
   import { zod } from "sveltekit-superforms/adapters";
 
   let validatedForm: SuperValidated<any, any, any>;
+
+  let updateAvailable = false;
+  let updateButtonDisabled = false;
+  let checkForUpdateButtonMessage = "Check for Update";
 
   onMount(async () => {
     const botInfo = await invoke<BotInfo>("get_bot_info");
@@ -117,6 +121,38 @@
       return colorPalettes["ennesults"];
     }
   }
+
+  async function checkForUpdate() {
+    updateButtonDisabled = true;
+    if (updateAvailable === false) {
+      checkForUpdateButtonMessage = "Checking!";
+      let result = await invoke<{
+        version: string;
+        currentVersion: string;
+      } | null>("fetch_update");
+      if (result === null) {
+        checkForUpdateButtonMessage = "Up to date!";
+        setTimeout(() => {
+          checkForUpdateButtonMessage = "Check for Update";
+          updateButtonDisabled = false;
+        }, 3000);
+      } else {
+        checkForUpdateButtonMessage = `Update to ${result.version}!`;
+        updateButtonDisabled = false;
+      }
+      console.log("🪵 ~ checkForUpdate ~ result:", result);
+    } else {
+      checkForUpdateButtonMessage = `Installing update...`;
+
+      const onEvent = new Channel<DownloadEvent>();
+      onEvent.onmessage = (message) => {
+        console.log(`got download event ${message.event}`);
+      };
+
+      let updater = await invoke("install_update", { onEvent });
+      console.log("🪵 ~ checkForUpdate ~ updater:", updater);
+    }
+  }
 </script>
 
 <h1 class="mb-4">Settings</h1>
@@ -156,6 +192,9 @@
         />
       </svg>
     </Button>
+    <Button on:click={checkForUpdate} disabled={updateButtonDisabled}
+      >{checkForUpdateButtonMessage}</Button
+    >
   </div>
 
   {#if validatedForm}

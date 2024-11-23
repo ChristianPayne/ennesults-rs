@@ -4,15 +4,19 @@
 extern crate dotenv_codegen;
 
 //Tauri
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_updater::UpdaterExt;
 
-use std::{sync::mpsc, thread};
+use std::{
+    sync::{mpsc, Mutex},
+    thread,
+};
 // Ennesults
 mod bot;
 mod commands;
 mod date;
 mod file;
+mod updater;
 
 use bot::{insult_thread_loop, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
@@ -47,19 +51,22 @@ async fn main() {
             crate::bot::api::get_insults_count,
             crate::bot::api::save_insults,
             crate::bot::api::delete_insult,
+            crate::updater::fetch_update,
+            crate::updater::install_update
         ])
         .setup(|app| {
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                match update(handle).await {
-                    Err(err) => {
-                        println!("Failed to update app! {}", err);
-                    }
-                    Ok(()) => {
-                        println!("App has been updated successfully!")
-                    }
-                }
-            });
+            // let handle = app.handle().clone();
+            // tauri::async_runtime::spawn(async move {
+            //     match update(handle.clone()).await {
+            //         Err(err) => {
+            //             println!("Failed to update app! {}", err);
+            //         }
+            //         Ok(()) => {
+            //             let _ = handle.emit("alert", "App has been updated successfully");
+            //         }
+            //     }
+            // });
+            app.manage(updater::PendingUpdate(Mutex::new(None)));
 
             println!("Setting up bot!");
             let bot_info =

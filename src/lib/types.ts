@@ -7,6 +7,8 @@ export type BotInfo = { channel_name: string, bot_name: string, oauth_token: str
 
 export type Comeback = { id: string, value: string, };
 
+export type DownloadEvent = { "event": "Started", "data": { contentLength: bigint | null, } } | { "event": "Progress", "data": { chunkLength: number, } } | { "event": "Finished" };
+
 export type Insult = { id: string, value: string, };
 
 export type TwitchMessage = { username: string, message: string, color: SerializeRBGColor | null, };

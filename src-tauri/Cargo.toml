@@ -4,7 +4,7 @@ version = "0.2.2"
 description = "A Twitch bot created for Ennegineer to kindly insult her chat."
 authors = ["Christian Payne"]
 license = ""
-repository = ""
+repository = "https://github.com/ChristianPayne/ennesults-rs"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -29,6 +29,7 @@ tauri-plugin-fs = "2.0.0-rc"
 tauri-plugin-shell = "2.0.0-rc"
 ts-rs = "10.0"
 rand = "0.8.5"
+thiserror = "2.0.3"
 
 
 [features]

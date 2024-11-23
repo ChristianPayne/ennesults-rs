@@ -23,7 +23,7 @@
   "identifier": "com.christianpayne.ennesults",
   "plugins": {
     "updater": {
-      "pubkey":"dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERFODE1N0EyMkQyOTJERjgKUldUNExTa3RvbGVCM2puRFBRaWtWRjBhM1h2b0tRUWJQZ0ZlNzFzblpCbmlDQWh6SnRQVHRHRmoK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERFODE1N0EyMkQyOTJERjgKUldUNExTa3RvbGVCM2puRFBRaWtWRjBhM1h2b0tRUWJQZ0ZlNzFzblpCbmlDQWh6SnRQVHRHRmoK",
       "endpoints": [
         "https://github.com/christianpayne/ennesults-rs/releases/latest/download/latest.json"
       ]

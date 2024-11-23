@@ -91,7 +91,7 @@
         >/ {activeUsers} Consented</span
       >
     </NumberTicker>
-    <p class="text-muted-foreground">Users waiting to be insulted</p>
+    <p class="text-muted-foreground">Users engaged with the bot</p>
   </button>
 </div>
 
