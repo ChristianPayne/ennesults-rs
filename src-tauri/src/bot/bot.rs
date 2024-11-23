@@ -55,8 +55,8 @@ impl Bot {
         self.bot_info.lock().unwrap().channel_name.clone()
     }
     pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
-        let client = self.client.lock().unwrap();
         let channel_name = self.get_channel_name().await;
+        let client = self.client.lock().unwrap();
         match &client.twitch_client {
             None => None,
             Some(client) => Some(client.get_channel_status(channel_name).await),

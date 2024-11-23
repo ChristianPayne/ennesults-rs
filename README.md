@@ -22,3 +22,6 @@ Files are being stored in Tauri's `app_data_dir` folder; different for each OS.
 
 ## Running the app
 From the root directory, use npm to start the front and backend code; `npm run tauri dev`
+
+## Compiling types for the frontend
+TS RS uses tests to build the types. Head into the `/src-tauri` backend folder and run `cargo test`.

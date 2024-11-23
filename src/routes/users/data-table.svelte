@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { createTable, Render, Subscribe, createRender } from "svelte-headless-table";
+  import {
+    createTable,
+    Render,
+    Subscribe,
+    createRender,
+  } from "svelte-headless-table";
   import { type Writable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import DataTableActions from "./data-table-actions.svelte";
@@ -27,24 +32,25 @@
     table.column({
       accessor: "consented",
       header: "Consented",
-      cell: ({value}) => {
-        return createRender(Checkbox, { checked: value, disabled: true })
-      }
+      cell: ({ value }) => {
+        return createRender(Checkbox, { checked: value, disabled: true });
+      },
     }),
     table.column({
       accessor: (row) => row,
       header: "Actions",
       cell: ({ value }) => {
-        return createRender(DataTableActions, { id: value.id, username: value.username });
+        return createRender(DataTableActions, {
+          id: value.id,
+          username: value.username,
+        });
       },
     }),
   ]);
 
-
-  const { headerRows, pageRows, tableAttrs, tableBodyAttrs } = table.createViewModel(columns);
-
+  const { headerRows, pageRows, tableAttrs, tableBodyAttrs } =
+    table.createViewModel(columns);
 </script>
-
 
 <div class="">
   <Table.Root {...$tableAttrs}>
@@ -63,14 +69,17 @@
         </Subscribe>
       {/each}
     </Table.Header>
-    <Table.Body {...$tableBodyAttrs} class="select-text selection:text-primary-foreground">
+    <Table.Body
+      {...$tableBodyAttrs}
+      class="select-text selection:text-primary-foreground"
+    >
       {#each $pageRows as row (row.id)}
         <Subscribe rowAttrs={row.attrs()} let:rowAttrs>
           <Table.Row {...rowAttrs}>
             {#each row.cells as cell (cell.id)}
               <Subscribe attrs={cell.attrs()} let:attrs>
                 <Table.Cell {...attrs}>
-                  {#if cell.id === 'type'}
+                  {#if cell.id === "type"}
                     <Badge>{cell.render()}</Badge>
                   {:else}
                     <Render of={cell.render()} />

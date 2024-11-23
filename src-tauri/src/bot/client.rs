@@ -139,7 +139,9 @@ pub async fn handle_incoming_chat(
             }
             ServerMessage::Part(_) => (),
             ServerMessage::Generic(_) => (),
-            ServerMessage::UserNotice(_) => (),
+            ServerMessage::UserNotice(user_notice_message) => {
+                dbg!(user_notice_message);
+            }
             ServerMessage::UserState(_) => (),
             ServerMessage::Notice(notice) => {
                 let _ = app_handle.emit("error", notice.message_text);

@@ -59,6 +59,8 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
         }
     }
 
+    tokio::spawn(emit_active_users(app_handle.clone()));
+
     if let Err(error) = write_file(&app_handle, "users.json", users.clone()) {
         println!("Failed to write users.json file to disk! {:?}", error);
         let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
@@ -67,6 +69,13 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
             "users_update",
             users.0.clone().into_values().collect::<Vec<User>>(),
         );
+    }
+}
+
+async fn emit_active_users(app_handle: AppHandle) {
+    let bot_data_state = app_handle.state::<BotData>();
+    if let Ok(active_users) = api::get_active_users(bot_data_state).await {
+        let _ = app_handle.emit("active_users", active_users);
     }
 }
 
