@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { exit, relaunch } from "@tauri-apps/plugin-process";
   import Button from "$lib/components/ui/button/button.svelte";
   import Input from "$lib/components/ui/input/input.svelte";
   import Label from "$lib/components/ui/label/label.svelte";
@@ -24,6 +25,7 @@
   let updateAvailable = false;
   let updateButtonDisabled = false;
   let checkForUpdateButtonMessage = "Check for Update";
+  let pendingRestart = false;
 
   onMount(async () => {
     const botInfo = await invoke<BotInfo>("get_bot_info");
@@ -137,21 +139,37 @@
           updateButtonDisabled = false;
         }, 3000);
       } else {
-        checkForUpdateButtonMessage = `Update to ${result.version}!`;
+        updateAvailable = true;
+        checkForUpdateButtonMessage = `Update to v.${result.version}!`;
         updateButtonDisabled = false;
       }
       console.log("🪵 ~ checkForUpdate ~ result:", result);
     } else {
-      checkForUpdateButtonMessage = `Installing update...`;
-
       const onEvent = new Channel<DownloadEvent>();
       onEvent.onmessage = (message) => {
-        console.log(`got download event ${message.event}`);
+        switch (message.event) {
+          case "Started": {
+            checkForUpdateButtonMessage = `Starting update...`;
+            break;
+          }
+          case "Progress": {
+            checkForUpdateButtonMessage = `Installing update...`;
+            break;
+          }
+          case "Finished": {
+            pendingRestart = true;
+            break;
+          }
+        }
       };
 
       let updater = await invoke("install_update", { onEvent });
       console.log("🪵 ~ checkForUpdate ~ updater:", updater);
     }
+  }
+
+  async function restart() {
+    await relaunch();
   }
 </script>
 
@@ -192,9 +210,13 @@
         />
       </svg>
     </Button>
-    <Button on:click={checkForUpdate} disabled={updateButtonDisabled}
-      >{checkForUpdateButtonMessage}</Button
-    >
+    {#if !pendingRestart}
+      <Button on:click={checkForUpdate} disabled={updateButtonDisabled}
+        >{checkForUpdateButtonMessage}</Button
+      >
+    {:else}
+      <Button on:click={restart}>Restart</Button>
+    {/if}
   </div>
 
   {#if validatedForm}

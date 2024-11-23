@@ -30,6 +30,7 @@ tauri-plugin-shell = "2.0.0-rc"
 ts-rs = "10.0"
 rand = "0.8.5"
 thiserror = "2.0.3"
+tauri-plugin-process = "2"
 
 
 [features]

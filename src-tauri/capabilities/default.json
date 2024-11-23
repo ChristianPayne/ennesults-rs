@@ -25,6 +25,7 @@
       "allow": [
         "$APP/*"
       ]
-    }
+    },
+    "process:default"
   ]
 }
