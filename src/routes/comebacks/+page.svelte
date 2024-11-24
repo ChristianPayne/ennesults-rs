@@ -90,7 +90,7 @@
           <AlertDialog.Description>
             <span class="font-semibold"
               >&lbrace;&lbrace;user&rbrace;&rbrace;</span
-            >: Replaced with a random user that is active and has consented.
+            >: Replaced with the user that @-ed the bot.
           </AlertDialog.Description>
         </AlertDialog.Header>
         <AlertDialog.Footer>
