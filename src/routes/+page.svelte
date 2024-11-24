@@ -95,10 +95,7 @@
   </button>
 </div>
 
-<!-- <div class="flex justify-around my-4 gap-2">
-</div> -->
-
-<div class="flex space-x-4">
+<div class="flex space-x-4 my-4">
   <h1>Chat</h1>
   <Button variant="ghost" on:click={() => (messages = [])}>Clear Chat</Button>
 </div>
