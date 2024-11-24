@@ -804,7 +804,7 @@ dependencies = [
 
 [[package]]
 name = "ennesults-rs"
-version = "0.2.3"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "dotenv_codegen",

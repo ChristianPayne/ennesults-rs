@@ -33,7 +33,11 @@
       accessor: "consented",
       header: "Consented",
       cell: ({ value }) => {
-        return createRender(Checkbox, { checked: value, disabled: true });
+        return createRender(Checkbox, {
+          checked: value,
+          disabled: true,
+          class: "!opacity-100",
+        });
       },
     }),
     table.column({

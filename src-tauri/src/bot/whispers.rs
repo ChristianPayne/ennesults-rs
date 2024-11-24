@@ -5,11 +5,10 @@ use crate::bot::{say, Bot, BotData, BotInfo};
 
 pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
     let bot = app_handle.state::<Bot>();
-    let bot_info = app_handle.state::<BotInfo>();
 
     println!("{} whispered {}", msg.sender.name, msg.message_text);
 
-    {
+    let users_allowed_to_whisper = {
         let bot_info = bot
             .bot_info
             .lock()
@@ -18,15 +17,14 @@ pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
         if !bot_info.enable_whispers {
             return;
         }
-    }
 
-    let user_allowed_to_whisper = {
-        let users = bot_info.users_allowed_to_whisper.clone();
-
-        users.contains(&msg.sender.name.to_lowercase())
+        bot_info.users_allowed_to_whisper.clone()
     };
 
-    if user_allowed_to_whisper {
+    let sender_allowed_to_whisper =
+        users_allowed_to_whisper.contains(&msg.sender.name.to_lowercase());
+
+    if sender_allowed_to_whisper {
         let _ = say(bot, msg.message_text.as_str()).await;
         app_handle
             .emit(
