@@ -18,6 +18,10 @@
   import NotificationsPanel from "$lib/components/notifications/notificationsPanel.svelte";
   import { alertNotification } from "$lib/components/notifications/notifications";
 
+  import { fade } from "svelte/transition";
+
+  export let data;
+
   let connectionStatus = false;
   let channelName = "";
   let botName = "";
@@ -141,7 +145,11 @@
   <Separator />
   <!-- Main Content -->
   <div class="grow px-4 xl:mx-auto xl:w-1/2 my-2 overflow-y-scroll">
-    <slot />
+    {#key data.pathname}
+      <div in:fade={{ duration: 150, delay: 200 }} out:fade={{ duration: 150 }}>
+        <slot />
+      </div>
+    {/key}
   </div>
   <Separator />
   <!-- Footer -->
