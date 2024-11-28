@@ -1,16 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![allow(dead_code, unused)]
+#![allow(unused)]
 extern crate dotenv_codegen;
+use std::sync::Mutex;
 
 //Tauri
 use tauri::{Emitter, Manager};
-use tauri_plugin_updater::UpdaterExt;
 
-use std::{
-    sync::{mpsc, Mutex},
-    thread,
-};
 // Ennesults
 mod bot;
 mod commands;
@@ -18,7 +14,7 @@ mod date;
 mod file;
 mod updater;
 
-use bot::{insult_thread_loop, Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
