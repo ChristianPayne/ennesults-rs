@@ -1,7 +1,9 @@
+use std::ops::{Deref, DerefMut};
+
 use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::Bot;
+use crate::bot::{Bot, Client, InsultThread};
 
 use super::{Command, UserLevel};
 
@@ -20,16 +22,22 @@ impl Command for TestCommand {
     ) -> Option<String> {
         let bot = app_handle.state::<Bot>();
 
-        let client = bot.client.lock().expect("Failed to get lock for client");
+        let mut client = bot.client.lock().expect("Failed to get lock for client");
 
-        match &client.insult_thread_sender {
-            None => (),
-            Some(tx) => {
-                let _ = tx.send(());
-                ()
-            }
+        match client.deref_mut() {
+            Client::Disconnected => None,
+            Client::Connected {
+                client,
+                client_join_handle,
+                insult_thread,
+            } => match insult_thread.shutdown() {
+                Ok(_) => Some("Insult thread shut down.".into()),
+                Err(err) => match err {
+                    crate::bot::InsultThreadShutdownError::ThreadNotRunning => {
+                        Some("Insult thread not running".into())
+                    }
+                },
+            },
         }
-
-        Some("Shutting down insult thread! ⚠️".into())
     }
 }

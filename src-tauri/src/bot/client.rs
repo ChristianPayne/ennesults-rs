@@ -15,11 +15,51 @@ use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for
 
 // CLIENT
 #[derive(Debug, Default)]
-pub struct Client {
-    pub twitch_client: Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>>,
-    pub twitch_client_join_handle: Option<JoinHandle<()>>,
-    pub insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
-    pub insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
+pub enum Client {
+    Connected {
+        client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
+        client_join_handle: JoinHandle<()>,
+        insult_thread: InsultThread,
+    },
+    #[default]
+    Disconnected,
+}
+
+#[derive(Debug, Default)]
+pub enum InsultThread {
+    Running {
+        handle: tokio::task::JoinHandle<()>,
+        sender: std::sync::mpsc::Sender<()>,
+    },
+    #[default]
+    Stopped,
+}
+
+pub enum InsultThreadShutdownError {
+    ThreadNotRunning,
+}
+
+impl InsultThread {
+    pub fn from(
+        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
+        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
+    ) -> InsultThread {
+        match (insult_thread_handle, insult_thread_sender) {
+            (Some(handle), Some(sender)) => InsultThread::Running { handle, sender },
+            (_, _) => InsultThread::Stopped,
+        }
+    }
+
+    pub fn shutdown(&mut self) -> Result<(), InsultThreadShutdownError> {
+        match self {
+            InsultThread::Stopped => Err(InsultThreadShutdownError::ThreadNotRunning),
+            InsultThread::Running { handle, sender } => {
+                sender.send(());
+                *self = InsultThread::Stopped;
+                Ok(())
+            }
+        }
+    }
 }
 
 // Left off here trying to get a certain return type for a Future on the join handle.
@@ -28,18 +68,23 @@ impl Client {
     pub fn new(
         client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
         join_handle: JoinHandle<()>,
-        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
-        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
+        insult_thread: InsultThread,
     ) -> Self {
-        Client {
-            twitch_client: Some(client),
-            twitch_client_join_handle: Some(join_handle),
-            insult_thread_handle,
-            insult_thread_sender,
+        Client::Connected {
+            client,
+            client_join_handle: join_handle,
+            insult_thread,
         }
     }
     pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
-        self.twitch_client.clone()
+        match self {
+            Client::Disconnected => None,
+            Client::Connected {
+                client,
+                client_join_handle,
+                insult_thread,
+            } => Some(client.clone()),
+        }
     }
 }
 
@@ -157,7 +202,10 @@ pub async fn handle_incoming_chat(
 
 pub mod api {
     use crate::bot::Bot;
+    use std::ops::Deref;
     use tauri::{AppHandle, Emitter};
+
+    use super::Client;
 
     #[tauri::command]
     pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
@@ -237,16 +285,20 @@ pub mod api {
             .channel_name
             .clone();
         let client = state.client.lock().unwrap();
-        match &client.twitch_client {
-            Some(client) => {
+        match client.deref() {
+            Client::Disconnected => Err(format!(
+                "Failed to leave {}. No client connected.",
+                channel_name
+            )),
+            Client::Connected {
+                client,
+                client_join_handle,
+                insult_thread,
+            } => {
                 client.part(channel_name.clone());
                 let _ = app_handle.emit("channel_part", channel_name.clone());
                 Ok(channel_name)
             }
-            None => Err(format!(
-                "Failed to leave {}. No client configured.",
-                channel_name
-            )),
         }
     }
 }

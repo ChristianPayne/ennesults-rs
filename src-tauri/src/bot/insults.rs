@@ -51,10 +51,11 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
         }
 
         if enable_insults {
-            let bot_data_state = app_handle.state::<BotData>();
+            let state = app_handle.state::<Bot>();
 
             let insults = {
-                let insults = bot_data_state
+                let insults = state
+                    .bot_data
                     .insults
                     .lock()
                     .expect("Failed to get lock for insults.");
@@ -112,16 +113,17 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{BotData, Insults};
+    use crate::bot::{Bot, BotData, Insults};
     use crate::file::{write_file, WriteFileError};
 
     use super::Insult;
 
     #[tauri::command]
     pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {
-        let bot_data_state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         let insults = {
-            bot_data_state
+            state
+                .bot_data
                 .insults
                 .lock()
                 .expect("Failed to get lock for insults.")
@@ -134,8 +136,9 @@ pub mod api {
 
     #[tauri::command]
     pub fn get_insults_count(app_handle: tauri::AppHandle) -> u32 {
-        let bot_data_state = app_handle.state::<BotData>();
-        let insults = bot_data_state
+        let state = app_handle.state::<Bot>();
+        let insults = state
+            .bot_data
             .insults
             .lock()
             .expect("Failed to get lock for insults.");
@@ -145,8 +148,9 @@ pub mod api {
 
     #[tauri::command]
     pub fn save_insults(app_handle: tauri::AppHandle, insults: Insults) -> Result<(), String> {
-        let state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         *state
+            .bot_data
             .insults
             .lock()
             .expect("Failed to get lock for bot info") = insults.clone();
@@ -174,9 +178,10 @@ pub mod api {
 
     #[tauri::command]
     pub fn delete_insult(app_handle: tauri::AppHandle, insult_id: String) -> Result<(), String> {
-        let state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         let insults = {
             let mut insults = state
+                .bot_data
                 .insults
                 .lock()
                 .expect("Failed to get lock for insults");

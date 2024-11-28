@@ -36,7 +36,8 @@ pub trait Command: Send {
 
 pub fn command_from_str(command_string: &str) -> Option<Box<dyn Command>> {
     match command_string {
-        // "test" | "t" => Some(Box::new(TestCommand)),
+        // Make sure to get rid of this line.
+        "test" | "t" => Some(Box::new(TestCommand)),
         "consent" | "c" | "consennet" => Some(Box::new(ConsentCommand)),
         "unconsent" | "uc" | "unconsennet" => Some(Box::new(UnconsentCommand)),
         _ => None,

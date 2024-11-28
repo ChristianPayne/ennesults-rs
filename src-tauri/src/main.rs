@@ -72,8 +72,6 @@ async fn main() {
             println!("Setting up bot!");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
-            let bot = Bot::new(bot_info);
-            app.manage(bot);
 
             let comebacks =
                 read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
@@ -82,7 +80,8 @@ async fn main() {
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
 
             let bot_data = BotData::new(comebacks, insults, users);
-            app.manage(bot_data);
+            let bot = Bot::new(bot_info, bot_data);
+            app.manage(bot);
 
             // Connect the bot to Twitch on startup.
             let state = app.state::<Bot>();
