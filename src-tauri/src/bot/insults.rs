@@ -28,10 +28,9 @@ pub struct Insult {
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
     loop {
-        println!("Looping insult thread.");
-        let bot_state = app_handle.state::<Bot>();
+        let state = app_handle.state::<Bot>();
         let (enable_insults, time_between_insults) = {
-            let bot_info = bot_state
+            let bot_info = state
                 .bot_info
                 .lock()
                 .expect("Failed to get lock for bot_info");
@@ -100,13 +99,14 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
                     }
 
                     // Say it in chat.
-                    let _ = say(bot_state.clone(), formatted_message.as_str()).await;
+                    let _ = say(state.clone(), formatted_message.as_str()).await;
                 }
                 None => {
                     println!("Could not get a random insult.")
                 }
             }
         }
+        println!("Looping insult thread.");
     }
 }
 

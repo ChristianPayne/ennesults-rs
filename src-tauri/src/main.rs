@@ -9,6 +9,7 @@ use tauri::{Emitter, Manager};
 
 // Ennesults
 mod bot;
+mod changelog;
 mod commands;
 mod date;
 mod file;
@@ -49,7 +50,8 @@ async fn main() {
             crate::bot::api::save_insults,
             crate::bot::api::delete_insult,
             crate::updater::fetch_update,
-            crate::updater::install_update
+            crate::updater::install_update,
+            crate::changelog::get_changelog,
         ])
         .setup(|app| {
             app.manage(updater::PendingUpdate(Mutex::new(None)));

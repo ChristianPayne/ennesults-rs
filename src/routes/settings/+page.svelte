@@ -143,7 +143,6 @@
         checkForUpdateButtonMessage = `Update to v.${result.version}!`;
         updateButtonDisabled = false;
       }
-      console.log("🪵 ~ checkForUpdate ~ result:", result);
     } else {
       const onEvent = new Channel<DownloadEvent>();
       onEvent.onmessage = (message) => {
@@ -164,7 +163,6 @@
       };
 
       let updater = await invoke("install_update", { onEvent });
-      console.log("🪵 ~ checkForUpdate ~ updater:", updater);
     }
   }
 

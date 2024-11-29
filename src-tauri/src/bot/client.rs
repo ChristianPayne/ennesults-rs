@@ -62,8 +62,6 @@ impl InsultThread {
     }
 }
 
-// Left off here trying to get a certain return type for a Future on the join handle.
-
 impl Client {
     pub fn new(
         client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
