@@ -54,7 +54,7 @@
 
   <div class="flex gap-2 w-full">
     <form on:submit={() => saveComeback()} class="flex gap-2 w-full">
-      <Input type="text" bind:value={input} />
+      <Input type="text" bind:value={input} placeholder="Add comeback..." />
       <Button type="submit">Add</Button>
     </form>
     <AlertDialog.Root>

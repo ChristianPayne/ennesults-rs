@@ -9,7 +9,9 @@ pub struct ChangelogVersionNotes {
 const CHANGELOG: [ChangelogVersionNotes; 2] = [
     ChangelogVersionNotes {
         version: "v.1.1.0",
-        notes: r"- Fancy new changelog!",
+        notes: r"- Fancy new changelog!
+        - You can now edit insults and comebacks after creating them.
+        - You can now filter and sort users on the Users page.",
     },
     ChangelogVersionNotes {
         version: "v1.0.0",
