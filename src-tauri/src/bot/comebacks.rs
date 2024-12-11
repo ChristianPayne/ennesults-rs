@@ -20,11 +20,10 @@ pub struct Comeback {
 }
 
 pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> bool {
-    let bot_state = app_handle.state::<Bot>();
-    let bot_data_state = app_handle.state::<BotData>();
+    let state = app_handle.state::<Bot>();
 
     let (bot_name, percent_chance_of_comeback, comeback_options, channel_name) = {
-        let bot_info = bot_state
+        let bot_info = state
             .bot_info
             .lock()
             .expect("Failed to get lock for bot info.");
@@ -34,7 +33,8 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
             return false;
         }
 
-        let comeback_options = bot_data_state
+        let comeback_options = state
+            .bot_data
             .comebacks
             .lock()
             .expect("Failed to get lock for bot data");
@@ -67,7 +67,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
             formatted_comeback = formatted_comeback.replace("{{user}}", msg.sender.name.as_str());
             formatted_comeback = formatted_comeback.replace("{{streamer}}", channel_name.as_str());
 
-            let _ = say(bot_state.clone(), formatted_comeback.as_str()).await;
+            let _ = say(state.clone(), formatted_comeback.as_str()).await;
             return true;
         }
     }
@@ -78,16 +78,17 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{BotData, Comebacks};
+    use crate::bot::{Bot, BotData, Comebacks};
     use crate::file::{write_file, WriteFileError};
 
     use super::Comeback;
 
     #[tauri::command]
     pub fn get_comebacks(app_handle: tauri::AppHandle) -> Vec<Comeback> {
-        let bot_data_state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         let comebacks = {
-            bot_data_state
+            state
+                .bot_data
                 .comebacks
                 .lock()
                 .expect("Failed to get lock for comebacks.")
@@ -100,8 +101,9 @@ pub mod api {
 
     #[tauri::command]
     pub fn get_comebacks_count(app_handle: tauri::AppHandle) -> u32 {
-        let bot_data_state = app_handle.state::<BotData>();
-        let comebacks = bot_data_state
+        let state = app_handle.state::<Bot>();
+        let comebacks = state
+            .bot_data
             .comebacks
             .lock()
             .expect("Failed to get lock for insults.");
@@ -110,12 +112,36 @@ pub mod api {
     }
 
     #[tauri::command]
+    pub fn update_comeback(app_handle: tauri::AppHandle, comeback: Comeback) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+        let mut comebacks = state
+            .bot_data
+            .comebacks
+            .lock()
+            .expect("Failed to get lock for insults.")
+            .clone();
+
+        match comebacks.0.iter_mut().find(|i| i.id == comeback.id) {
+            Some(comeback_in_db) => {
+                comeback_in_db.value = comeback.value;
+            }
+            None => {
+                return Err("Failed to find insult in database.".to_string());
+            }
+        }
+        save_comebacks(app_handle, comebacks)?;
+
+        Ok(())
+    }
+
+    #[tauri::command]
     pub fn save_comebacks(
         app_handle: tauri::AppHandle,
         comebacks: Comebacks,
     ) -> Result<(), String> {
-        let state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         *state
+            .bot_data
             .comebacks
             .lock()
             .expect("Failed to get lock for bot info") = comebacks.clone();
@@ -147,9 +173,10 @@ pub mod api {
         app_handle: tauri::AppHandle,
         comeback_id: String,
     ) -> Result<(), String> {
-        let state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         let comebacks = {
             let mut comebacks = state
+                .bot_data
                 .comebacks
                 .lock()
                 .expect("Failed to get lock for comebacks");

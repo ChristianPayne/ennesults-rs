@@ -1,24 +1,21 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![allow(dead_code, unused)]
+#![allow(unused)]
 extern crate dotenv_codegen;
+use std::sync::Mutex;
 
 //Tauri
 use tauri::{Emitter, Manager};
-use tauri_plugin_updater::UpdaterExt;
 
-use std::{
-    sync::{mpsc, Mutex},
-    thread,
-};
 // Ennesults
 mod bot;
+mod changelog;
 mod commands;
 mod date;
 mod file;
 mod updater;
 
-use bot::{insult_thread_loop, Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
@@ -47,33 +44,23 @@ async fn main() {
             crate::bot::api::get_comebacks,
             crate::bot::api::save_comebacks,
             crate::bot::api::get_comebacks_count,
+            crate::bot::api::update_comeback,
             crate::bot::api::delete_comeback,
             crate::bot::api::get_insults,
             crate::bot::api::get_insults_count,
+            crate::bot::api::update_insult,
             crate::bot::api::save_insults,
             crate::bot::api::delete_insult,
             crate::updater::fetch_update,
-            crate::updater::install_update
+            crate::updater::install_update,
+            crate::changelog::get_changelog,
         ])
         .setup(|app| {
-            // let handle = app.handle().clone();
-            // tauri::async_runtime::spawn(async move {
-            //     match update(handle.clone()).await {
-            //         Err(err) => {
-            //             println!("Failed to update app! {}", err);
-            //         }
-            //         Ok(()) => {
-            //             let _ = handle.emit("alert", "App has been updated successfully");
-            //         }
-            //     }
-            // });
             app.manage(updater::PendingUpdate(Mutex::new(None)));
 
             println!("Setting up bot!");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
-            let bot = Bot::new(bot_info);
-            app.manage(bot);
 
             let comebacks =
                 read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
@@ -82,13 +69,12 @@ async fn main() {
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
 
             let bot_data = BotData::new(comebacks, insults, users);
-            app.manage(bot_data);
+            let bot = Bot::new(bot_info, bot_data);
+            app.manage(bot);
 
             // Connect the bot to Twitch on startup.
             let state = app.state::<Bot>();
-            let connection_result = state.connect_to_twitch(app.handle().clone());
-
-            if let Some(error) = connection_result.err() {
+            if let Err(error) = state.connect_to_twitch(app.handle().clone()) {
                 println!("{}", error)
             }
 
@@ -96,28 +82,4 @@ async fn main() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
-    if let Some(update) = app.updater()?.check().await? {
-        let mut downloaded = 0;
-
-        // alternatively we could also call update.download() and update.install() separately
-        update
-            .download_and_install(
-                |chunk_length, content_length| {
-                    downloaded += chunk_length;
-                    println!("downloaded {downloaded} from {content_length:?}");
-                },
-                || {
-                    println!("download finished");
-                },
-            )
-            .await?;
-
-        println!("update installed");
-        app.restart();
-    }
-
-    Ok(())
 }

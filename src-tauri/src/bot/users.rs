@@ -33,9 +33,10 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
     // If not, assign default User values and save it to our files.
     // If they are known in our data, update any data we need to.
 
-    let bot_data = app_handle.state::<BotData>();
+    let state = app_handle.state::<Bot>();
 
-    let mut users = bot_data
+    let mut users = state
+        .bot_data
         .users
         .lock()
         .expect("Failed to get lock for users state.");
@@ -73,15 +74,16 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
 }
 
 async fn emit_active_users(app_handle: AppHandle) {
-    let bot_data_state = app_handle.state::<BotData>();
-    if let Ok(active_users) = api::get_active_users(bot_data_state).await {
+    let state = app_handle.state::<Bot>();
+    if let Ok(active_users) = api::get_active_users(state).await {
         let _ = app_handle.emit("active_users", active_users);
     }
 }
 
 pub fn get_random_user(app_handle: AppHandle, streamer_inclusive: bool) -> Option<User> {
-    let bot_data_state = app_handle.state::<BotData>();
-    let users = bot_data_state
+    let state = app_handle.state::<Bot>();
+    let users = state
+        .bot_data
         .users
         .lock()
         .expect("Failed to get lock for users.");
@@ -121,13 +123,14 @@ pub mod api {
     use tauri::{Emitter, Manager};
 
     use crate::{
-        bot::{BotData, User},
+        bot::{Bot, BotData, User},
         file::write_file,
     };
 
     #[tauri::command]
-    pub async fn get_users(state: tauri::State<'_, BotData>) -> Result<Vec<User>, String> {
+    pub async fn get_users(state: tauri::State<'_, Bot>) -> Result<Vec<User>, String> {
         let users = state
+            .bot_data
             .users
             .lock()
             .expect("Failed to get lock for users state.");
@@ -136,8 +139,9 @@ pub mod api {
     }
 
     #[tauri::command]
-    pub async fn get_active_users(state: tauri::State<'_, BotData>) -> Result<(u32, u32), String> {
+    pub async fn get_active_users(state: tauri::State<'_, Bot>) -> Result<(u32, u32), String> {
         let users = state
+            .bot_data
             .users
             .lock()
             .expect("Failed to get lock for users state.");
@@ -153,8 +157,9 @@ pub mod api {
         app_handle: tauri::AppHandle,
         username: String,
     ) -> Result<String, String> {
-        let state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         let mut users = state
+            .bot_data
             .users
             .lock()
             .expect("Failed to get lock for users state.");

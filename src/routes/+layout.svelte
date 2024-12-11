@@ -12,6 +12,7 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Toaster } from "$lib/components/ui/sonner";
   import * as Tooltip from "$lib/components/ui/tooltip";
+  import * as Dialog from "$lib/components/ui/dialog";
 
   import type { BotInfo } from "$lib/types";
   import SpeakAsEnnesults from "$lib/components/speakAsEnnesults.svelte";
@@ -19,6 +20,7 @@
   import { alertNotification } from "$lib/components/notifications/notifications";
 
   import { fade } from "svelte/transition";
+  import Changelog from "$lib/components/Changelog.svelte";
 
   export let data;
 
@@ -27,9 +29,12 @@
   let botName = "";
   let tauriVersion = "";
 
+  let changelog;
+
   onMount(async () => {
     tauriVersion = await getVersion();
     await getBotInfo();
+    changelog = await invoke("get_changelog");
 
     listen("bot_info_save", async (event) => {
       let botInfo = event.payload as BotInfo;
@@ -157,9 +162,16 @@
     {#if tauriVersion}
       <Tooltip.Root>
         <Tooltip.Trigger>
-          <p class="font-light italic text-sm text-gray-400 select-text">
-            ennesults-rs v{tauriVersion}
-          </p>
+          <Dialog.Root>
+            <Dialog.Trigger>
+              <p class="font-light italic text-sm text-gray-400 select-text">
+                ennesults-rs v{tauriVersion}
+              </p>
+            </Dialog.Trigger>
+            <Dialog.Content>
+              <Changelog {changelog} />
+            </Dialog.Content>
+          </Dialog.Root>
         </Tooltip.Trigger>
         <Tooltip.Content>
           <p>Current development build of the bot</p>

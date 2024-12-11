@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Insult } from "$lib/types";
-  import { type Writable } from "svelte/store";
+  import { derived, get, writable, type Writable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import {
     createTable,
@@ -9,10 +9,30 @@
     createRender,
   } from "svelte-headless-table";
   import DataTableActions from "./data-table-actions.svelte";
+  import EditInsult from "$lib/components/editInsult.svelte";
+  import { invoke } from "@tauri-apps/api/core";
 
   export let insults: Writable<Insult[]>;
 
   const table = createTable(insults);
+
+  let insultBeingEdited: Writable<string> = writable("");
+
+  function setInsultBeingEdited(id: string) {
+    insultBeingEdited.set(id);
+  }
+
+  async function updateInsult(insultValue: string) {
+    if (!get(insultBeingEdited)) return;
+    if (insultValue == "") {
+      insultBeingEdited.set("");
+      return;
+    }
+    await invoke("update_insult", {
+      insult: { id: get(insultBeingEdited), value: insultValue },
+    });
+    insultBeingEdited.set("");
+  }
 
   const columns = table.createColumns([
     // table.column({
@@ -20,14 +40,26 @@
     //   header: "ID",
     // }),
     table.column({
-      accessor: "value",
+      accessor: (insult) => insult,
       header: "Insult",
+      cell: ({ value }) =>
+        createRender(
+          EditInsult,
+          derived(insultBeingEdited, (insultBeingEdited) => ({
+            insultBeingEdited,
+            insult: value,
+            callback: updateInsult,
+          })),
+        ),
     }),
     table.column({
-      accessor: ({ id }) => id,
+      accessor: "id",
       header: "Actions",
       cell: ({ value }) => {
-        return createRender(DataTableActions, { id: value });
+        return createRender(DataTableActions, {
+          id: value,
+          setInsultBeingEdited,
+        });
       },
     }),
   ]);

@@ -3,13 +3,15 @@ use std::thread;
 use tauri::{self, Emitter, Manager};
 use ts_rs::TS;
 
+use std::ops::{Deref, DerefMut};
+
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
-use crate::bot::insult_thread_loop;
+use crate::bot::{insult_thread_loop, InsultThread};
 
 use super::api::get_bot_info;
-use super::{handle_incoming_chat, BotInfo, Client};
+use super::{handle_incoming_chat, BotData, BotInfo, Client};
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -39,14 +41,16 @@ pub enum Alert {
 #[derive(Debug)]
 pub struct Bot {
     pub bot_info: Arc<Mutex<BotInfo>>,
+    pub bot_data: BotData,
     pub client: Arc<Mutex<Client>>,
     pub chat_messages: Arc<Mutex<Vec<TwitchMessage>>>,
 }
 
 impl Bot {
-    pub fn new(bot_info: BotInfo) -> Self {
+    pub fn new(bot_info: BotInfo, bot_data: BotData) -> Self {
         Self {
             bot_info: Arc::new(Mutex::new(bot_info)),
+            bot_data,
             client: Arc::new(Mutex::new(Client::default())),
             chat_messages: Arc::new(Mutex::new(Vec::new())),
         }
@@ -57,9 +61,13 @@ impl Bot {
     pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
         let channel_name = self.get_channel_name().await;
         let client = self.client.lock().unwrap();
-        match &client.twitch_client {
-            None => None,
-            Some(client) => Some(client.get_channel_status(channel_name).await),
+        match client.deref() {
+            Client::Disconnected => None,
+            Client::Connected {
+                client,
+                client_join_handle,
+                insult_thread,
+            } => Some(client.get_channel_status(channel_name).await),
         }
     }
 
@@ -75,20 +83,24 @@ impl Bot {
                 .lock()
                 .expect("Failed to get lock on bot client");
 
-            if existing_client.twitch_client.is_some() {
-                println!("Dropped client that was already there.");
-                existing_client
-                    .twitch_client
-                    .take()
-                    .expect("Failed to take existing client")
-                    .part(bot_info.channel_name.clone());
+            match existing_client.deref_mut() {
+                Client::Disconnected => {}
+                Client::Connected {
+                    client,
+                    client_join_handle,
+                    insult_thread,
+                } => {
+                    match insult_thread {
+                        InsultThread::Running { handle, sender } => {
+                            sender.send(());
+                            handle.abort();
+                        }
+                        InsultThread::Stopped => (),
+                    }
 
-                let existing_handle = existing_client
-                    .twitch_client_join_handle
-                    .take()
-                    .expect("Failed to take existing client handle.");
-
-                existing_handle.abort();
+                    client.part(bot_info.channel_name.clone());
+                    **existing_client = Client::Disconnected;
+                }
             }
         }
 
@@ -120,8 +132,7 @@ impl Bot {
         *self.client.lock().unwrap() = Client::new(
             client,
             join_handle,
-            insult_thread_handle,
-            insult_thread_sender,
+            InsultThread::from(insult_thread_handle, insult_thread_sender),
         );
 
         Ok(())
@@ -131,6 +142,7 @@ impl Default for Bot {
     fn default() -> Self {
         Self {
             bot_info: Arc::new(Mutex::new(BotInfo::default())),
+            bot_data: BotData::default(),
             client: Arc::new(Mutex::new(Client::default())),
             chat_messages: Arc::new(Mutex::new(Vec::new())),
         }

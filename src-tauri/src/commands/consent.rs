@@ -2,7 +2,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
 use crate::{
-    bot::{BotData, User},
+    bot::{Bot, BotData, User},
     file::write_file,
 };
 
@@ -22,8 +22,9 @@ impl Command for ConsentCommand {
         msg: &PrivmsgMessage,
         app_handle: AppHandle,
     ) -> Option<String> {
-        let bot_data = app_handle.state::<BotData>();
+        let bot_data = app_handle.state::<Bot>();
         let mut users = bot_data
+            .bot_data
             .users
             .lock()
             .expect("Failed to get lock for bot data.");

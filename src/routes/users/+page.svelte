@@ -8,7 +8,7 @@
 
   export const users$: Writable<User[]> = writable([]);
 
-  let unlisten: UnlistenFn
+  let unlisten: UnlistenFn;
 
   onMount(async () => {
     // Get users from state.
@@ -16,21 +16,22 @@
     updateUsers(users);
 
     unlisten = await listen<User[]>("users_update", (event) => {
-      updateUsers(event.payload)
-    })
-  })
+      updateUsers(event.payload);
+    });
+  });
 
   onDestroy(() => {
-    unlisten?.()
-  })
+    unlisten?.();
+  });
 
-  function updateUsers (users: User[]) {
-    users.sort((a,b) => a.username.localeCompare(b.username));
+  function updateUsers(users: User[]) {
+    users.sort((a, b) =>
+      new Date(a.last_seen) < new Date(b.last_seen) ? 1 : -1,
+    );
 
     users$.set(users);
   }
-
 </script>
 
 <h1>Users</h1>
-<DataTable usersStore={users$}/>
+<DataTable usersStore={users$} />

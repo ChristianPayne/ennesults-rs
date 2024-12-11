@@ -28,10 +28,9 @@ pub struct Insult {
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
     loop {
-        println!("Looping insult thread.");
-        let bot_state = app_handle.state::<Bot>();
+        let state = app_handle.state::<Bot>();
         let (enable_insults, time_between_insults) = {
-            let bot_info = bot_state
+            let bot_info = state
                 .bot_info
                 .lock()
                 .expect("Failed to get lock for bot_info");
@@ -51,10 +50,11 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
         }
 
         if enable_insults {
-            let bot_data_state = app_handle.state::<BotData>();
+            let state = app_handle.state::<Bot>();
 
             let insults = {
-                let insults = bot_data_state
+                let insults = state
+                    .bot_data
                     .insults
                     .lock()
                     .expect("Failed to get lock for insults.");
@@ -99,29 +99,31 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
                     }
 
                     // Say it in chat.
-                    let _ = say(bot_state.clone(), formatted_message.as_str()).await;
+                    let _ = say(state.clone(), formatted_message.as_str()).await;
                 }
                 None => {
                     println!("Could not get a random insult.")
                 }
             }
         }
+        println!("Looping insult thread.");
     }
 }
 
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{BotData, Insults};
+    use crate::bot::{Bot, BotData, Insults};
     use crate::file::{write_file, WriteFileError};
 
     use super::Insult;
 
     #[tauri::command]
     pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {
-        let bot_data_state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         let insults = {
-            bot_data_state
+            state
+                .bot_data
                 .insults
                 .lock()
                 .expect("Failed to get lock for insults.")
@@ -134,8 +136,9 @@ pub mod api {
 
     #[tauri::command]
     pub fn get_insults_count(app_handle: tauri::AppHandle) -> u32 {
-        let bot_data_state = app_handle.state::<BotData>();
-        let insults = bot_data_state
+        let state = app_handle.state::<Bot>();
+        let insults = state
+            .bot_data
             .insults
             .lock()
             .expect("Failed to get lock for insults.");
@@ -144,9 +147,33 @@ pub mod api {
     }
 
     #[tauri::command]
+    pub fn update_insult(app_handle: tauri::AppHandle, insult: Insult) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+        let mut insults = state
+            .bot_data
+            .insults
+            .lock()
+            .expect("Failed to get lock for insults.")
+            .clone();
+
+        match insults.0.iter_mut().find(|i| i.id == insult.id) {
+            Some(insult_in_db) => {
+                insult_in_db.value = insult.value;
+            }
+            None => {
+                return Err("Failed to find insult in database.".to_string());
+            }
+        }
+        save_insults(app_handle, insults)?;
+
+        Ok(())
+    }
+
+    #[tauri::command]
     pub fn save_insults(app_handle: tauri::AppHandle, insults: Insults) -> Result<(), String> {
-        let state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         *state
+            .bot_data
             .insults
             .lock()
             .expect("Failed to get lock for bot info") = insults.clone();
@@ -174,9 +201,10 @@ pub mod api {
 
     #[tauri::command]
     pub fn delete_insult(app_handle: tauri::AppHandle, insult_id: String) -> Result<(), String> {
-        let state = app_handle.state::<BotData>();
+        let state = app_handle.state::<Bot>();
         let insults = {
             let mut insults = state
+                .bot_data
                 .insults
                 .lock()
                 .expect("Failed to get lock for insults");
