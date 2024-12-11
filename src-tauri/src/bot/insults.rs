@@ -147,6 +147,29 @@ pub mod api {
     }
 
     #[tauri::command]
+    pub fn update_insult(app_handle: tauri::AppHandle, insult: Insult) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+        let mut insults = state
+            .bot_data
+            .insults
+            .lock()
+            .expect("Failed to get lock for insults.")
+            .clone();
+
+        match insults.0.iter_mut().find(|i| i.id == insult.id) {
+            Some(insult_in_db) => {
+                insult_in_db.value = insult.value;
+            }
+            None => {
+                return Err("Failed to find insult in database.".to_string());
+            }
+        }
+        save_insults(app_handle, insults)?;
+
+        Ok(())
+    }
+
+    #[tauri::command]
     pub fn save_insults(app_handle: tauri::AppHandle, insults: Insults) -> Result<(), String> {
         let state = app_handle.state::<Bot>();
         *state

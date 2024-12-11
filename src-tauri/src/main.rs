@@ -47,6 +47,7 @@ async fn main() {
             crate::bot::api::delete_comeback,
             crate::bot::api::get_insults,
             crate::bot::api::get_insults_count,
+            crate::bot::api::update_insult,
             crate::bot::api::save_insults,
             crate::bot::api::delete_insult,
             crate::updater::fetch_update,
