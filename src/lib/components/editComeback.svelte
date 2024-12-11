@@ -1,23 +1,23 @@
 <script lang="ts">
-  import type { Insult } from "$lib/types";
+  import type { Comeback } from "$lib/types";
   import Input from "./ui/input/input.svelte";
 
-  export let callback: (insultValue: string) => void;
-  export let insultBeingEdited: string;
-  export let insult: Insult;
+  export let callback: (comebackValue: string) => void;
+  export let comebackBeingEdited: string;
+  export let comeback: Comeback;
 
-  let value = insult.value;
+  let value = comeback.value;
 
   function onKeyDown(e) {
     switch (e.keyCode) {
       case 13: {
         // Enter
-        callback(insult.value);
+        callback(comeback.value);
         break;
       }
       case 27: {
         // Escape
-        value = insult.value;
+        value = comeback.value;
         callback("");
         break;
       }
@@ -25,11 +25,11 @@
   }
 </script>
 
-{#if insultBeingEdited === insult.id}
+{#if comebackBeingEdited === comeback.id}
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div on:keydown={onKeyDown}>
     <Input bind:value></Input>
   </div>
 {:else}
-  <p>{insult.value}</p>
+  <p>{comeback.value}</p>
 {/if}

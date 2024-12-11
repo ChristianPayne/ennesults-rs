@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Insult } from "$lib/types";
-  import { type Writable } from "svelte/store";
+  import { derived, get, writable, type Writable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import {
     createTable,
@@ -16,22 +16,22 @@
 
   const table = createTable(insults);
 
-  let insultBeingEdited: string | null = null;
+  let insultBeingEdited: Writable<string> = writable("");
 
   function setInsultBeingEdited(id: string) {
-    insultBeingEdited = id;
+    insultBeingEdited.set(id);
   }
 
   async function updateInsult(insultValue: string) {
-    if (!insultBeingEdited) return;
+    if (!get(insultBeingEdited)) return;
     if (insultValue == "") {
-      insultBeingEdited = null;
+      insultBeingEdited.set("");
       return;
     }
     await invoke("update_insult", {
       insult: { id: insultBeingEdited, value: insultValue },
     });
-    insultBeingEdited = null;
+    insultBeingEdited.set("");
   }
 
   const columns = table.createColumns([
@@ -40,21 +40,20 @@
     //   header: "ID",
     // }),
     table.column({
-      accessor: (x) => x,
+      accessor: (insult) => insult,
       header: "Insult",
-      cell: ({ value: insult }) => {
-        if (insult.id === insultBeingEdited) {
-          return createRender(EditInsult, {
-            insultValue: insult.value,
+      cell: ({ value }) =>
+        createRender(
+          EditInsult,
+          derived(insultBeingEdited, (insultBeingEdited) => ({
+            insultBeingEdited,
+            insult: value,
             callback: updateInsult,
-          });
-        }
-
-        return insult.value;
-      },
+          })),
+        ),
     }),
     table.column({
-      accessor: ({ id }) => id,
+      accessor: "id",
       header: "Actions",
       cell: ({ value }) => {
         return createRender(DataTableActions, {
@@ -93,14 +92,7 @@
             {#each row.cells as cell (cell.id)}
               <Subscribe attrs={cell.attrs()} let:attrs>
                 <Table.Cell {...attrs}>
-                  {#if cell.value.id === insultBeingEdited}
-                    <EditInsult
-                      insultValue={cell.value.value}
-                      callback={updateInsult}
-                    />
-                  {:else}
-                    <Render of={cell.render()} />
-                  {/if}
+                  <Render of={cell.render()} />
                 </Table.Cell>
               </Subscribe>
             {/each}

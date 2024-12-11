@@ -112,6 +112,29 @@ pub mod api {
     }
 
     #[tauri::command]
+    pub fn update_comeback(app_handle: tauri::AppHandle, comeback: Comeback) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+        let mut comebacks = state
+            .bot_data
+            .comebacks
+            .lock()
+            .expect("Failed to get lock for insults.")
+            .clone();
+
+        match comebacks.0.iter_mut().find(|i| i.id == comeback.id) {
+            Some(comeback_in_db) => {
+                comeback_in_db.value = comeback.value;
+            }
+            None => {
+                return Err("Failed to find insult in database.".to_string());
+            }
+        }
+        save_comebacks(app_handle, comebacks)?;
+
+        Ok(())
+    }
+
+    #[tauri::command]
     pub fn save_comebacks(
         app_handle: tauri::AppHandle,
         comebacks: Comebacks,
