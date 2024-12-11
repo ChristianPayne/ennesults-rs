@@ -6,7 +6,11 @@ pub struct ChangelogVersionNotes {
     notes: &'static str,
 }
 
-const CHANGELOG: [ChangelogVersionNotes; 2] = [
+const CHANGELOG: [ChangelogVersionNotes; 3] = [
+    ChangelogVersionNotes {
+        version: "v.1.1.1",
+        notes: r"- Fixing updater.",
+    },
     ChangelogVersionNotes {
         version: "v.1.1.0",
         notes: r"- Fancy new changelog!
