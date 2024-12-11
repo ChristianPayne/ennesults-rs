@@ -4,7 +4,7 @@
   import { Button } from "$lib/components/ui/button";
 
   export let id: string;
-  export let editComebackCallback: (id: string) => void;
+  export let setComebackBeingEdited: (id: string) => void;
 
   async function deleteComeback(id: string) {
     await invoke("delete_comeback", { comebackId: id });
@@ -39,7 +39,7 @@
   <DropdownMenu.Content>
     <DropdownMenu.Group>
       <DropdownMenu.Label>Actions</DropdownMenu.Label>
-      <DropdownMenu.Item on:click={() => editComebackCallback(id)}>
+      <DropdownMenu.Item on:click={() => setComebackBeingEdited(id)}>
         Edit Comeback
       </DropdownMenu.Item>
       <DropdownMenu.Item

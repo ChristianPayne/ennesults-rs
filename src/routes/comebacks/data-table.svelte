@@ -58,7 +58,7 @@
       cell: ({ value }) =>
         createRender(DataTableActions, {
           id: value,
-          editComebackCallback: setComebackBeingEdited,
+          setComebackBeingEdited,
         }),
     }),
   ]);

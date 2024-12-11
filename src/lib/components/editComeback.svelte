@@ -12,7 +12,8 @@
     switch (e.keyCode) {
       case 13: {
         // Enter
-        callback(comeback.value);
+        callback(value);
+        comeback.value = value;
         break;
       }
       case 27: {

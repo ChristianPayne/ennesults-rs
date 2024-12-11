@@ -29,7 +29,7 @@
       return;
     }
     await invoke("update_insult", {
-      insult: { id: insultBeingEdited, value: insultValue },
+      insult: { id: get(insultBeingEdited), value: insultValue },
     });
     insultBeingEdited.set("");
   }
@@ -58,7 +58,7 @@
       cell: ({ value }) => {
         return createRender(DataTableActions, {
           id: value,
-          editInsultCallback: setInsultBeingEdited,
+          setInsultBeingEdited,
         });
       },
     }),

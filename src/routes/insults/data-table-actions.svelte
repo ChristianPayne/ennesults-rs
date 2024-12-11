@@ -4,7 +4,7 @@
   import { Button } from "$lib/components/ui/button";
 
   export let id: string;
-  export let editInsultCallback: (id: string) => void;
+  export let setInsultBeingEdited: (id: string) => void;
 
   async function deleteInsult(id: string) {
     await invoke("delete_insult", { insultId: id });
@@ -39,7 +39,7 @@
   <DropdownMenu.Content>
     <DropdownMenu.Group>
       <DropdownMenu.Label>Actions</DropdownMenu.Label>
-      <DropdownMenu.Item on:click={() => editInsultCallback(id)}>
+      <DropdownMenu.Item on:click={() => setInsultBeingEdited(id)}>
         Edit Insult
       </DropdownMenu.Item>
       <DropdownMenu.Item
