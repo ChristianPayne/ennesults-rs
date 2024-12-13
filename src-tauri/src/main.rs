@@ -15,7 +15,7 @@ mod date;
 mod file;
 mod updater;
 
-use bot::{Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Announcements, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
@@ -51,6 +51,10 @@ async fn main() {
             crate::bot::api::update_insult,
             crate::bot::api::save_insults,
             crate::bot::api::delete_insult,
+            crate::bot::api::get_announcements,
+            crate::bot::api::update_announcement,
+            crate::bot::api::delete_announcement,
+            crate::bot::api::save_announcements,
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog,
@@ -67,8 +71,10 @@ async fn main() {
             let insults =
                 read_json_file::<Insults>(app.handle(), "insults.json").unwrap_or_default();
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
+            let announcements = read_json_file::<Announcements>(app.handle(), "announcements.json")
+                .unwrap_or_default();
 
-            let bot_data = BotData::new(comebacks, insults, users);
+            let bot_data = BotData::new(comebacks, insults, users, announcements);
             let bot = Bot::new(bot_info, bot_data);
             app.manage(bot);
 

@@ -88,7 +88,8 @@
           <AlertDialog.Description>
             <span class="font-semibold"
               >&lbrace;&lbrace;user&rbrace;&rbrace;</span
-            >: Replaced with a random user that is active and has consented.
+            >: Replaced with a random user that is active and has consented. You
+            can use multiple of these tags to get more random users.
           </AlertDialog.Description>
         </AlertDialog.Header>
         <AlertDialog.Footer>

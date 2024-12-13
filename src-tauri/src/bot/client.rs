@@ -8,8 +8,8 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
 use super::{
-    handle_whisper, process_comebacks, process_corrections, process_user_state, Bot, BotData,
-    SerializeRBGColor, TwitchMessage,
+    handle_whisper, process_comebacks, process_corrections, process_user_state, AnnouncementThread,
+    Bot, BotData, InsultThread, SerializeRBGColor, TwitchMessage,
 };
 use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
 
@@ -20,46 +20,10 @@ pub enum Client {
         client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
         client_join_handle: JoinHandle<()>,
         insult_thread: InsultThread,
+        announcement_thread: AnnouncementThread,
     },
     #[default]
     Disconnected,
-}
-
-#[derive(Debug, Default)]
-pub enum InsultThread {
-    Running {
-        handle: tokio::task::JoinHandle<()>,
-        sender: std::sync::mpsc::Sender<()>,
-    },
-    #[default]
-    Stopped,
-}
-
-pub enum InsultThreadShutdownError {
-    ThreadNotRunning,
-}
-
-impl InsultThread {
-    pub fn from(
-        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
-        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
-    ) -> InsultThread {
-        match (insult_thread_handle, insult_thread_sender) {
-            (Some(handle), Some(sender)) => InsultThread::Running { handle, sender },
-            (_, _) => InsultThread::Stopped,
-        }
-    }
-
-    pub fn shutdown(&mut self) -> Result<(), InsultThreadShutdownError> {
-        match self {
-            InsultThread::Stopped => Err(InsultThreadShutdownError::ThreadNotRunning),
-            InsultThread::Running { handle, sender } => {
-                sender.send(());
-                *self = InsultThread::Stopped;
-                Ok(())
-            }
-        }
-    }
 }
 
 impl Client {
@@ -67,11 +31,13 @@ impl Client {
         client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
         join_handle: JoinHandle<()>,
         insult_thread: InsultThread,
+        announcement_thread: AnnouncementThread,
     ) -> Self {
         Client::Connected {
             client,
             client_join_handle: join_handle,
             insult_thread,
+            announcement_thread,
         }
     }
     pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
@@ -81,6 +47,7 @@ impl Client {
                 client,
                 client_join_handle,
                 insult_thread,
+                announcement_thread,
             } => Some(client.clone()),
         }
     }
@@ -292,6 +259,7 @@ pub mod api {
                 client,
                 client_join_handle,
                 insult_thread,
+                announcement_thread,
             } => {
                 client.part(channel_name.clone());
                 let _ = app_handle.emit("channel_part", channel_name.clone());

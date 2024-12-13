@@ -6,10 +6,15 @@ pub struct ChangelogVersionNotes {
     notes: &'static str,
 }
 
-const CHANGELOG: [ChangelogVersionNotes; 3] = [
+const CHANGELOG: [ChangelogVersionNotes; 4] = [
+    ChangelogVersionNotes {
+        version: "v.1.2.0",
+        notes: r"- Announcements! Add messages for Ennesults to say over time.
+        - Added the ability to get multiple random users per insult.",
+    },
     ChangelogVersionNotes {
         version: "v.1.1.1",
-        notes: r"- Fixing updater.",
+        notes: r"- Fixed GitHub build action for updater to work successfully.",
     },
     ChangelogVersionNotes {
         version: "v.1.1.0",

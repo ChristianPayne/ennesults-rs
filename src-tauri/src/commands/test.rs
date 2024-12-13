@@ -30,6 +30,7 @@ impl Command for TestCommand {
                 client,
                 client_join_handle,
                 insult_thread,
+                announcement_thread,
             } => match insult_thread.shutdown() {
                 Ok(_) => Some("Insult thread shut down.".into()),
                 Err(err) => match err {

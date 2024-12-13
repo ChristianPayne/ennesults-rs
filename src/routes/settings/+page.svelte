@@ -40,6 +40,9 @@
       oauthTokenValue: botInfo.oauth_token,
       enableWhispers: botInfo.enable_whispers,
       usersAllowedToWhisper: usersAllowedToWhisperResult.join(", "),
+      enableAnnouncements: botInfo.enable_announcements,
+      timeBetweenAnnouncements: botInfo.time_between_announcements,
+      randomizeAnnouncements: botInfo.randomize_announcements,
       enableInsults: botInfo.enable_insults,
       timeBetweenInsults: botInfo.time_between_insults,
       lurkTime: botInfo.lurk_time,
@@ -89,6 +92,9 @@
           .split(",")
           .filter(Boolean)
           .map((user) => user.trim().toLowerCase()),
+        enable_announcements: validatedData.enableAnnouncements,
+        time_between_announcements: validatedData.timeBetweenAnnouncements,
+        randomize_announcements: validatedData.randomizeAnnouncements,
         enable_insults: validatedData.enableInsults,
         time_between_insults: validatedData.timeBetweenInsults,
         lurk_time: validatedData.lurkTime,

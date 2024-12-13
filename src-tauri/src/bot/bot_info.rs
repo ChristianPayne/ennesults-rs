@@ -12,6 +12,10 @@ pub struct BotInfo {
     pub enable_whispers: bool,
     pub users_allowed_to_whisper: Vec<String>,
 
+    pub enable_announcements: bool,
+    pub randomize_announcements: bool,
+    pub time_between_announcements: u32,
+
     pub enable_insults: bool,
     pub time_between_insults: u32,
     pub lurk_time: u32,
@@ -34,6 +38,9 @@ impl Default for BotInfo {
             auto_connect_on_startup: false,
             enable_whispers: false,
             users_allowed_to_whisper: vec![],
+            enable_announcements: false,
+            randomize_announcements: false,
+            time_between_announcements: 300,
             enable_insults: false,
             time_between_insults: 300,
             lurk_time: 5,

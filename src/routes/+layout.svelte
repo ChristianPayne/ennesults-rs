@@ -140,6 +140,7 @@
       {botName || "Ennesults"}
     </Button>
     <div class="flex space-x-2 items-center">
+      <Button variant="ghost" href="/announcements">Announcements</Button>
       <Button variant="ghost" href="/insults">Insults</Button>
       <Button variant="ghost" href="/comebacks">Comebacks</Button>
       <Button variant="ghost" href="/users">Users</Button>

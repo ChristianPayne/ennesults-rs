@@ -1,3 +1,4 @@
+mod announcements;
 mod bot;
 mod bot_data;
 mod bot_info;
@@ -8,6 +9,7 @@ mod insults;
 mod users;
 mod whispers;
 
+pub use announcements::*;
 pub use bot::*;
 pub use bot_data::*;
 pub use bot_info::*;
@@ -21,6 +23,7 @@ pub use whispers::*;
 pub mod api {
     use super::bot;
     // use super::bot_data;
+    use super::announcements;
     use super::bot_info;
     use super::client;
     use super::comebacks;
@@ -28,6 +31,7 @@ pub mod api {
     use super::users;
     use super::whispers;
 
+    pub use announcements::api::*;
     pub use bot::api::*;
     // pub use bot_data::api::*;
     pub use bot_info::api::*;

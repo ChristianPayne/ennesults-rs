@@ -25,9 +25,46 @@ pub struct Insult {
     value: String,
 }
 
+#[derive(Debug, Default)]
+pub enum InsultThread {
+    Running {
+        handle: tokio::task::JoinHandle<()>,
+        sender: std::sync::mpsc::Sender<()>,
+    },
+    #[default]
+    Stopped,
+}
+
+pub enum InsultThreadShutdownError {
+    ThreadNotRunning,
+}
+
+impl InsultThread {
+    pub fn from(
+        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
+        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
+    ) -> InsultThread {
+        match (insult_thread_handle, insult_thread_sender) {
+            (Some(handle), Some(sender)) => InsultThread::Running { handle, sender },
+            (_, _) => InsultThread::Stopped,
+        }
+    }
+
+    pub fn shutdown(&mut self) -> Result<(), InsultThreadShutdownError> {
+        match self {
+            InsultThread::Stopped => Err(InsultThreadShutdownError::ThreadNotRunning),
+            InsultThread::Running { handle, sender } => {
+                sender.send(());
+                *self = InsultThread::Stopped;
+                Ok(())
+            }
+        }
+    }
+}
+
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
-    loop {
+    'thread_loop: loop {
         let state = app_handle.state::<Bot>();
         let (enable_insults, time_between_insults) = {
             let bot_info = state
@@ -81,19 +118,42 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
                     }
 
                     if formatted_message.contains("{{user}}") {
-                        let random_user = get_random_user(
-                            app_handle.clone(),
-                            !insult.value.contains("{{streamer}}"),
-                        );
+                        let mut users = {
+                            let users_state = state
+                                .bot_data
+                                .users
+                                .lock()
+                                .expect("Failed to get lock for users.");
+                            users_state.clone()
+                        };
 
-                        match random_user {
-                            Some(user) => {
-                                formatted_message =
-                                    formatted_message.replace("{{user}}", user.username.as_str());
+                        while formatted_message.contains("{{user}}") {
+                            let random_user = {
+                                get_random_user(
+                                    app_handle.clone(),
+                                    !insult.value.contains("{{streamer}}"),
+                                    &users,
+                                )
+                                .cloned()
+                            };
+
+                            if let Some(user) = &random_user {
+                                let username = user.username.clone();
+                                users.0.remove(&user.username);
                             }
-                            None => {
-                                println!("No users available after filters to insult.");
-                                continue;
+
+                            match random_user {
+                                Some(user) => {
+                                    formatted_message = formatted_message.replacen(
+                                        "{{user}}",
+                                        user.username.as_str(),
+                                        1,
+                                    );
+                                }
+                                None => {
+                                    println!("No users available after filters to insult.");
+                                    continue 'thread_loop;
+                                }
                             }
                         }
                     }
@@ -113,10 +173,10 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{Bot, BotData, Insults};
+    use crate::bot::{Bot, BotData};
     use crate::file::{write_file, WriteFileError};
 
-    use super::Insult;
+    use super::{Insult, Insults};
 
     #[tauri::command]
     pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {
