@@ -15,7 +15,7 @@ mod date;
 mod file;
 mod updater;
 
-use bot::{Announcement, Announcements, Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Announcements, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]

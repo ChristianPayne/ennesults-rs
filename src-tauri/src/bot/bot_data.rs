@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use super::{announcements, Announcements, Comebacks, Insults, Users};
+use super::{Announcements, Comebacks, Insults, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct BotData {
