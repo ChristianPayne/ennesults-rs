@@ -92,209 +92,230 @@
   </Form.Field>
 
   <h2>Announcements</h2>
-  <Form.Field {form} name="enableAnnouncements">
-    <Form.Control let:attrs>
-      <div class="flex items-center space-x-2">
-        <Checkbox {...attrs} bind:checked={$formData.enableAnnouncements} />
-        <input
-          name={attrs.name}
-          bind:value={$formData.enableAnnouncements}
-          hidden
+  <div class="md:ml-8">
+    <Form.Field {form} name="enableAnnouncements">
+      <Form.Control let:attrs>
+        <div class="flex items-center space-x-2">
+          <Checkbox {...attrs} bind:checked={$formData.enableAnnouncements} />
+          <input
+            name={attrs.name}
+            bind:value={$formData.enableAnnouncements}
+            hidden
+          />
+          <Form.Label>Enable Announcements</Form.Label>
+        </div>
+      </Form.Control>
+      <Form.Description
+        >Enables announcements to be said in chat by the bot.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="timeBetweenAnnouncements">
+      <Form.Control let:attrs>
+        <Form.Label>Time Between Announcements</Form.Label>
+        <Input
+          {...attrs}
+          type="number"
+          bind:value={$formData.timeBetweenAnnouncements}
         />
-        <Form.Label>Enable Announcements</Form.Label>
-      </div>
-    </Form.Control>
-    <Form.Description
-      >Enables announcements to be said in chat by the bot.</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="timeBetweenAnnouncements">
-    <Form.Control let:attrs>
-      <Form.Label>Time Between Announcements</Form.Label>
-      <Input
-        {...attrs}
-        type="number"
-        bind:value={$formData.timeBetweenAnnouncements}
-      />
-    </Form.Control>
-    <Form.Description
-      >How much time (seconds) do you want to pass before saying the next
-      announcement?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="randomizeAnnouncements">
-    <Form.Control let:attrs>
-      <div class="flex items-center space-x-2">
-        <Checkbox {...attrs} bind:checked={$formData.randomizeAnnouncements} />
-        <input
-          name={attrs.name}
-          bind:value={$formData.randomizeAnnouncements}
-          hidden
-        />
-        <Form.Label>Randomize Announcements</Form.Label>
-      </div>
-    </Form.Control>
-    <Form.Description
-      >Chooses whether or not to pick a random announcement every time or go
-      sequentially.</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
+      </Form.Control>
+      <Form.Description
+        >How much time (seconds) do you want to pass before saying the next
+        announcement?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="randomizeAnnouncements">
+      <Form.Control let:attrs>
+        <div class="flex items-center space-x-2">
+          <Checkbox
+            {...attrs}
+            bind:checked={$formData.randomizeAnnouncements}
+          />
+          <input
+            name={attrs.name}
+            bind:value={$formData.randomizeAnnouncements}
+            hidden
+          />
+          <Form.Label>Randomize Announcements</Form.Label>
+        </div>
+      </Form.Control>
+      <Form.Description
+        >Chooses whether or not to pick a random announcement every time or go
+        sequentially.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+  </div>
 
   <h2>Insults</h2>
-  <Form.Field {form} name="enableInsults">
-    <Form.Control let:attrs>
-      <div class="flex items-center space-x-2">
-        <Checkbox {...attrs} bind:checked={$formData.enableInsults} />
-        <input name={attrs.name} bind:value={$formData.enableInsults} hidden />
-        <Form.Label>Enable Insults</Form.Label>
-      </div>
-    </Form.Control>
-    <Form.Description
-      >Enables insults to be said in chat by the bot.</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="timeBetweenInsults">
-    <Form.Control let:attrs>
-      <Form.Label>Time Between Insults</Form.Label>
-      <Input
-        {...attrs}
-        type="number"
-        bind:value={$formData.timeBetweenInsults}
-      />
-    </Form.Control>
-    <Form.Description
-      >How much time (seconds) do you want to pass before saying another random
-      insult?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="lurkTime">
-    <Form.Control let:attrs>
-      <Form.Label>Lurk Time</Form.Label>
-      <Input {...attrs} type="number" bind:value={$formData.lurkTime} />
-    </Form.Control>
-    <Form.Description
-      >How long (minutes) since someone chatted until we flag them as lurking.</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
+  <div class="md:ml-8">
+    <Form.Field {form} name="enableInsults">
+      <Form.Control let:attrs>
+        <div class="flex items-center space-x-2">
+          <Checkbox {...attrs} bind:checked={$formData.enableInsults} />
+          <input
+            name={attrs.name}
+            bind:value={$formData.enableInsults}
+            hidden
+          />
+          <Form.Label>Enable Insults</Form.Label>
+        </div>
+      </Form.Control>
+      <Form.Description
+        >Enables insults to be said in chat by the bot.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="timeBetweenInsults">
+      <Form.Control let:attrs>
+        <Form.Label>Time Between Insults</Form.Label>
+        <Input
+          {...attrs}
+          type="number"
+          bind:value={$formData.timeBetweenInsults}
+        />
+      </Form.Control>
+      <Form.Description
+        >How much time (seconds) do you want to pass before saying another
+        random insult?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="lurkTime">
+      <Form.Control let:attrs>
+        <Form.Label>Lurk Time</Form.Label>
+        <Input {...attrs} type="number" bind:value={$formData.lurkTime} />
+      </Form.Control>
+      <Form.Description
+        >How long (minutes) since someone chatted until we flag them as lurking.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+  </div>
 
   <h2>Comebacks</h2>
-  <Form.Field {form} name="enableComebacks">
-    <Form.Control let:attrs>
-      <div class="flex items-center space-x-2">
-        <Checkbox {...attrs} bind:checked={$formData.enableComebacks} />
-        <input
-          name={attrs.name}
-          bind:value={$formData.enableComebacks}
-          hidden
+  <div class="md:ml-8">
+    <Form.Field {form} name="enableComebacks">
+      <Form.Control let:attrs>
+        <div class="flex items-center space-x-2">
+          <Checkbox {...attrs} bind:checked={$formData.enableComebacks} />
+          <input
+            name={attrs.name}
+            bind:value={$formData.enableComebacks}
+            hidden
+          />
+          <Form.Label>Enable Comebacks</Form.Label>
+        </div>
+      </Form.Control>
+      <Form.Description
+        >Enables comebacks to be said in reply to people @-ing her.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="comebackExceptions">
+      <Form.Control let:attrs>
+        <Form.Label>Comeback Exceptions</Form.Label>
+        <Input {...attrs} bind:value={$formData.comebackExceptions} />
+      </Form.Control>
+      <Form.Description
+        >Exceptions for people that may abuse @-ing Ennesults (comma separated
+        usernames).</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="percentChanceOfComeback">
+      <Form.Control let:attrs>
+        <Form.Label>Percent Chance of Comeback</Form.Label>
+        <Input
+          {...attrs}
+          type="number"
+          bind:value={$formData.percentChanceOfComeback}
         />
-        <Form.Label>Enable Comebacks</Form.Label>
-      </div>
-    </Form.Control>
-    <Form.Description
-      >Enables comebacks to be said in reply to people @-ing her.</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="comebackExceptions">
-    <Form.Control let:attrs>
-      <Form.Label>Comeback Exceptions</Form.Label>
-      <Input {...attrs} bind:value={$formData.comebackExceptions} />
-    </Form.Control>
-    <Form.Description
-      >Exceptions for people that may abuse @-ing Ennesults (comma separated
-      usernames).</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="percentChanceOfComeback">
-    <Form.Control let:attrs>
-      <Form.Label>Percent Chance of Comeback</Form.Label>
-      <Input
-        {...attrs}
-        type="number"
-        bind:value={$formData.percentChanceOfComeback}
-      />
-    </Form.Control>
-    <Form.Description
-      >Replying every time would get tiring. What percent (%) should we snap
-      back?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
+      </Form.Control>
+      <Form.Description
+        >Replying every time would get tiring. What percent (%) should we snap
+        back?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+  </div>
 
   <h2>Corrections</h2>
-  <Form.Field {form} name="enableCorrections">
-    <Form.Control let:attrs>
-      <div class="flex items-center space-x-2">
-        <Checkbox {...attrs} bind:checked={$formData.enableCorrections} />
-        <input
-          name={attrs.name}
-          bind:value={$formData.enableCorrections}
-          hidden
+  <div class="md:ml-8">
+    <Form.Field {form} name="enableCorrections">
+      <Form.Control let:attrs>
+        <div class="flex items-center space-x-2">
+          <Checkbox {...attrs} bind:checked={$formData.enableCorrections} />
+          <input
+            name={attrs.name}
+            bind:value={$formData.enableCorrections}
+            hidden
+          />
+          <Form.Label>Enable Corrections</Form.Label>
+        </div>
+      </Form.Control>
+      <Form.Description
+        >Enables Ennesults to correct people misspelling "Enne".</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="correctionExceptions">
+      <Form.Control let:attrs>
+        <Form.Label>Correction Exceptions</Form.Label>
+        <Input {...attrs} bind:value={$formData.correctionExceptions} />
+      </Form.Control>
+      <Form.Description
+        >Parts of a word that don't make sense to correct (comma separated).</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="percentChanceOfCorrection">
+      <Form.Control let:attrs>
+        <Form.Label>Percent Chance of Correction</Form.Label>
+        <Input
+          {...attrs}
+          type="number"
+          bind:value={$formData.percentChanceOfCorrection}
         />
-        <Form.Label>Enable Corrections</Form.Label>
-      </div>
-    </Form.Control>
-    <Form.Description
-      >Enables Ennesults to correct people misspelling "Enne".</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="correctionExceptions">
-    <Form.Control let:attrs>
-      <Form.Label>Correction Exceptions</Form.Label>
-      <Input {...attrs} bind:value={$formData.correctionExceptions} />
-    </Form.Control>
-    <Form.Description
-      >Parts of a word that don't make sense to correct (comma separated).</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="percentChanceOfCorrection">
-    <Form.Control let:attrs>
-      <Form.Label>Percent Chance of Correction</Form.Label>
-      <Input
-        {...attrs}
-        type="number"
-        bind:value={$formData.percentChanceOfCorrection}
-      />
-    </Form.Control>
-    <Form.Description
-      >What percent (%) of the time should we correct viewers?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
+      </Form.Control>
+      <Form.Description
+        >What percent (%) of the time should we correct viewers?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+  </div>
 
   <h2>Whispers</h2>
-  <Form.Field {form} name="enableWhispers">
-    <Form.Control let:attrs>
-      <div class="flex items-center space-x-2">
-        <Checkbox {...attrs} bind:checked={$formData.enableWhispers} />
-        <input name={attrs.name} bind:value={$formData.enableWhispers} hidden />
-        <Form.Label>Enable Whispers</Form.Label>
-      </div>
-    </Form.Control>
-    <Form.Description
-      >Enables the bot to say in chat what users whisper to her.</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="usersAllowedToWhisper">
-    <Form.Control let:attrs>
-      <Form.Label>Users Allowed to Whisper</Form.Label>
-      <Input {...attrs} bind:value={$formData.usersAllowedToWhisper} />
-    </Form.Control>
-    <Form.Description
-      >Each user's name that can whisper (comma separated).</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
+  <div class="md:ml-8">
+    <Form.Field {form} name="enableWhispers">
+      <Form.Control let:attrs>
+        <div class="flex items-center space-x-2">
+          <Checkbox {...attrs} bind:checked={$formData.enableWhispers} />
+          <input
+            name={attrs.name}
+            bind:value={$formData.enableWhispers}
+            hidden
+          />
+          <Form.Label>Enable Whispers</Form.Label>
+        </div>
+      </Form.Control>
+      <Form.Description
+        >Enables the bot to say in chat what users whisper to her.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="usersAllowedToWhisper">
+      <Form.Control let:attrs>
+        <Form.Label>Users Allowed to Whisper</Form.Label>
+        <Input {...attrs} bind:value={$formData.usersAllowedToWhisper} />
+      </Form.Control>
+      <Form.Description
+        >Each user's name that can whisper (comma separated).</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+  </div>
 
   <div class="flex justify-center">
     <Form.Button class="w-1/3">Save</Form.Button>
