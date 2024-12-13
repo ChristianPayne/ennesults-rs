@@ -9,7 +9,7 @@ pub struct ChangelogVersionNotes {
 const CHANGELOG: [ChangelogVersionNotes; 3] = [
     ChangelogVersionNotes {
         version: "v.1.1.1",
-        notes: r"- Fixing updater.",
+        notes: r"- Fixed GitHub build action for updater to work successfully.",
     },
     ChangelogVersionNotes {
         version: "v.1.1.0",
