@@ -150,10 +150,10 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{Bot, BotData, Insults};
+    use crate::bot::{Bot, BotData};
     use crate::file::{write_file, WriteFileError};
 
-    use super::Insult;
+    use super::{Insult, Insults};
 
     #[tauri::command]
     pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {

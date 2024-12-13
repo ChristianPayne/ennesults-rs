@@ -125,4 +125,115 @@ pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     }
 }
 
-pub mod api {}
+pub mod api {
+    use tauri::{Emitter, Manager};
+
+    use crate::bot::{Bot, BotData, Insults};
+    use crate::file::{write_file, WriteFileError};
+
+    use super::{Announcement, Announcements};
+
+    #[tauri::command]
+    pub fn get_announcements(app_handle: tauri::AppHandle) -> Vec<Announcement> {
+        let state = app_handle.state::<Bot>();
+        let announcements = {
+            state
+                .bot_data
+                .announcements
+                .lock()
+                .expect("Failed to get lock for announcements.")
+                .0
+                .clone()
+        };
+
+        announcements
+    }
+
+    #[tauri::command]
+    pub fn update_announcement(
+        app_handle: tauri::AppHandle,
+        announcement: Announcement,
+    ) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+        let mut announcements = state
+            .bot_data
+            .announcements
+            .lock()
+            .expect("Failed to get lock for announcements.")
+            .clone();
+
+        match announcements.0.iter_mut().find(|i| i.id == announcement.id) {
+            Some(announcement_in_db) => {
+                announcement_in_db.value = announcement.value;
+            }
+            None => return Err("Failed to find announcement in database".to_string()),
+        }
+
+        save_announcements(app_handle, announcements)?;
+
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub fn save_announcements(
+        app_handle: tauri::AppHandle,
+        announcements: Announcements,
+    ) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+        *state
+            .bot_data
+            .announcements
+            .lock()
+            .expect("Failed to get lock for bot info") = announcements.clone();
+
+        let write_result =
+            write_file::<Announcements>(&app_handle, "announcements.json", announcements.clone());
+
+        if let Some(err) = write_result.err() {
+            match err {
+                WriteFileError::FailedConvertJSON => {
+                    return Err("Failed to convert to json.".to_string())
+                }
+                WriteFileError::FailedCreateFile => {
+                    return Err("Failed to create file.".to_string())
+                }
+                WriteFileError::FailedWriteFile => {
+                    return Err("Failed to write contents in file.".to_string())
+                }
+            }
+        } else {
+            let _ = app_handle.emit("announcements_update", announcements);
+        }
+
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub fn delete_announcement(
+        app_handle: tauri::AppHandle,
+        announcement_id: String,
+    ) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+        let announcements = {
+            let mut announcements = state
+                .bot_data
+                .announcements
+                .lock()
+                .expect("Failed to get lock for announcements");
+            match announcements
+                .0
+                .iter()
+                .position(|announcement| announcement.id == announcement_id)
+            {
+                None => return Err("Could not find index of insult.".to_string()),
+                Some(index) => announcements.0.remove(index),
+            };
+
+            announcements.clone()
+        };
+
+        save_announcements(app_handle.clone(), announcements);
+
+        Ok(())
+    }
+}
