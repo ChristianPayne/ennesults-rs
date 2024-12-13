@@ -64,7 +64,7 @@ impl InsultThread {
 
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
-    loop {
+    'thread_loop: loop {
         let state = app_handle.state::<Bot>();
         let (enable_insults, time_between_insults) = {
             let bot_info = state
@@ -118,19 +118,42 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
                     }
 
                     if formatted_message.contains("{{user}}") {
-                        let random_user = get_random_user(
-                            app_handle.clone(),
-                            !insult.value.contains("{{streamer}}"),
-                        );
+                        let mut users = {
+                            let users_state = state
+                                .bot_data
+                                .users
+                                .lock()
+                                .expect("Failed to get lock for users.");
+                            users_state.clone()
+                        };
 
-                        match random_user {
-                            Some(user) => {
-                                formatted_message =
-                                    formatted_message.replace("{{user}}", user.username.as_str());
+                        while formatted_message.contains("{{user}}") {
+                            let random_user = {
+                                get_random_user(
+                                    app_handle.clone(),
+                                    !insult.value.contains("{{streamer}}"),
+                                    &users,
+                                )
+                                .cloned()
+                            };
+
+                            if let Some(user) = &random_user {
+                                let username = user.username.clone();
+                                users.0.remove(&user.username);
                             }
-                            None => {
-                                println!("No users available after filters to insult.");
-                                continue;
+
+                            match random_user {
+                                Some(user) => {
+                                    formatted_message = formatted_message.replacen(
+                                        "{{user}}",
+                                        user.username.as_str(),
+                                        1,
+                                    );
+                                }
+                                None => {
+                                    println!("No users available after filters to insult.");
+                                    continue 'thread_loop;
+                                }
                             }
                         }
                     }

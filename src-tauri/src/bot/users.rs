@@ -80,14 +80,11 @@ async fn emit_active_users(app_handle: AppHandle) {
     }
 }
 
-pub fn get_random_user(app_handle: AppHandle, streamer_inclusive: bool) -> Option<User> {
-    let state = app_handle.state::<Bot>();
-    let users = state
-        .bot_data
-        .users
-        .lock()
-        .expect("Failed to get lock for users.");
-
+pub fn get_random_user(
+    app_handle: AppHandle,
+    streamer_inclusive: bool,
+    users: &Users,
+) -> Option<&User> {
     let bot_state = app_handle.state::<Bot>();
     let bot_info = bot_state
         .bot_info
@@ -96,8 +93,7 @@ pub fn get_random_user(app_handle: AppHandle, streamer_inclusive: bool) -> Optio
 
     users
         .0
-        .clone()
-        .into_values()
+        .values()
         .filter(|user| {
             // If it is the streamer, check if we want to include them.
             if user.username == bot_info.channel_name {
