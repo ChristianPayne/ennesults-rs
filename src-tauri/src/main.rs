@@ -15,7 +15,7 @@ mod date;
 mod file;
 mod updater;
 
-use bot::{Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Announcement, Announcements, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
@@ -67,8 +67,10 @@ async fn main() {
             let insults =
                 read_json_file::<Insults>(app.handle(), "insults.json").unwrap_or_default();
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
+            let announcements = read_json_file::<Announcements>(app.handle(), "announcements.json")
+                .unwrap_or_default();
 
-            let bot_data = BotData::new(comebacks, insults, users);
+            let bot_data = BotData::new(comebacks, insults, users, announcements);
             let bot = Bot::new(bot_info, bot_data);
             app.manage(bot);
 

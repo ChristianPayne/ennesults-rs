@@ -8,7 +8,7 @@ use std::ops::{Deref, DerefMut};
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
-use crate::bot::{insult_thread_loop, InsultThread};
+use crate::bot::{announcement_thread_loop, insult_thread_loop, AnnouncementThread, InsultThread};
 
 use super::api::get_bot_info;
 use super::{handle_incoming_chat, BotData, BotInfo, Client};
@@ -67,6 +67,7 @@ impl Bot {
                 client,
                 client_join_handle,
                 insult_thread,
+                announcement_thread,
             } => Some(client.get_channel_status(channel_name).await),
         }
     }
@@ -89,13 +90,24 @@ impl Bot {
                     client,
                     client_join_handle,
                     insult_thread,
+                    announcement_thread,
                 } => {
-                    match insult_thread {
-                        InsultThread::Running { handle, sender } => {
-                            sender.send(());
-                            handle.abort();
-                        }
-                        InsultThread::Stopped => (),
+                    if let InsultThread::Running {
+                        handle: insult_handle,
+                        sender: insult_sender,
+                    } = insult_thread
+                    {
+                        insult_sender.send(());
+                        insult_handle.abort();
+                    }
+
+                    if let AnnouncementThread::Running {
+                        handle: announcement_handle,
+                        sender: announcement_sender,
+                    } = announcement_thread
+                    {
+                        announcement_sender.send(());
+                        announcement_handle.abort();
                     }
 
                     client.part(bot_info.channel_name.clone());
@@ -129,10 +141,23 @@ impl Bot {
         } else {
             (None, None)
         };
+
+        let (announcement_thread_handle, announcement_thread_sender) =
+            if bot_info.enable_announcements {
+                let (tx, rx) = mpsc::channel();
+                let app_handle = app_handle.clone();
+                let announcement_thread = tokio::spawn(announcement_thread_loop(app_handle, rx));
+
+                (Some(announcement_thread), Some(tx))
+            } else {
+                (None, None)
+            };
+
         *self.client.lock().unwrap() = Client::new(
             client,
             join_handle,
             InsultThread::from(insult_thread_handle, insult_thread_sender),
+            AnnouncementThread::from(announcement_thread_handle, announcement_thread_sender),
         );
 
         Ok(())

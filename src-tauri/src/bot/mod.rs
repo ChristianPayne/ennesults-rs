@@ -1,3 +1,4 @@
+mod announcements;
 mod bot;
 mod bot_data;
 mod bot_info;
@@ -8,6 +9,7 @@ mod insults;
 mod users;
 mod whispers;
 
+pub use announcements::*;
 pub use bot::*;
 pub use bot_data::*;
 pub use bot_info::*;

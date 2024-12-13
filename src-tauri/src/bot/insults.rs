@@ -25,6 +25,43 @@ pub struct Insult {
     value: String,
 }
 
+#[derive(Debug, Default)]
+pub enum InsultThread {
+    Running {
+        handle: tokio::task::JoinHandle<()>,
+        sender: std::sync::mpsc::Sender<()>,
+    },
+    #[default]
+    Stopped,
+}
+
+pub enum InsultThreadShutdownError {
+    ThreadNotRunning,
+}
+
+impl InsultThread {
+    pub fn from(
+        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
+        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
+    ) -> InsultThread {
+        match (insult_thread_handle, insult_thread_sender) {
+            (Some(handle), Some(sender)) => InsultThread::Running { handle, sender },
+            (_, _) => InsultThread::Stopped,
+        }
+    }
+
+    pub fn shutdown(&mut self) -> Result<(), InsultThreadShutdownError> {
+        match self {
+            InsultThread::Stopped => Err(InsultThreadShutdownError::ThreadNotRunning),
+            InsultThread::Running { handle, sender } => {
+                sender.send(());
+                *self = InsultThread::Stopped;
+                Ok(())
+            }
+        }
+    }
+}
+
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
     loop {
