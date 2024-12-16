@@ -6,7 +6,12 @@ pub struct ChangelogVersionNotes {
     notes: &'static str,
 }
 
-const CHANGELOG: [ChangelogVersionNotes; 4] = [
+const CHANGELOG: [ChangelogVersionNotes; 5] = [
+    ChangelogVersionNotes {
+        version: "v.1.3.0",
+        notes: r"- New icon.
+        - Settings page formatting changes.",
+    },
     ChangelogVersionNotes {
         version: "v.1.2.0",
         notes: r"- Announcements! Add messages for Ennesults to say over time.
