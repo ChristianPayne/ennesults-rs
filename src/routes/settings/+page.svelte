@@ -180,7 +180,7 @@
 <h1 class="mb-4">Settings</h1>
 <div class="ml-2 space-y-8">
   <div class="flex items-end space-x-2">
-    <div>
+    <div class="md:ml-8">
       <Label>Theme</Label>
       <Select.Root
         selected={getCurrentColorPalette()}

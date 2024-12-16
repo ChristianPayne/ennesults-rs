@@ -30,66 +30,68 @@
 </script>
 
 <form method="POST" use:enhance class="space-y-4">
-  <Form.Field {form} name="autoConnectOnStartup">
-    <Form.Control let:attrs>
-      <div class="flex items-center space-x-2">
-        <Checkbox {...attrs} bind:checked={$formData.autoConnectOnStartup} />
-        <input
-          name={attrs.name}
-          bind:value={$formData.autoConnectOnStartup}
-          hidden
-        />
-        <Form.Label>Auto-connect on Startup</Form.Label>
-      </div>
-    </Form.Control>
-    <Form.Description
-      >Should the bot join your channel automatically?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="channelName">
-    <Form.Control let:attrs>
-      <Form.Label>Channel Name</Form.Label>
-      <Input {...attrs} bind:value={$formData.channelName} />
-    </Form.Control>
-    <Form.Description
-      >What channel do you want the bot to join?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
+  <div class="md:ml-8">
+    <Form.Field {form} name="autoConnectOnStartup">
+      <Form.Control let:attrs>
+        <div class="flex items-center space-x-2">
+          <Checkbox {...attrs} bind:checked={$formData.autoConnectOnStartup} />
+          <input
+            name={attrs.name}
+            bind:value={$formData.autoConnectOnStartup}
+            hidden
+          />
+          <Form.Label>Auto-connect on Startup</Form.Label>
+        </div>
+      </Form.Control>
+      <Form.Description
+        >Should the bot join your channel automatically?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="channelName">
+      <Form.Control let:attrs>
+        <Form.Label>Channel Name</Form.Label>
+        <Input {...attrs} bind:value={$formData.channelName} />
+      </Form.Control>
+      <Form.Description
+        >What channel do you want the bot to join?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
 
-  <Form.Field {form} name="botName">
-    <Form.Control let:attrs>
-      <Form.Label class="block mb-2">Bot name</Form.Label>
-      <Input
-        {...attrs}
-        class="placeholder:text-muted"
-        placeholder="Ennesults"
-        type="text"
-        bind:value={$formData.botName}
-      />
-    </Form.Control>
-    <Form.Description
-      >What is the name of the bot account you want to use?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Field {form} name="oauthTokenValue">
-    <Form.Control let:attrs>
-      <Form.Label class="block mb-2">OAuth token</Form.Label>
-      <Input
-        {...attrs}
-        type="password"
-        class="placeholder:text-muted"
-        placeholder="01J924W48ACP2FDDR7Y6FW88PQ"
-        bind:value={$formData.oauthTokenValue}
-      />
-    </Form.Control>
-    <Form.Description
-      >What is the oAuth token of the bot account?</Form.Description
-    >
-    <Form.FieldErrors />
-  </Form.Field>
+    <Form.Field {form} name="botName">
+      <Form.Control let:attrs>
+        <Form.Label class="block mb-2">Bot name</Form.Label>
+        <Input
+          {...attrs}
+          class="placeholder:text-muted"
+          placeholder="Ennesults"
+          type="text"
+          bind:value={$formData.botName}
+        />
+      </Form.Control>
+      <Form.Description
+        >What is the name of the bot account you want to use?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="oauthTokenValue">
+      <Form.Control let:attrs>
+        <Form.Label class="block mb-2">OAuth token</Form.Label>
+        <Input
+          {...attrs}
+          type="password"
+          class="placeholder:text-muted"
+          placeholder="01J924W48ACP2FDDR7Y6FW88PQ"
+          bind:value={$formData.oauthTokenValue}
+        />
+      </Form.Control>
+      <Form.Description
+        >What is the oAuth token of the bot account?</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+  </div>
 
   <h2>Announcements</h2>
   <div class="md:ml-8">
