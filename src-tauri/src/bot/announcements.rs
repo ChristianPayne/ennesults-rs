@@ -1,4 +1,4 @@
-use std::sync::mpsc::{Receiver, TryRecvError};
+use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::{thread, time::Duration};
 
 use tauri::{AppHandle, Manager};
@@ -35,13 +35,17 @@ pub enum AnnouncementThreadShutdownError {
 }
 
 impl AnnouncementThread {
-    pub fn from(
-        announcement_thread_handle: Option<tokio::task::JoinHandle<()>>,
-        announcement_thread_sender: Option<std::sync::mpsc::Sender<()>>,
-    ) -> AnnouncementThread {
-        match (announcement_thread_handle, announcement_thread_sender) {
-            (Some(handle), Some(sender)) => AnnouncementThread::Running { handle, sender },
-            (_, _) => AnnouncementThread::Stopped,
+    pub fn new(app_handle: tauri::AppHandle, start_thread: bool) -> Self {
+        if start_thread {
+            let (tx, rx) = mpsc::channel();
+            let thread_handle = tokio::spawn(announcement_thread_loop(app_handle, rx));
+
+            Self::Running {
+                handle: thread_handle,
+                sender: tx,
+            }
+        } else {
+            Self::Stopped
         }
     }
 }

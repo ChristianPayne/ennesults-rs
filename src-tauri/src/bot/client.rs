@@ -28,14 +28,14 @@ pub enum Client {
 
 impl Client {
     pub fn new(
-        client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
-        join_handle: JoinHandle<()>,
+        twitch_client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
+        twitch_client_thread_handle: JoinHandle<()>,
         insult_thread: InsultThread,
         announcement_thread: AnnouncementThread,
     ) -> Self {
         Client::Connected {
-            client,
-            client_join_handle: join_handle,
+            client: twitch_client,
+            client_join_handle: twitch_client_thread_handle,
             insult_thread,
             announcement_thread,
         }
@@ -99,6 +99,7 @@ pub async fn handle_incoming_chat(
         match message {
             ServerMessage::Privmsg(msg) => {
                 {
+                    // dbg!(&msg);
                     let mut chat_messages = bot
                         .chat_messages
                         .lock()

@@ -2,7 +2,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
 use crate::{
-    bot::{Bot, BotData, User},
+    bot::{choose_random_insult, format_insult, Bot, BotData, User},
     file::write_file,
 };
 
@@ -61,7 +61,16 @@ impl Command for UnconsentCommand {
                     } else {
                         user.consented = false;
 
-                        Some(format!("{}, unconsented!", &user.username))
+                        // Pick a random insult.
+                        let insult = match choose_random_insult(app_handle.clone()) {
+                            Some(insult) => format_insult(app_handle.clone(), &insult),
+                            None => None,
+                        };
+
+                        match insult {
+                            None => Some(format!("{}, unconsented!", &user.username)),
+                            Some(insult) => Some(insult),
+                        }
                     }
                 }
             },

@@ -1,6 +1,8 @@
-use std::sync::mpsc::{Receiver, TryRecvError};
+use std::collections::HashSet;
+use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::{thread, time::Duration};
 
+use serde_inline_default::serde_inline_default;
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
@@ -14,15 +16,19 @@ use crate::date::{
 
 use super::{say, Bot, User};
 
+#[serde_inline_default]
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
 pub struct Insults(Vec<Insult>);
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, TS)]
+#[serde_inline_default]
+#[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct Insult {
     id: String,
     value: String,
+    #[serde(default = "HashSet::new")]
+    tags: HashSet<InsultTag>,
 }
 
 #[derive(Debug, Default)]
@@ -35,18 +41,29 @@ pub enum InsultThread {
     Stopped,
 }
 
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, TS, PartialEq, Eq, Hash)]
+pub enum InsultTag {
+    Consent,
+    Unconsent,
+    Raid,
+}
+
 pub enum InsultThreadShutdownError {
     ThreadNotRunning,
 }
 
 impl InsultThread {
-    pub fn from(
-        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
-        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
-    ) -> InsultThread {
-        match (insult_thread_handle, insult_thread_sender) {
-            (Some(handle), Some(sender)) => InsultThread::Running { handle, sender },
-            (_, _) => InsultThread::Stopped,
+    pub fn new(app_handle: tauri::AppHandle, start_thread: bool) -> Self {
+        if start_thread {
+            let (tx, rx) = mpsc::channel();
+            let thread_handle = tokio::spawn(insult_thread_loop(app_handle, rx));
+
+            Self::Running {
+                handle: thread_handle,
+                sender: tx,
+            }
+        } else {
+            Self::Stopped
         }
     }
 
@@ -66,6 +83,7 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
     'thread_loop: loop {
         let state = app_handle.state::<Bot>();
+
         let (enable_insults, time_between_insults) = {
             let bot_info = state
                 .bot_info
@@ -86,88 +104,105 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
             Err(TryRecvError::Empty) => {}
         }
 
-        if enable_insults {
-            let state = app_handle.state::<Bot>();
+        let insults = {
+            let insults = state
+                .bot_data
+                .insults
+                .lock()
+                .expect("Failed to get lock for insults.");
 
-            let insults = {
-                let insults = state
-                    .bot_data
-                    .insults
-                    .lock()
-                    .expect("Failed to get lock for insults.");
+            insults.0.clone()
+        };
 
-                insults.0.clone()
-            };
+        // Pick a random insult.
+        let random_insult = choose_random_insult(app_handle.clone());
 
-            // Pick a random insult.
-            let random_insult = insults.choose(&mut rand::thread_rng());
+        match random_insult {
+            Some(insult) => {
+                let formatted_insult = format_insult(app_handle.clone(), &insult);
 
-            match random_insult {
-                Some(insult) => {
-                    let mut formatted_message = insult.value.clone();
-
-                    if formatted_message.contains("{{streamer}}") {
-                        let channel_name = {
-                            let state = app_handle.state::<Bot>();
-                            let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
-                            bot_info.channel_name.clone()
-                        };
-
-                        formatted_message =
-                            formatted_message.replace("{{streamer}}", channel_name.as_str())
+                match formatted_insult {
+                    None => continue 'thread_loop,
+                    Some(insult) => {
+                        // Say it in chat.
+                        let _ = say(state.clone(), insult.as_str()).await;
                     }
-
-                    if formatted_message.contains("{{user}}") {
-                        let mut users = {
-                            let users_state = state
-                                .bot_data
-                                .users
-                                .lock()
-                                .expect("Failed to get lock for users.");
-                            users_state.clone()
-                        };
-
-                        while formatted_message.contains("{{user}}") {
-                            let random_user = {
-                                get_random_user(
-                                    app_handle.clone(),
-                                    !insult.value.contains("{{streamer}}"),
-                                    &users,
-                                )
-                                .cloned()
-                            };
-
-                            if let Some(user) = &random_user {
-                                let username = user.username.clone();
-                                users.0.remove(&user.username);
-                            }
-
-                            match random_user {
-                                Some(user) => {
-                                    formatted_message = formatted_message.replacen(
-                                        "{{user}}",
-                                        user.username.as_str(),
-                                        1,
-                                    );
-                                }
-                                None => {
-                                    println!("No users available after filters to insult.");
-                                    continue 'thread_loop;
-                                }
-                            }
-                        }
-                    }
-
-                    // Say it in chat.
-                    let _ = say(state.clone(), formatted_message.as_str()).await;
                 }
-                None => {
-                    println!("Could not get a random insult.")
-                }
+            }
+            None => {
+                println!("Could not get a random insult.")
             }
         }
         println!("Looping insult thread.");
     }
+}
+
+pub fn choose_random_insult(app_handle: tauri::AppHandle) -> Option<Insult> {
+    let state = app_handle.state::<Bot>();
+    let insults = state
+        .bot_data
+        .insults
+        .lock()
+        .expect("Failed to get lock for insults");
+
+    // Pick a random insult.
+    let rand_insult = insults.0.choose(&mut rand::thread_rng());
+    rand_insult.cloned()
+}
+
+pub fn format_insult(app_handle: tauri::AppHandle, insult: &Insult) -> Option<String> {
+    let state = app_handle.state::<Bot>();
+    let mut formatted_message = insult.value.clone();
+
+    if formatted_message.contains("{{streamer}}") {
+        let channel_name = {
+            let state = app_handle.state::<Bot>();
+            let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
+            bot_info.channel_name.clone()
+        };
+
+        formatted_message = formatted_message.replace("{{streamer}}", channel_name.as_str())
+    }
+
+    if formatted_message.contains("{{user}}") {
+        let mut users = {
+            let users_state = state
+                .bot_data
+                .users
+                .lock()
+                .expect("Failed to get lock for users.");
+            users_state.clone()
+        };
+
+        while formatted_message.contains("{{user}}") {
+            let random_user = {
+                get_random_user(
+                    app_handle.clone(),
+                    !insult.value.contains("{{streamer}}"),
+                    &users,
+                )
+                .cloned()
+            };
+
+            if let Some(user) = &random_user {
+                let username = user.username.clone();
+                users.0.remove(&user.username);
+            }
+
+            match random_user {
+                Some(user) => {
+                    formatted_message =
+                        formatted_message.replacen("{{user}}", user.username.as_str(), 1);
+                }
+                None => {
+                    println!("No users available after filters to insult.");
+                    return None;
+                }
+            }
+        }
+    }
+
+    Some(formatted_message)
 }
 
 pub mod api {

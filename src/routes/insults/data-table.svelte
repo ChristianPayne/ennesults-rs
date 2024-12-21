@@ -53,6 +53,10 @@
         ),
     }),
     table.column({
+      accessor: "tags",
+      header: "Tags",
+    }),
+    table.column({
       accessor: "id",
       header: "Actions",
       cell: ({ value }) => {

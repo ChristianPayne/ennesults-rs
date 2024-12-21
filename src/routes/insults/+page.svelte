@@ -19,6 +19,7 @@
 
   onMount(async () => {
     let insults = await invoke<Insult[]>("get_insults");
+    console.log("🪵 ~ onMount ~ insults:", insults);
     insults$.set(insults);
 
     unlisten = await listen<Insult[]>("insults_update", (event) => {
@@ -39,6 +40,7 @@
     let newInsult: Insult = {
       id: nanoid(),
       value: input.trim(),
+      tags: [],
     };
 
     await invoke("save_insults", { insults: [newInsult, ...currentInsults] });
