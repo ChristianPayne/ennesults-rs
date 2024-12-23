@@ -1,11 +1,15 @@
-use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::{thread, time::Duration};
-
+use rand::{
+    seq::{IteratorRandom, SliceRandom},
+    Rng,
+};
+use std::{
+    sync::mpsc::{self, Receiver, Sender, TryRecvError},
+    thread,
+    time::Duration,
+};
 use tauri::{AppHandle, Manager};
+use tokio::task::JoinHandle;
 use ts_rs::TS;
-
-use rand::seq::{IteratorRandom, SliceRandom};
-use rand::Rng;
 
 use super::{say, Bot, User};
 
@@ -23,8 +27,8 @@ pub struct Announcement {
 #[derive(Debug, Default)]
 pub enum AnnouncementThread {
     Running {
-        handle: tokio::task::JoinHandle<()>,
-        sender: std::sync::mpsc::Sender<()>,
+        handle: JoinHandle<()>,
+        sender: Sender<()>,
     },
     #[default]
     Stopped,
@@ -81,48 +85,46 @@ pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
             Err(TryRecvError::Empty) => {}
         }
 
-        if enable_announcements {
-            let state = app_handle.state::<Bot>();
+        let state = app_handle.state::<Bot>();
 
-            let announcements = {
-                let announcements = state
-                    .bot_data
-                    .announcements
-                    .lock()
-                    .expect("Failed to get lock for insults.");
+        let announcements = {
+            let announcements = state
+                .bot_data
+                .announcements
+                .lock()
+                .expect("Failed to get lock for insults.");
 
-                announcements.0.clone()
-            };
+            announcements.0.clone()
+        };
 
-            // Pick a random announcement.
-            let announcement = {
-                if randomize_announcements {
-                    announcements.choose(&mut rand::thread_rng())
+        // Pick a random announcement.
+        let announcement = {
+            if randomize_announcements {
+                announcements.choose(&mut rand::thread_rng())
+            } else {
+                // Next announcement
+                if announcements.is_empty() {
+                    None
                 } else {
-                    // Next announcement
-                    if announcements.is_empty() {
-                        None
-                    } else {
-                        let x = &announcements[next_announcement_index];
+                    let x = &announcements[next_announcement_index];
 
-                        next_announcement_index += 1;
+                    next_announcement_index += 1;
 
-                        if next_announcement_index == announcements.len() {
-                            next_announcement_index = 0
-                        }
-
-                        Some(x)
+                    if next_announcement_index == announcements.len() {
+                        next_announcement_index = 0
                     }
-                }
-            };
 
-            match announcement {
-                Some(announcement) => {
-                    // Say it in chat.
-                    let _ = say(state.clone(), announcement.value.as_str()).await;
+                    Some(x)
                 }
-                None => println!("Could not get an announcement to say."),
             }
+        };
+
+        match announcement {
+            Some(announcement) => {
+                // Say it in chat.
+                let _ = say(state.clone(), announcement.value.as_str()).await;
+            }
+            None => println!("Could not get an announcement to say."),
         }
 
         println!("Looping announcement thread.");

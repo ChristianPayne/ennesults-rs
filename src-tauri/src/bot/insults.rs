@@ -16,12 +16,10 @@ use crate::date::{
 
 use super::{say, Bot, User};
 
-#[serde_inline_default]
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
 pub struct Insults(Vec<Insult>);
 
-#[serde_inline_default]
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct Insult {
@@ -42,6 +40,7 @@ pub enum InsultThread {
 }
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, TS, PartialEq, Eq, Hash)]
+#[ts(export, export_to = "../../src/lib/types.ts")]
 pub enum InsultTag {
     Consent,
     Unconsent,
@@ -99,7 +98,7 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
         match rx.try_recv() {
             Ok(_) | Err(TryRecvError::Disconnected) => {
                 println!("Shutting down insult thread.");
-                break;
+                break 'thread_loop;
             }
             Err(TryRecvError::Empty) => {}
         }
@@ -253,7 +252,7 @@ pub mod api {
 
         match insults.0.iter_mut().find(|i| i.id == insult.id) {
             Some(insult_in_db) => {
-                insult_in_db.value = insult.value;
+                *insult_in_db = insult;
             }
             None => {
                 return Err("Failed to find insult in database.".to_string());

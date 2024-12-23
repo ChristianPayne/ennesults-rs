@@ -42,6 +42,7 @@
       <DropdownMenu.Item on:click={() => setInsultBeingEdited(id)}>
         Edit Insult
       </DropdownMenu.Item>
+      <DropdownMenu.Separator />
       <DropdownMenu.Item
         on:click={() => deleteInsult(id)}
         class="text-destructive"

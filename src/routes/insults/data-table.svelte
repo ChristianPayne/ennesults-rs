@@ -11,6 +11,7 @@
   import DataTableActions from "./data-table-actions.svelte";
   import EditInsult from "$lib/components/editInsult.svelte";
   import { invoke } from "@tauri-apps/api/core";
+  import EditInsultTags from "$lib/components/editInsultTags.svelte";
 
   export let insults: Writable<Insult[]>;
 
@@ -22,16 +23,25 @@
     insultBeingEdited.set(id);
   }
 
-  async function updateInsult(insultValue: string) {
+  async function updateInsult(
+    insult: Insult | undefined,
+    closeAfterSave: boolean = true,
+  ) {
     if (!get(insultBeingEdited)) return;
-    if (insultValue == "") {
+    if (insult === undefined) {
       insultBeingEdited.set("");
       return;
     }
+    if (insult.value == "") return;
+
     await invoke("update_insult", {
-      insult: { id: get(insultBeingEdited), value: insultValue },
+      insult,
+    }).then(() => {
+      console.log("Saved insult", insult);
     });
-    insultBeingEdited.set("");
+    if (closeAfterSave) {
+      insultBeingEdited.set("");
+    }
   }
 
   const columns = table.createColumns([
@@ -53,8 +63,18 @@
         ),
     }),
     table.column({
-      accessor: "tags",
+      accessor: (insult) => insult,
       header: "Tags",
+      cell: ({ value }) => {
+        return createRender(
+          EditInsultTags,
+          derived(insultBeingEdited, (insultBeingEdited) => ({
+            insultBeingEdited,
+            insult: value,
+            callback: updateInsult,
+          })),
+        );
+      },
     }),
     table.column({
       accessor: "id",

@@ -2,7 +2,10 @@
   import type { Insult } from "$lib/types";
   import Input from "./ui/input/input.svelte";
 
-  export let callback: (insultValue: string) => void;
+  export let callback: (
+    insult: Insult | undefined,
+    closeAfterSave?: boolean,
+  ) => void;
   export let insultBeingEdited: string;
   export let insult: Insult;
 
@@ -12,14 +15,14 @@
     switch (e.keyCode) {
       case 13: {
         // Enter
-        callback(value);
         insult.value = value;
+        callback(insult);
         break;
       }
       case 27: {
         // Escape
         value = insult.value;
-        callback("");
+        callback(undefined);
         break;
       }
     }
