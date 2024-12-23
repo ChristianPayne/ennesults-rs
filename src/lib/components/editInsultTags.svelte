@@ -12,7 +12,13 @@
   export let insultBeingEdited: string;
   export let insult: Insult;
 
-  const insultTagOptions: InsultTag[] = ["Consent", "Unconsent", "Raid"];
+  const insultTagOptions: InsultTag[] = [
+    "Insult",
+    "Consent",
+    "Unconsent",
+    "Raid",
+    "Lurk",
+  ];
 
   function onTagsChange(value: Selected<InsultTag>[]) {
     const newTags = value.map((x) => x.value);

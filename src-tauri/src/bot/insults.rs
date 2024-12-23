@@ -18,15 +18,15 @@ use super::{say, Bot, User};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
-pub struct Insults(Vec<Insult>);
+pub struct Insults(pub Vec<Insult>);
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct Insult {
-    id: String,
-    value: String,
+    pub id: String,
+    pub value: String,
     #[serde(default = "HashSet::new")]
-    tags: HashSet<InsultTag>,
+    pub tags: HashSet<InsultTag>,
 }
 
 #[derive(Debug, Default)]
@@ -42,9 +42,11 @@ pub enum InsultThread {
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, TS, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub enum InsultTag {
+    Insult,
     Consent,
     Unconsent,
     Raid,
+    Lurk,
 }
 
 pub enum InsultThreadShutdownError {
@@ -210,7 +212,7 @@ pub mod api {
     use crate::bot::{Bot, BotData};
     use crate::file::{write_file, WriteFileError};
 
-    use super::{Insult, Insults};
+    use super::{Insult, InsultTag, Insults};
 
     #[tauri::command]
     pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {

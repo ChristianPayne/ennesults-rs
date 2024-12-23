@@ -40,7 +40,7 @@
     let newInsult: Insult = {
       id: nanoid(),
       value: input.trim(),
-      tags: [],
+      tags: ["Insult"],
     };
 
     await invoke("save_insults", { insults: [newInsult, ...currentInsults] });

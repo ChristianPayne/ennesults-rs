@@ -13,7 +13,7 @@ export type DownloadEvent = { "event": "Started", "data": { contentLength: bigin
 
 export type Insult = { id: string, value: string, tags: Array<InsultTag>, };
 
-export type InsultTag = "Consent" | "Unconsent" | "Raid";
+export type InsultTag = "Insult" | "Consent" | "Unconsent" | "Raid" | "Lurk";
 
 export type TwitchMessage = { username: string, message: string, color: SerializeRBGColor | null, };
 
