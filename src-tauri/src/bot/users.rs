@@ -18,6 +18,18 @@ use crate::{date::get_local_now_formatted, file::write_file};
 #[serde(default = "Default::default")]
 pub struct Users(pub HashMap<String, User>);
 
+impl Users {
+    pub fn from(users: Vec<User>) -> Self {
+        let mut users_hash: HashMap<String, User> = HashMap::new();
+
+        for user in users {
+            users_hash.insert(user.username.clone(), user);
+        }
+
+        Self(users_hash)
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct User {
@@ -84,6 +96,7 @@ pub fn get_random_user(
     app_handle: AppHandle,
     streamer_inclusive: bool,
     users: &Users,
+    user_must_be_consented: bool,
 ) -> Option<&User> {
     let bot_state = app_handle.state::<Bot>();
     let bot_info = bot_state
@@ -110,7 +123,13 @@ pub fn get_random_user(
                 }
             };
 
-            user_is_not_lurking && user.consented
+            user_is_not_lurking && {
+                if user_must_be_consented {
+                    user.consented
+                } else {
+                    true
+                }
+            }
         })
         .choose(&mut rand::thread_rng())
 }

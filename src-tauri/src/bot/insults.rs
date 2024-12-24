@@ -14,7 +14,7 @@ use crate::date::{
     date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now, parse_date_time,
 };
 
-use super::{say, Bot, User};
+use super::{say, Bot, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -116,11 +116,11 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
         };
 
         // Pick a random insult.
-        let random_insult = choose_random_insult(app_handle.clone());
+        let random_insult = choose_random_insult(app_handle.clone(), Some(vec![InsultTag::Insult]));
 
         match random_insult {
             Some(insult) => {
-                let formatted_insult = format_insult(app_handle.clone(), &insult);
+                let formatted_insult = format_insult(app_handle.clone(), &insult, None, true);
 
                 match formatted_insult {
                     None => continue 'thread_loop,
@@ -138,7 +138,10 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     }
 }
 
-pub fn choose_random_insult(app_handle: tauri::AppHandle) -> Option<Insult> {
+pub fn choose_random_insult(
+    app_handle: tauri::AppHandle,
+    insult_tag_filter: Option<Vec<InsultTag>>,
+) -> Option<Insult> {
     let state = app_handle.state::<Bot>();
     let insults = state
         .bot_data
@@ -146,12 +149,37 @@ pub fn choose_random_insult(app_handle: tauri::AppHandle) -> Option<Insult> {
         .lock()
         .expect("Failed to get lock for insults");
 
+    let filtered_insults = {
+        match insult_tag_filter {
+            None => insults.0.clone(),
+            Some(filter) => insults
+                .0
+                .clone()
+                .into_iter()
+                .filter(|insult| {
+                    for tag in &insult.tags {
+                        if filter.contains(tag) {
+                            return true;
+                        }
+                    }
+
+                    false
+                })
+                .collect::<Vec<Insult>>(),
+        }
+    };
+
     // Pick a random insult.
-    let rand_insult = insults.0.choose(&mut rand::thread_rng());
+    let rand_insult = filtered_insults.choose(&mut rand::thread_rng());
     rand_insult.cloned()
 }
 
-pub fn format_insult(app_handle: tauri::AppHandle, insult: &Insult) -> Option<String> {
+pub fn format_insult(
+    app_handle: tauri::AppHandle,
+    insult: &Insult,
+    users_to_use_in_formatting: Option<Vec<User>>,
+    user_must_be_consented: bool,
+) -> Option<String> {
     let state = app_handle.state::<Bot>();
     let mut formatted_message = insult.value.clone();
 
@@ -166,13 +194,18 @@ pub fn format_insult(app_handle: tauri::AppHandle, insult: &Insult) -> Option<St
     }
 
     if formatted_message.contains("{{user}}") {
-        let mut users = {
-            let users_state = state
-                .bot_data
-                .users
-                .lock()
-                .expect("Failed to get lock for users.");
-            users_state.clone()
+        let mut users: Users = {
+            match users_to_use_in_formatting {
+                None => {
+                    let users_state = state
+                        .bot_data
+                        .users
+                        .lock()
+                        .expect("Failed to get lock for users.");
+                    users_state.clone()
+                }
+                Some(users) => Users::from(users),
+            }
         };
 
         while formatted_message.contains("{{user}}") {
@@ -181,17 +214,15 @@ pub fn format_insult(app_handle: tauri::AppHandle, insult: &Insult) -> Option<St
                     app_handle.clone(),
                     !insult.value.contains("{{streamer}}"),
                     &users,
+                    user_must_be_consented,
                 )
                 .cloned()
             };
 
-            if let Some(user) = &random_user {
-                let username = user.username.clone();
-                users.0.remove(&user.username);
-            }
-
             match random_user {
                 Some(user) => {
+                    users.0.remove(&user.username);
+
                     formatted_message =
                         formatted_message.replacen("{{user}}", user.username.as_str(), 1);
                 }
