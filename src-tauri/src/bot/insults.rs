@@ -120,7 +120,11 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
 
         match random_insult {
             Some(insult) => {
-                let formatted_insult = format_insult(app_handle.clone(), &insult, None, true);
+                let formatted_insult = format_insult(
+                    app_handle.clone(),
+                    &insult,
+                    FormattingOptions::Random { users: None },
+                );
 
                 match formatted_insult {
                     None => continue 'thread_loop,
@@ -138,47 +142,60 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     }
 }
 
+/// Chooses a random insult from the state of the bot.  
+/// Inclusive tags allow you to filter down all insults in the bot to only ones tags with one or more of the tags provided.
 pub fn choose_random_insult(
     app_handle: tauri::AppHandle,
     insult_tag_filter: Option<Vec<InsultTag>>,
 ) -> Option<Insult> {
     let state = app_handle.state::<Bot>();
+
     let insults = state
         .bot_data
         .insults
         .lock()
         .expect("Failed to get lock for insults");
 
-    let filtered_insults = {
+    let filtered_insults: Vec<Insult> = {
         match insult_tag_filter {
+            // No filters provided; just clone all of the insults we have in state.
             None => insults.0.clone(),
+            // Filter the insults in state using the filters passed into this function.
             Some(filter) => insults
                 .0
                 .clone()
                 .into_iter()
                 .filter(|insult| {
+                    // If the insult has a tag that our filter also has, include it.
                     for tag in &insult.tags {
                         if filter.contains(tag) {
+                            // Returning here because only one tag is required to pass the filter.
                             return true;
                         }
                     }
 
+                    // If we get to this then there are no tags on this insult that match the filter so we cut it from the filtered results.
                     false
                 })
-                .collect::<Vec<Insult>>(),
+                .collect(),
         }
     };
 
-    // Pick a random insult.
+    // Pick a random insult from the insults we have filtered (or not).
     let rand_insult = filtered_insults.choose(&mut rand::thread_rng());
     rand_insult.cloned()
+}
+
+pub enum FormattingOptions {
+    Unconsent { user: User },
+    Consent { user: User },
+    Random { users: Option<Vec<User>> },
 }
 
 pub fn format_insult(
     app_handle: tauri::AppHandle,
     insult: &Insult,
-    users_to_use_in_formatting: Option<Vec<User>>,
-    user_must_be_consented: bool,
+    formatting_options: FormattingOptions,
 ) -> Option<String> {
     let state = app_handle.state::<Bot>();
     let mut formatted_message = insult.value.clone();
@@ -194,44 +211,72 @@ pub fn format_insult(
     }
 
     if formatted_message.contains("{{user}}") {
-        let mut users: Users = {
-            match users_to_use_in_formatting {
-                None => {
-                    let users_state = state
-                        .bot_data
-                        .users
-                        .lock()
-                        .expect("Failed to get lock for users.");
-                    users_state.clone()
+        match formatting_options {
+            FormattingOptions::Consent { user } | FormattingOptions::Unconsent { user } => {
+                // If we are consenting or unconsenting, the formatted message can contain the same username multiple times.
+                let users = Users::from(vec![user]);
+                while formatted_message.contains("{{user}}") {
+                    let random_user = get_random_user(
+                        app_handle.clone(),
+                        !insult.value.contains("{{streamer}}"),
+                        &users,
+                        false,
+                    )
+                    .cloned();
+
+                    match random_user {
+                        Some(user) => {
+                            formatted_message =
+                                formatted_message.replacen("{{user}}", user.username.as_str(), 1);
+                        }
+                        None => {
+                            println!("No users available after filters to insult.");
+                            return None;
+                        }
+                    }
                 }
-                Some(users) => Users::from(users),
+            }
+            FormattingOptions::Random { users } => {
+                // If we are picking a random option for formatting, we remove each picked user from the user pool.
+                let mut users: Users = {
+                    match users {
+                        None => {
+                            let users_state = state
+                                .bot_data
+                                .users
+                                .lock()
+                                .expect("Failed to get lock for users.");
+                            users_state.clone()
+                        }
+                        Some(users) => Users::from(users),
+                    }
+                };
+
+                while formatted_message.contains("{{user}}") {
+                    let random_user = get_random_user(
+                        app_handle.clone(),
+                        !insult.value.contains("{{streamer}}"),
+                        &users,
+                        true,
+                    )
+                    .cloned();
+
+                    match random_user {
+                        Some(user) => {
+                            // How do we deal with removing users?
+                            users.0.remove(&user.username);
+
+                            formatted_message =
+                                formatted_message.replacen("{{user}}", user.username.as_str(), 1);
+                        }
+                        None => {
+                            println!("No users available after filters to insult.");
+                            return None;
+                        }
+                    }
+                }
             }
         };
-
-        while formatted_message.contains("{{user}}") {
-            let random_user = {
-                get_random_user(
-                    app_handle.clone(),
-                    !insult.value.contains("{{streamer}}"),
-                    &users,
-                    user_must_be_consented,
-                )
-                .cloned()
-            };
-
-            match random_user {
-                Some(user) => {
-                    users.0.remove(&user.username);
-
-                    formatted_message =
-                        formatted_message.replacen("{{user}}", user.username.as_str(), 1);
-                }
-                None => {
-                    println!("No users available after filters to insult.");
-                    return None;
-                }
-            }
-        }
     }
 
     Some(formatted_message)

@@ -66,12 +66,12 @@ async fn main() {
             app.manage(updater::PendingUpdate(Mutex::new(None)));
 
             // Run any migrations on the data files before loading the files into the bot.
+            println!("Checking for migrations...");
             run_migrations(app.handle().clone());
 
-            println!("Setting up bot!");
+            println!("Setting up bot...");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
-
             let comebacks =
                 read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
             let insults =
@@ -90,6 +90,7 @@ async fn main() {
                 println!("{}", error)
             }
 
+            println!("Bot started successfully!");
             Ok(())
         })
         .run(tauri::generate_context!())

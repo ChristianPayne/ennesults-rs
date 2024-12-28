@@ -19,7 +19,6 @@
 
   onMount(async () => {
     let insults = await invoke<Insult[]>("get_insults");
-    console.log("🪵 ~ onMount ~ insults:", insults);
     insults$.set(insults);
 
     unlisten = await listen<Insult[]>("insults_update", (event) => {

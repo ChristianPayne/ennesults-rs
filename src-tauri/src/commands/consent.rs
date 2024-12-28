@@ -2,7 +2,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
 use crate::{
-    bot::{choose_random_insult, format_insult, Bot, BotData, InsultTag, User},
+    bot::{choose_random_insult, format_insult, Bot, BotData, FormattingOptions, InsultTag, User},
     file::write_file,
 };
 
@@ -69,8 +69,7 @@ impl Command for ConsentCommand {
                             Some(insult) => format_insult(
                                 app_handle.clone(),
                                 &insult,
-                                Some(vec![user.clone()]),
-                                false,
+                                FormattingOptions::Consent { user: user.clone() },
                             ),
                             None => None,
                         };

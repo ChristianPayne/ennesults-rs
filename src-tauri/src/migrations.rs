@@ -2,9 +2,11 @@ use std::collections::HashMap;
 
 use tauri::{Emitter, Manager};
 
-use crate::bot::{api::save_insults, Bot, BotData, Insult, InsultTag, Insults};
+use crate::bot::{Bot, BotData, Insult, InsultTag, Insults};
 use crate::file::{read_json_file, write_file, WriteFileError};
 
+/// Migrations allow us to change the shape of the file system before running the application.  
+/// Each migration block should read from the file system and write back to the file system. No state should be touched in any of them as the state has not been managed by Tauri yet.
 pub fn run_migrations(app_handle: tauri::AppHandle) -> Result<(), String> {
     // Get migrations file. This holds the function signature name of different migrations.
     let migrations_previously_run =
@@ -12,7 +14,6 @@ pub fn run_migrations(app_handle: tauri::AppHandle) -> Result<(), String> {
 
     let mut migrations_run: Vec<String> = vec![];
 
-    // Check for each migration and run it. No state can be used in these migrations. We run them before we manage state.
     if !migrations_previously_run.contains(&"migrate_insult_tags".to_string()) {
         migrate_insult_tags(app_handle.clone())?;
         migrations_run.push("migrate_insult_tags".to_string());
@@ -32,6 +33,7 @@ pub fn run_migrations(app_handle: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// 2024-12-28 - Migration to add insult tags to the file system. The default value for tags does not work in our case because we want a default tag of "Insult" to be present on all existing insults. Run the migration once to add the tags. After we run it, we don't want to run it again as someone could remove all tags from an insult and we should not add them back.
 pub fn migrate_insult_tags(app_handle: tauri::AppHandle) -> Result<(), String> {
     let mut insults_migrated = 0;
 
@@ -45,7 +47,6 @@ pub fn migrate_insult_tags(app_handle: tauri::AppHandle) -> Result<(), String> {
         }
     }
 
-    // save_insults(app_handle, insults)?;
     let write_result = write_file::<Insults>(&app_handle, "insults.json", insults);
 
     if let Some(err) = write_result.err() {
