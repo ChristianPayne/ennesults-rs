@@ -11,7 +11,9 @@ export type Comeback = { id: string, value: string, };
 
 export type DownloadEvent = { "event": "Started", "data": { contentLength: bigint | null, } } | { "event": "Progress", "data": { chunkLength: number, } } | { "event": "Finished" };
 
-export type Insult = { id: string, value: string, };
+export type Insult = { id: string, value: string, tags: Array<InsultTag>, };
+
+export type InsultTag = "Insult" | "Consent" | "Unconsent" | "Raid" | "Lurk";
 
 export type TwitchMessage = { username: string, message: string, color: SerializeRBGColor | null, };
 

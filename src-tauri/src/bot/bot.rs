@@ -1,4 +1,4 @@
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::{self, Emitter, Manager};
 use ts_rs::TS;
@@ -10,8 +10,7 @@ use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 use crate::bot::{announcement_thread_loop, insult_thread_loop, AnnouncementThread, InsultThread};
 
-use super::api::get_bot_info;
-use super::{handle_incoming_chat, BotData, BotInfo, Client};
+use super::{api::get_bot_info, handle_incoming_chat, BotData, BotInfo, Client};
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -73,11 +72,12 @@ impl Bot {
     }
 
     pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) -> Result<(), &str> {
-        println!("Connecting to Twitch!");
+        println!("Connecting to Twitch...");
         let _ = app_handle.emit("alert", "Connecting to Twitch");
         // default configuration is to join chat as anonymous.
         let bot_info = get_bot_info(app_handle.state::<Bot>());
 
+        // Handle the disconnecting of existing client connections to Twitch and any threads that are currently running.
         {
             let existing_client = &mut self
                 .client
@@ -92,6 +92,7 @@ impl Bot {
                     insult_thread,
                     announcement_thread,
                 } => {
+                    // Shut down the insult thread if it is running.
                     if let InsultThread::Running {
                         handle: insult_handle,
                         sender: insult_sender,
@@ -101,6 +102,7 @@ impl Bot {
                         insult_handle.abort();
                     }
 
+                    // Shut down the announcement thread if it is running.
                     if let AnnouncementThread::Running {
                         handle: announcement_handle,
                         sender: announcement_sender,
@@ -110,7 +112,10 @@ impl Bot {
                         announcement_handle.abort();
                     }
 
+                    // Tell the client to leave the twitch channel.
                     client.part(bot_info.channel_name.clone());
+
+                    // Update the state to reflect the client being disconnected.
                     **existing_client = Client::Disconnected;
                 }
             }
@@ -125,39 +130,26 @@ impl Bot {
             ))
         };
 
-        let (incoming_messages, client) =
+        let (incoming_messages, twitch_client) =
             TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
-        // first thing you should do: start consuming incoming messages,
-        // otherwise they will back up.
-        let join_handle = tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
+        // First thing we should do is start consuming incoming messages, otherwise they will back up.
+        let twitch_client_thread_handle =
+            tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
 
-        let (insult_thread_handle, insult_thread_sender) = if bot_info.enable_insults {
-            let (tx, rx) = mpsc::channel();
-            let app_handle = app_handle.clone();
-            let insult_thread = tokio::spawn(insult_thread_loop(app_handle, rx));
+        let insult_thread = InsultThread::new(app_handle.clone(), bot_info.enable_insults);
 
-            (Some(insult_thread), Some(tx))
-        } else {
-            (None, None)
-        };
+        let announcement_thread =
+            AnnouncementThread::new(app_handle.clone(), bot_info.enable_announcements);
 
-        let (announcement_thread_handle, announcement_thread_sender) =
-            if bot_info.enable_announcements {
-                let (tx, rx) = mpsc::channel();
-                let app_handle = app_handle.clone();
-                let announcement_thread = tokio::spawn(announcement_thread_loop(app_handle, rx));
-
-                (Some(announcement_thread), Some(tx))
-            } else {
-                (None, None)
-            };
-
-        *self.client.lock().unwrap() = Client::new(
-            client,
-            join_handle,
-            InsultThread::from(insult_thread_handle, insult_thread_sender),
-            AnnouncementThread::from(announcement_thread_handle, announcement_thread_sender),
+        *self
+            .client
+            .lock()
+            .expect("Failed to get lock for client when connecting to twitch.") = Client::new(
+            twitch_client,
+            twitch_client_thread_handle,
+            insult_thread,
+            announcement_thread,
         );
 
         Ok(())

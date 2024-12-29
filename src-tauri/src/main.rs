@@ -4,6 +4,7 @@
 extern crate dotenv_codegen;
 use std::sync::Mutex;
 
+use migrations::run_migrations;
 //Tauri
 use tauri::{Emitter, Manager};
 
@@ -13,6 +14,7 @@ mod changelog;
 mod commands;
 mod date;
 mod file;
+mod migrations;
 mod updater;
 
 use bot::{Announcements, Bot, BotData, BotInfo, Comebacks, Insults, Users};
@@ -57,15 +59,19 @@ async fn main() {
             crate::bot::api::save_announcements,
             crate::updater::fetch_update,
             crate::updater::install_update,
-            crate::changelog::get_changelog,
+            crate::changelog::get_changelog
         ])
         .setup(|app| {
+            // Manage state for updates.
             app.manage(updater::PendingUpdate(Mutex::new(None)));
 
-            println!("Setting up bot!");
+            // Run any migrations on the data files before loading the files into the bot.
+            println!("Checking for migrations...");
+            run_migrations(app.handle().clone());
+
+            println!("Setting up bot...");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
-
             let comebacks =
                 read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
             let insults =
@@ -84,6 +90,7 @@ async fn main() {
                 println!("{}", error)
             }
 
+            println!("Bot started successfully!");
             Ok(())
         })
         .run(tauri::generate_context!())

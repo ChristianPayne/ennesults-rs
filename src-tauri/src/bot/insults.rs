@@ -1,6 +1,8 @@
-use std::sync::mpsc::{Receiver, TryRecvError};
+use std::collections::HashSet;
+use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::{thread, time::Duration};
 
+use serde_inline_default::serde_inline_default;
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
@@ -12,17 +14,19 @@ use crate::date::{
     date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now, parse_date_time,
 };
 
-use super::{say, Bot, User};
+use super::{say, Bot, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
-pub struct Insults(Vec<Insult>);
+pub struct Insults(pub Vec<Insult>);
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, TS)]
+#[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct Insult {
-    id: String,
-    value: String,
+    pub id: String,
+    pub value: String,
+    #[serde(default = "HashSet::new")]
+    pub tags: HashSet<InsultTag>,
 }
 
 #[derive(Debug, Default)]
@@ -35,18 +39,32 @@ pub enum InsultThread {
     Stopped,
 }
 
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, TS, PartialEq, Eq, Hash)]
+#[ts(export, export_to = "../../src/lib/types.ts")]
+pub enum InsultTag {
+    Insult,
+    Consent,
+    Unconsent,
+    Raid,
+    Lurk,
+}
+
 pub enum InsultThreadShutdownError {
     ThreadNotRunning,
 }
 
 impl InsultThread {
-    pub fn from(
-        insult_thread_handle: Option<tokio::task::JoinHandle<()>>,
-        insult_thread_sender: Option<std::sync::mpsc::Sender<()>>,
-    ) -> InsultThread {
-        match (insult_thread_handle, insult_thread_sender) {
-            (Some(handle), Some(sender)) => InsultThread::Running { handle, sender },
-            (_, _) => InsultThread::Stopped,
+    pub fn new(app_handle: tauri::AppHandle, start_thread: bool) -> Self {
+        if start_thread {
+            let (tx, rx) = mpsc::channel();
+            let thread_handle = tokio::spawn(insult_thread_loop(app_handle, rx));
+
+            Self::Running {
+                handle: thread_handle,
+                sender: tx,
+            }
+        } else {
+            Self::Stopped
         }
     }
 
@@ -66,6 +84,7 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     println!("Starting new insult thread!");
     'thread_loop: loop {
         let state = app_handle.state::<Bot>();
+
         let (enable_insults, time_between_insults) = {
             let bot_info = state
                 .bot_info
@@ -81,93 +100,186 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
         match rx.try_recv() {
             Ok(_) | Err(TryRecvError::Disconnected) => {
                 println!("Shutting down insult thread.");
-                break;
+                break 'thread_loop;
             }
             Err(TryRecvError::Empty) => {}
         }
 
-        if enable_insults {
-            let state = app_handle.state::<Bot>();
+        let insults = {
+            let insults = state
+                .bot_data
+                .insults
+                .lock()
+                .expect("Failed to get lock for insults.");
 
-            let insults = {
-                let insults = state
-                    .bot_data
-                    .insults
-                    .lock()
-                    .expect("Failed to get lock for insults.");
+            insults.0.clone()
+        };
 
-                insults.0.clone()
-            };
+        // Pick a random insult.
+        let random_insult = choose_random_insult(app_handle.clone(), Some(vec![InsultTag::Insult]));
 
-            // Pick a random insult.
-            let random_insult = insults.choose(&mut rand::thread_rng());
+        match random_insult {
+            Some(insult) => {
+                let formatted_insult = format_insult(
+                    app_handle.clone(),
+                    &insult,
+                    FormattingOptions::Random { users: None },
+                );
 
-            match random_insult {
-                Some(insult) => {
-                    let mut formatted_message = insult.value.clone();
+                match formatted_insult {
+                    None => continue 'thread_loop,
+                    Some(insult) => {
+                        // Say it in chat.
+                        let _ = say(state.clone(), insult.as_str()).await;
+                    }
+                }
+            }
+            None => {
+                println!("Could not get a random insult.")
+            }
+        }
+        println!("Looping insult thread.");
+    }
+}
 
-                    if formatted_message.contains("{{streamer}}") {
-                        let channel_name = {
-                            let state = app_handle.state::<Bot>();
-                            let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
-                            bot_info.channel_name.clone()
-                        };
+/// Chooses a random insult from the state of the bot.  
+/// Inclusive tags allow you to filter down all insults in the bot to only ones tags with one or more of the tags provided.
+pub fn choose_random_insult(
+    app_handle: tauri::AppHandle,
+    insult_tag_filter: Option<Vec<InsultTag>>,
+) -> Option<Insult> {
+    let state = app_handle.state::<Bot>();
 
-                        formatted_message =
-                            formatted_message.replace("{{streamer}}", channel_name.as_str())
+    let insults = state
+        .bot_data
+        .insults
+        .lock()
+        .expect("Failed to get lock for insults");
+
+    let filtered_insults: Vec<Insult> = {
+        match insult_tag_filter {
+            // No filters provided; just clone all of the insults we have in state.
+            None => insults.0.clone(),
+            // Filter the insults in state using the filters passed into this function.
+            Some(filter) => insults
+                .0
+                .clone()
+                .into_iter()
+                .filter(|insult| {
+                    // If the insult has a tag that our filter also has, include it.
+                    for tag in &insult.tags {
+                        if filter.contains(tag) {
+                            // Returning here because only one tag is required to pass the filter.
+                            return true;
+                        }
                     }
 
-                    if formatted_message.contains("{{user}}") {
-                        let mut users = {
+                    // If we get to this then there are no tags on this insult that match the filter so we cut it from the filtered results.
+                    false
+                })
+                .collect(),
+        }
+    };
+
+    // Pick a random insult from the insults we have filtered (or not).
+    let rand_insult = filtered_insults.choose(&mut rand::thread_rng());
+    rand_insult.cloned()
+}
+
+pub enum FormattingOptions {
+    Unconsent { user: User },
+    Consent { user: User },
+    Random { users: Option<Vec<User>> },
+}
+
+pub fn format_insult(
+    app_handle: tauri::AppHandle,
+    insult: &Insult,
+    formatting_options: FormattingOptions,
+) -> Option<String> {
+    let state = app_handle.state::<Bot>();
+    let mut formatted_message = insult.value.clone();
+
+    if formatted_message.contains("{{streamer}}") {
+        let channel_name = {
+            let state = app_handle.state::<Bot>();
+            let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
+            bot_info.channel_name.clone()
+        };
+
+        formatted_message = formatted_message.replace("{{streamer}}", channel_name.as_str())
+    }
+
+    if formatted_message.contains("{{user}}") {
+        match formatting_options {
+            FormattingOptions::Consent { user } | FormattingOptions::Unconsent { user } => {
+                // If we are consenting or unconsenting, the formatted message can contain the same username multiple times.
+                let users = Users::from(vec![user]);
+                while formatted_message.contains("{{user}}") {
+                    let random_user = get_random_user(
+                        app_handle.clone(),
+                        !insult.value.contains("{{streamer}}"),
+                        &users,
+                        false,
+                    )
+                    .cloned();
+
+                    match random_user {
+                        Some(user) => {
+                            formatted_message =
+                                formatted_message.replacen("{{user}}", user.username.as_str(), 1);
+                        }
+                        None => {
+                            println!("No users available after filters to insult.");
+                            return None;
+                        }
+                    }
+                }
+            }
+            FormattingOptions::Random { users } => {
+                // If we are picking a random option for formatting, we remove each picked user from the user pool.
+                let mut users: Users = {
+                    match users {
+                        None => {
                             let users_state = state
                                 .bot_data
                                 .users
                                 .lock()
                                 .expect("Failed to get lock for users.");
                             users_state.clone()
-                        };
+                        }
+                        Some(users) => Users::from(users),
+                    }
+                };
 
-                        while formatted_message.contains("{{user}}") {
-                            let random_user = {
-                                get_random_user(
-                                    app_handle.clone(),
-                                    !insult.value.contains("{{streamer}}"),
-                                    &users,
-                                )
-                                .cloned()
-                            };
+                while formatted_message.contains("{{user}}") {
+                    let random_user = get_random_user(
+                        app_handle.clone(),
+                        !insult.value.contains("{{streamer}}"),
+                        &users,
+                        true,
+                    )
+                    .cloned();
 
-                            if let Some(user) = &random_user {
-                                let username = user.username.clone();
-                                users.0.remove(&user.username);
-                            }
+                    match random_user {
+                        Some(user) => {
+                            // How do we deal with removing users?
+                            users.0.remove(&user.username);
 
-                            match random_user {
-                                Some(user) => {
-                                    formatted_message = formatted_message.replacen(
-                                        "{{user}}",
-                                        user.username.as_str(),
-                                        1,
-                                    );
-                                }
-                                None => {
-                                    println!("No users available after filters to insult.");
-                                    continue 'thread_loop;
-                                }
-                            }
+                            formatted_message =
+                                formatted_message.replacen("{{user}}", user.username.as_str(), 1);
+                        }
+                        None => {
+                            println!("No users available after filters to insult.");
+                            return None;
                         }
                     }
-
-                    // Say it in chat.
-                    let _ = say(state.clone(), formatted_message.as_str()).await;
-                }
-                None => {
-                    println!("Could not get a random insult.")
                 }
             }
-        }
-        println!("Looping insult thread.");
+        };
     }
+
+    Some(formatted_message)
 }
 
 pub mod api {
@@ -176,7 +288,7 @@ pub mod api {
     use crate::bot::{Bot, BotData};
     use crate::file::{write_file, WriteFileError};
 
-    use super::{Insult, Insults};
+    use super::{Insult, InsultTag, Insults};
 
     #[tauri::command]
     pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {
@@ -218,7 +330,7 @@ pub mod api {
 
         match insults.0.iter_mut().find(|i| i.id == insult.id) {
             Some(insult_in_db) => {
-                insult_in_db.value = insult.value;
+                *insult_in_db = insult;
             }
             None => {
                 return Err("Failed to find insult in database.".to_string());

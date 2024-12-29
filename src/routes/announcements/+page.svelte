@@ -1,15 +1,14 @@
 <script lang="ts">
+  import { customAlphabet } from "nanoid";
+  const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
   import { onMount, onDestroy } from "svelte";
   import { writable, get } from "svelte/store";
-  import Button from "$lib/components/ui/button/button.svelte";
-  import Input from "$lib/components/ui/input/input.svelte";
-  import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  import type { Announcement } from "$lib/types";
-  import { customAlphabet } from "nanoid";
-  const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
   import DataTable from "./data-table.svelte";
+  import type { Announcement } from "$lib/types";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
 
   let announcements$ = writable<Announcement[]>([]);
 
@@ -30,7 +29,7 @@
     unlisten?.();
   });
 
-  async function saveAnnouncement() {
+  async function saveNewAnnouncement() {
     if (input.trim() === "") {
       return;
     }
@@ -53,7 +52,7 @@
   <h1>Announcements</h1>
 
   <div class="flex gap-2 w-full">
-    <form on:submit={() => saveAnnouncement()} class="flex gap-2 w-full">
+    <form on:submit={() => saveNewAnnouncement()} class="flex gap-2 w-full">
       <Input type="text" bind:value={input} placeholder="Add announcement..." />
       <Button type="submit">Add</Button>
     </form>
