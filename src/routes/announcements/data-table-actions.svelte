@@ -14,7 +14,7 @@
   let showEditControls: boolean = false;
 
   // The text we are editing inside of the sheet.
-  let editText: string = announcement.value;
+  $: editText = announcement.value;
 
   function toggleEditControls() {
     showEditControls = !showEditControls;

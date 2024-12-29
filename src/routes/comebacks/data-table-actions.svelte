@@ -13,7 +13,7 @@
   let showEditControls: boolean = false;
 
   // The text we are editing inside of the sheet.
-  let editText: string = comeback.value;
+  $: editText = comeback.value;
 
   function toggleEditControls() {
     showEditControls = !showEditControls;
