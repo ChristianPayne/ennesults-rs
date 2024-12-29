@@ -3,32 +3,40 @@ use serde::Serialize;
 #[derive(Clone, Serialize)]
 pub struct ChangelogVersionNotes {
     version: &'static str,
+    title: Option<&'static str>,
     notes: &'static str,
 }
 
 const CHANGELOG: [ChangelogVersionNotes; 5] = [
     ChangelogVersionNotes {
         version: "v.1.3.0",
+        title: Some("Insult Tags"),
         notes: r"- New icon.
-        - Settings page formatting changes.",
+        - Settings page formatting changes.
+        - New migrations capabilities (insult tags migration).
+        - You can now add Insult Tags to insults to use them for certain events.",
     },
     ChangelogVersionNotes {
         version: "v.1.2.0",
+        title: Some("Announcements"),
         notes: r"- Announcements! Add messages for Ennesults to say over time.
         - Added the ability to get multiple random users per insult.",
     },
     ChangelogVersionNotes {
         version: "v.1.1.1",
+        title: None,
         notes: r"- Fixed GitHub build action for updater to work successfully.",
     },
     ChangelogVersionNotes {
         version: "v.1.1.0",
+        title: Some("Editing"),
         notes: r"- Fancy new changelog!
         - You can now edit insults and comebacks after creating them.
         - You can now filter and sort users on the Users page.",
     },
     ChangelogVersionNotes {
         version: "v1.0.0",
+        title: Some("MVP"),
         notes: r"- Connection to Twitch!
         - Consenting / Unconsenting
         - Command parsing

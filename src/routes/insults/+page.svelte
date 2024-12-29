@@ -90,7 +90,9 @@
             <span class="font-semibold"
               >&lbrace;&lbrace;user&rbrace;&rbrace;</span
             >: Replaced with a random user that is active and has consented. You
-            can use multiple of these tags to get more random users.
+            can use multiple of these tags to get more random users. When using
+            them on consent or unconsent insults, they represent the user who
+            said the command.
           </AlertDialog.Description>
         </AlertDialog.Header>
         <AlertDialog.Footer>

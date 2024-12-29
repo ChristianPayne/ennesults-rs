@@ -8,6 +8,7 @@
     return changelog?.map((log) => {
       return {
         version: log.version,
+        title: log.title,
         notes: log.notes.replaceAll("\n", "<br/>"),
       };
     });
@@ -19,7 +20,14 @@
   <Dialog.Description class="flex flex-col gap-4">
     {#each formatChangelog(changelog) as log}
       <div>
-        <h2>{log.version}</h2>
+        <h2 class="font-bold">
+          {#if log.title}
+            {log.title} -
+          {/if}
+          <span class="font-normal">
+            {log.version}
+          </span>
+        </h2>
         {@html log.notes}
       </div>
     {/each}
