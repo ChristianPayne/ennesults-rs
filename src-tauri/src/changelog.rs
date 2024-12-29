@@ -7,7 +7,12 @@ pub struct ChangelogVersionNotes {
     notes: &'static str,
 }
 
-const CHANGELOG: [ChangelogVersionNotes; 6] = [
+const CHANGELOG: [ChangelogVersionNotes; 7] = [
+    ChangelogVersionNotes {
+        version: "v1.3.2",
+        title: None,
+        notes: r"- Fixed locked input fields on new editing panels.",
+    },
     ChangelogVersionNotes {
         version: "v1.3.1",
         title: None,
