@@ -9,12 +9,12 @@ pub struct ChangelogVersionNotes {
 
 const CHANGELOG: [ChangelogVersionNotes; 6] = [
     ChangelogVersionNotes {
-        version: "v.1.3.1",
+        version: "v1.3.1",
         title: None,
         notes: r"- Fixed stale state issue with new editing panels.",
     },
     ChangelogVersionNotes {
-        version: "v.1.3.0",
+        version: "v1.3.0",
         title: Some("Insult Tags"),
         notes: r"- New icon.
         - Settings page formatting changes.
@@ -22,18 +22,18 @@ const CHANGELOG: [ChangelogVersionNotes; 6] = [
         - You can now add Insult Tags to insults to use them for certain events.",
     },
     ChangelogVersionNotes {
-        version: "v.1.2.0",
+        version: "v1.2.0",
         title: Some("Announcements"),
         notes: r"- Announcements! Add messages for Ennesults to say over time.
         - Added the ability to get multiple random users per insult.",
     },
     ChangelogVersionNotes {
-        version: "v.1.1.1",
+        version: "v1.1.1",
         title: None,
         notes: r"- Fixed GitHub build action for updater to work successfully.",
     },
     ChangelogVersionNotes {
-        version: "v.1.1.0",
+        version: "v1.1.0",
         title: Some("Editing"),
         notes: r"- Fancy new changelog!
         - You can now edit insults and comebacks after creating them.
