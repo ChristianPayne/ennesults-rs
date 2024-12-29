@@ -72,6 +72,7 @@
       <DropdownMenu.Item on:click={toggleEditControls}>
         Edit Comeback
       </DropdownMenu.Item>
+      <DropdownMenu.Separator />
       <DropdownMenu.Item on:click={deleteComeback} class="text-destructive">
         Delete comeback
       </DropdownMenu.Item>
