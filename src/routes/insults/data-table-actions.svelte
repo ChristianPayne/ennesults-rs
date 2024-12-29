@@ -23,7 +23,7 @@
   let showEditControls: boolean = false;
 
   // The text we are editing inside of the sheet.
-  let editText: string = insult.value;
+  $: editText = insult.value;
 
   function toggleEditControls() {
     showEditControls = !showEditControls;

@@ -13,7 +13,7 @@
   let showEditControls: boolean = false;
 
   // The text we are editing inside of the sheet.
-  let editText: string = comeback.value;
+  $: editText = comeback.value;
 
   function toggleEditControls() {
     showEditControls = !showEditControls;
@@ -72,6 +72,7 @@
       <DropdownMenu.Item on:click={toggleEditControls}>
         Edit Comeback
       </DropdownMenu.Item>
+      <DropdownMenu.Separator />
       <DropdownMenu.Item on:click={deleteComeback} class="text-destructive">
         Delete comeback
       </DropdownMenu.Item>
