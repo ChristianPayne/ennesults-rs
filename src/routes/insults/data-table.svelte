@@ -9,80 +9,31 @@
     createRender,
   } from "svelte-headless-table";
   import DataTableActions from "./data-table-actions.svelte";
-  import EditInsult from "$lib/components/editInsult.svelte";
-  import { invoke } from "@tauri-apps/api/core";
-  import EditInsultTags from "$lib/components/editInsultTags.svelte";
+  import InsultTags from "$lib/components/insultTags.svelte";
 
   export let insults: Writable<Insult[]>;
-
   const table = createTable(insults);
 
-  let insultBeingEdited: Writable<string> = writable("");
-
-  function setInsultBeingEdited(id: string) {
-    insultBeingEdited.set(id);
-  }
-
-  async function updateInsult(
-    insult: Insult | undefined,
-    closeAfterSave: boolean = true,
-  ) {
-    if (!get(insultBeingEdited)) return;
-    if (insult === undefined) {
-      insultBeingEdited.set("");
-      return;
-    }
-    if (insult.value == "") return;
-
-    await invoke("update_insult", {
-      insult,
-    }).then(() => {
-      console.log("Saved insult", insult);
-    });
-    if (closeAfterSave) {
-      insultBeingEdited.set("");
-    }
-  }
-
   const columns = table.createColumns([
-    // table.column({
-    //   accessor: "id",
-    //   header: "ID",
-    // }),
     table.column({
-      accessor: (insult) => insult,
+      accessor: "value",
       header: "Insult",
-      cell: ({ value }) =>
-        createRender(
-          EditInsult,
-          derived(insultBeingEdited, (insultBeingEdited) => ({
-            insultBeingEdited,
-            insult: value,
-            callback: updateInsult,
-          })),
-        ),
     }),
     table.column({
       accessor: (insult) => insult,
       header: "Tags",
-      cell: ({ value }) => {
-        return createRender(
-          EditInsultTags,
-          derived(insultBeingEdited, (insultBeingEdited) => ({
-            insultBeingEdited,
-            insult: value,
-            callback: updateInsult,
-          })),
-        );
+      cell: ({ value: insult }) => {
+        return createRender(InsultTags, {
+          insult,
+        });
       },
     }),
     table.column({
-      accessor: "id",
+      accessor: (insult) => insult,
       header: "Actions",
-      cell: ({ value }) => {
+      cell: ({ value: insult }) => {
         return createRender(DataTableActions, {
-          id: value,
-          setInsultBeingEdited,
+          insult,
         });
       },
     }),

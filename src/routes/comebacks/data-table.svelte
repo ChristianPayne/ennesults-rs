@@ -9,56 +9,22 @@
     createRender,
   } from "svelte-headless-table";
   import DataTableActions from "./data-table-actions.svelte";
-  import EditComeback from "$lib/components/editComeback.svelte";
-  import { invoke } from "@tauri-apps/api/core";
 
   export let comebacks: Writable<Comeback[]>;
 
   const table = createTable(comebacks);
 
-  let comebackBeingEdited: Writable<string> = writable("");
-
-  async function updateComeback(comebackValue: string) {
-    if (!get(comebackBeingEdited)) return;
-    if (comebackValue == "") {
-      comebackBeingEdited.set("");
-      return;
-    }
-    await invoke("update_comeback", {
-      comeback: { id: get(comebackBeingEdited), value: comebackValue },
-    });
-    comebackBeingEdited.set("");
-  }
-
-  function setComebackBeingEdited(id: string) {
-    comebackBeingEdited.set(id);
-  }
-
   const columns = table.createColumns([
-    // table.column({
-    //   accessor: "id",
-    //   header: "ID",
-    // }),
     table.column({
-      accessor: (comeback) => comeback,
+      accessor: "value",
       header: "Comeback",
-      cell: ({ value }) =>
-        createRender(
-          EditComeback,
-          derived(comebackBeingEdited, (comebackBeingEdited) => ({
-            comebackBeingEdited,
-            comeback: value,
-            callback: updateComeback,
-          })),
-        ),
     }),
     table.column({
-      accessor: "id",
+      accessor: (comeback) => comeback,
       header: "Actions",
-      cell: ({ value }) =>
+      cell: ({ value: comeback }) =>
         createRender(DataTableActions, {
-          id: value,
-          setComebackBeingEdited,
+          comeback,
         }),
     }),
   ]);

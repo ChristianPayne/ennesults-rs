@@ -1,13 +1,44 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import { Button } from "$lib/components/ui/button";
 
-  export let id: string;
-  export let setAnnouncementBeingEdited: (id: string) => void;
+  import * as Sheet from "$lib/components/ui/sheet/index.js";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
+  import Input from "$lib/components/ui/input/input.svelte";
+  import type { Announcement } from "$lib/types";
 
-  async function deleteAnnouncement(id: string) {
-    await invoke("delete_announcement", { announcementId: id });
+  export let announcement: Announcement;
+
+  // Sheet open controls.
+  let showEditControls: boolean = false;
+
+  // The text we are editing inside of the sheet.
+  let editText: string = announcement.value;
+
+  function toggleEditControls() {
+    showEditControls = !showEditControls;
+  }
+
+  function onOpenChange(value: boolean) {
+    showEditControls = value;
+  }
+
+  async function deleteAnnouncement() {
+    await invoke("delete_announcement", { announcementId: announcement.id });
+  }
+
+  async function updateAnnouncement() {
+    if (editText == "") return;
+
+    await invoke("update_announcement", {
+      announcement: {
+        id: announcement.id,
+        value: editText,
+      },
+    });
+
+    showEditControls = false;
   }
 </script>
 
@@ -39,15 +70,33 @@
   <DropdownMenu.Content>
     <DropdownMenu.Group>
       <DropdownMenu.Label>Actions</DropdownMenu.Label>
-      <DropdownMenu.Item on:click={() => setAnnouncementBeingEdited(id)}>
+      <DropdownMenu.Item on:click={toggleEditControls}>
         Edit Announcement
       </DropdownMenu.Item>
-      <DropdownMenu.Item
-        on:click={() => deleteAnnouncement(id)}
-        class="text-destructive"
-      >
+      <DropdownMenu.Separator />
+      <DropdownMenu.Item on:click={deleteAnnouncement} class="text-destructive">
         Delete Announcement
       </DropdownMenu.Item>
     </DropdownMenu.Group>
   </DropdownMenu.Content>
 </DropdownMenu.Root>
+
+<Sheet.Root open={showEditControls} {onOpenChange}>
+  <Sheet.Content side="right">
+    <Sheet.Header>
+      <Sheet.Title>Edit Announcement</Sheet.Title>
+      <Sheet.Description>
+        Make changes to the announcement here. Click save when you're done.
+      </Sheet.Description>
+    </Sheet.Header>
+    <div class="grid gap-4 py-4">
+      <div class="grid grid-cols-4 items-center gap-4">
+        <Label for="name" class="text-left">Value</Label>
+        <Input id="name" bind:value={editText} class="col-span-4" />
+      </div>
+    </div>
+    <Sheet.Footer>
+      <Button on:click={updateAnnouncement}>Save changes</Button>
+    </Sheet.Footer>
+  </Sheet.Content>
+</Sheet.Root>

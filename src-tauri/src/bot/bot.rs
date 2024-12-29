@@ -72,7 +72,7 @@ impl Bot {
     }
 
     pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) -> Result<(), &str> {
-        println!("Connecting to Twitch!");
+        println!("Connecting to Twitch...");
         let _ = app_handle.emit("alert", "Connecting to Twitch");
         // default configuration is to join chat as anonymous.
         let bot_info = get_bot_info(app_handle.state::<Bot>());

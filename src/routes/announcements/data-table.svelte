@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Announcement } from "$lib/types";
-  import { derived, get, writable, type Writable } from "svelte/store";
+  import { type Writable } from "svelte/store";
   import * as Table from "$lib/components/ui/table";
   import {
     createTable,
@@ -9,59 +9,21 @@
     createRender,
   } from "svelte-headless-table";
   import DataTableActions from "./data-table-actions.svelte";
-  import EditAnnouncement from "$lib/components/editAnnouncement.svelte";
-  import { invoke } from "@tauri-apps/api/core";
 
   export let announcements: Writable<Announcement[]>;
-
   const table = createTable(announcements);
 
-  let announcementBeingEdited: Writable<string> = writable("");
-
-  function setAnnouncementBeingEdited(id: string) {
-    announcementBeingEdited.set(id);
-  }
-
-  async function updateAnnouncement(announcementValue: string) {
-    if (!get(announcementBeingEdited)) return;
-    if (announcementValue == "") {
-      announcementBeingEdited.set("");
-      return;
-    }
-    await invoke("update_announcement", {
-      announcement: {
-        id: get(announcementBeingEdited),
-        value: announcementValue,
-      },
-    });
-    announcementBeingEdited.set("");
-  }
-
   const columns = table.createColumns([
-    // table.column({
-    //   accessor: "id",
-    //   header: "ID",
-    // }),
     table.column({
-      accessor: (announcement) => announcement,
+      accessor: "value",
       header: "Announcement",
-      cell: ({ value }) =>
-        createRender(
-          EditAnnouncement,
-          derived(announcementBeingEdited, (announcementBeingEdited) => ({
-            announcementBeingEdited,
-            announcement: value,
-            callback: updateAnnouncement,
-          })),
-        ),
     }),
     table.column({
-      accessor: "id",
+      accessor: (announcement) => announcement,
       header: "Actions",
-      cell: ({ value }) => {
+      cell: ({ value: announcement }) => {
         return createRender(DataTableActions, {
-          id: value,
-          setAnnouncementBeingEdited,
+          announcement,
         });
       },
     }),
