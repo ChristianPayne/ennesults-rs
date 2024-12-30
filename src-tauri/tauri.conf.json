@@ -3,7 +3,7 @@
   "mainBinaryName": "ennesults-rs",
   "identifier": "com.christianpayne.ennesults",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run dev -- --host",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../build",
     "devUrl": "http://localhost:1420"
@@ -28,7 +28,10 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": ""
+        "title": "Ennesults",
+        "dragDropEnabled": false,
+        "minHeight": 540,
+        "minWidth": 480
       }
     ],
     "security": {

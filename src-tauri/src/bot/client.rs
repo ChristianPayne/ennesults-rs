@@ -106,6 +106,7 @@ pub async fn handle_incoming_chat(
                         .expect("Failed to get lock for chat_messages on bot state.");
 
                     let twitch_message = TwitchMessage {
+                        message_id: msg.message_id.clone(),
                         username: msg.sender.name.clone(),
                         message: msg.message_text.clone(),
                         color: msg
