@@ -15,9 +15,13 @@
   }
 </script>
 
-<Dialog.Header class="max-h-96 overflow-y-scroll">
-  <Dialog.Title>Changelog</Dialog.Title>
-  <Dialog.Description class="flex flex-col gap-4">
+<Dialog.Root>
+  <Dialog.Header>
+    <Dialog.Title>Changelog</Dialog.Title>
+  </Dialog.Header>
+  <Dialog.Description
+    class="max-h-96 overflow-y-scroll flex flex-col gap-4 text-left"
+  >
     {#each formatChangelog(changelog) as log}
       <div>
         <h2 class="font-bold">
@@ -32,4 +36,4 @@
       </div>
     {/each}
   </Dialog.Description>
-</Dialog.Header>
+</Dialog.Root>

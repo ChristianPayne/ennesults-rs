@@ -135,11 +135,11 @@
 <Toaster position="bottom-left" />
 <div class="flex flex-col h-full">
   <!-- Title -->
-  <div class="flex justify-between mb-2 p-2">
+  <div class="flex flex-col sm:flex-row justify-between mb-2 p-2">
     <Button variant="ghost" href="/" class="text-2xl font-bold space-x-2">
       {botName || "Ennesults"}
     </Button>
-    <div class="flex space-x-2 items-center">
+    <div class="sm:flex sm:space-x-2 items-center">
       <Button variant="ghost" href="/announcements">Announcements</Button>
       <Button variant="ghost" href="/insults">Insults</Button>
       <Button variant="ghost" href="/comebacks">Comebacks</Button>

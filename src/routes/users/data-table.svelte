@@ -86,7 +86,7 @@
       },
       cell: ({ value }) => {
         return createRender(DataTableActions, {
-          id: value.id,
+          // id: value.id,
           username: value.username,
         });
       },

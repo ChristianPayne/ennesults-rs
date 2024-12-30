@@ -15,7 +15,7 @@ export type Insult = { id: string, value: string, tags: Array<InsultTag>, };
 
 export type InsultTag = "Insult" | "Consent" | "Unconsent" | "Raid" | "Lurk";
 
-export type TwitchMessage = { username: string, message: string, color: SerializeRBGColor | null, };
+export type TwitchMessage = { message_id: string, username: string, message: string, color: SerializeRBGColor | null, };
 
 export type User = { id: string, username: string, consented: boolean, last_seen: string, };
 
