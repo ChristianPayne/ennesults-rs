@@ -11,7 +11,13 @@ const CHANGELOG: [ChangelogVersionNotes; 7] = [
     ChangelogVersionNotes {
         version: "v1.3.2",
         title: None,
-        notes: r"- Fixed locked input fields on new editing panels.",
+        notes: r"- Fixed locked input fields on new editing panels.
+        - New font for Mac and Windows builds.
+        - Style changes for Windows.
+        - Window now has Ennesults name.
+        - Performance optimizations on the chat window.
+        - New !version command for moderators.
+        - Creator user level added.",
     },
     ChangelogVersionNotes {
         version: "v1.3.1",

@@ -3,7 +3,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::ServerMessage;
+use twitch_irc::message::{ServerMessage, UserNoticeEvent};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
@@ -145,6 +145,7 @@ pub async fn handle_incoming_chat(
                 }
             }
             ServerMessage::GlobalUserState(_) => (),
+            ServerMessage::Ping(_) => (),
             ServerMessage::Pong(_) => (),
             ServerMessage::Join(msg) => {
                 let _ = app_handle.emit("channel_join", msg.channel_login);
@@ -152,7 +153,20 @@ pub async fn handle_incoming_chat(
             ServerMessage::Part(_) => (),
             ServerMessage::Generic(_) => (),
             ServerMessage::UserNotice(user_notice_message) => {
-                dbg!(user_notice_message);
+                if let UserNoticeEvent::Raid {
+                    viewer_count,
+                    profile_image_url,
+                } = user_notice_message.event
+                {
+                    let raid_message = format!(
+                        "{} raiding with {} viewers!",
+                        user_notice_message.sender.name, viewer_count
+                    );
+                    dbg!(&user_notice_message.channel_id);
+                    let _ = say(app_handle.state::<Bot>(), &raid_message).await;
+                } else {
+                    dbg!(user_notice_message);
+                }
             }
             ServerMessage::UserState(_) => (),
             ServerMessage::Notice(notice) => {
