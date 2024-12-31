@@ -14,10 +14,13 @@
   let showEditControls: boolean = false;
 
   // The text we are editing inside of the sheet.
-  $: editText = announcement.value;
+  let editText: string = "";
 
   function toggleEditControls() {
     showEditControls = !showEditControls;
+    if (showEditControls === true) {
+      editText = announcement.value;
+    }
   }
 
   function onOpenChange(value: boolean) {

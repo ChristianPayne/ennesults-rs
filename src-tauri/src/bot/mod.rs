@@ -21,9 +21,8 @@ pub use users::*;
 pub use whispers::*;
 
 pub mod api {
-    use super::bot;
-    // use super::bot_data;
     use super::announcements;
+    use super::bot;
     use super::bot_info;
     use super::client;
     use super::comebacks;
@@ -33,7 +32,6 @@ pub mod api {
 
     pub use announcements::api::*;
     pub use bot::api::*;
-    // pub use bot_data::api::*;
     pub use bot_info::api::*;
     pub use client::api::*;
     pub use comebacks::api::*;

@@ -53,10 +53,11 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
     };
 
     // Check if bot name is in msg.
-    if msg
+    if (msg
         .message_text
         .to_lowercase()
         .contains(bot_name.to_lowercase().as_str())
+        || msg.message_text.to_lowercase().contains("ennegisults"))
         && rand::thread_rng().gen_ratio(percent_chance_of_comeback, 100)
     {
         let mut random_comeback = comeback_options.choose(&mut rand::thread_rng());

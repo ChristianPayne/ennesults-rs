@@ -5,10 +5,12 @@ use twitch_irc::message::PrivmsgMessage;
 mod consent;
 mod test;
 mod unconsent;
+mod version;
 
 use consent::ConsentCommand;
 use test::TestCommand;
 use unconsent::UnconsentCommand;
+use version::VersionCommand;
 
 #[derive(serde::Serialize, Clone, Copy, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -18,6 +20,7 @@ pub enum UserLevel {
     Vip,
     Moderator,
     Broadcaster,
+    Creator,
 }
 
 impl UserLevel {
@@ -36,10 +39,10 @@ pub trait Command: Send {
 
 pub fn command_from_str(command_string: &str) -> Option<Box<dyn Command>> {
     match command_string {
-        // Make sure to get rid of this line.
-        // "test" | "t" => Some(Box::new(TestCommand)),
+        "test" | "t" => Some(Box::new(TestCommand)),
         "consent" | "c" | "consennet" => Some(Box::new(ConsentCommand)),
         "unconsent" | "uc" | "unconsennet" => Some(Box::new(UnconsentCommand)),
+        "version" => Some(Box::new(VersionCommand)),
         _ => None,
     }
 }
@@ -80,6 +83,12 @@ pub fn parse_for_command(
 }
 
 pub fn parse_msg_for_user_level(msg: &PrivmsgMessage) -> UserLevel {
+    // Creator rule
+    if msg.sender.name.to_lowercase() == "chrisgriffin522" {
+        return UserLevel::Creator;
+    }
+
+    // Convert from badge to UserLevel
     for badge in &msg.badges {
         let badge_name = badge.name.as_str();
 

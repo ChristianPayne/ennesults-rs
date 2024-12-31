@@ -28,7 +28,10 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": ""
+        "title": "Ennesults",
+        "dragDropEnabled": false,
+        "minHeight": 540,
+        "minWidth": 480
       }
     ],
     "security": {

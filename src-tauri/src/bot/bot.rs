@@ -15,6 +15,7 @@ use super::{api::get_bot_info, handle_incoming_chat, BotData, BotInfo, Client};
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct TwitchMessage {
+    pub message_id: String,
     pub username: String,
     pub message: String,
     pub color: Option<SerializeRBGColor>,

@@ -34,6 +34,7 @@
         // event.payload is the payload object
         // console.log("event", event.payload)
         messages.push({
+          message_id: event.payload.message_id,
           username: event.payload.username,
           message: event.payload.message,
           color: event.payload.color,
@@ -100,11 +101,11 @@
   <Button variant="ghost" on:click={() => (messages = [])}>Clear Chat</Button>
 </div>
 <div
-  class="overflow-y-scroll max-h-screen min-h-[65vh] h-auto select-text border rounded-md p-2"
+  class="overflow-y-scroll h-[60vh] select-text border rounded-md p-2"
   bind:this={chatElement}
 >
   <ul class="space-y-1">
-    {#each messages as message}
+    {#each messages as message (message.message_id)}
       <li>
         <span
           style="color: rgb({message.color?.[0]},{message.color?.[1]},{message
