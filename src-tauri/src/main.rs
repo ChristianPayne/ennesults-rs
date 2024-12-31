@@ -23,6 +23,7 @@ use file::read_json_file;
 #[tokio::main]
 async fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_oauth::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
@@ -57,6 +58,8 @@ async fn main() {
             crate::bot::api::update_announcement,
             crate::bot::api::delete_announcement,
             crate::bot::api::save_announcements,
+            crate::bot::api::open_auth_window,
+            crate::bot::api::decode_auth_redirect,
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog

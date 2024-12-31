@@ -13,6 +13,7 @@
   import { theme, setTheme, toggleMode } from "mode-watcher";
   import SettingsForm from "./settings-form.svelte";
   import { formSchema, type FormSchema } from "./schema";
+  import { start, cancel, onUrl } from "@fabianlars/tauri-plugin-oauth";
   import {
     superValidate,
     type SuperValidated,
@@ -175,6 +176,50 @@
   async function restart() {
     await relaunch();
   }
+
+  let port: number = undefined;
+  let unlisten: () => void = undefined;
+  let tryParse = true;
+
+  async function startOAuthFlow() {
+    try {
+      port = await start({
+        ports: [4500, 4501, 4502],
+        response:
+          "Thank you for authenticating Ennesults! You can close this window now.",
+      });
+      tryParse = true;
+      console.log(`OAuth server started on port ${port}`);
+
+      // Set up listeners for OAuth results
+      unlisten = await onUrl(async (url) => {
+        if (port && tryParse) {
+          tryParse = false;
+          // console.log("Received OAuth URL:", url);
+          // Handle the OAuth redirect
+          await invoke("decode_auth_redirect", { url });
+          stopOAuthServer();
+        }
+      });
+
+      // Initiate your OAuth flow here
+      await invoke("open_auth_window");
+    } catch (error) {
+      console.error("Error starting OAuth server:", error);
+    }
+  }
+
+  // Don't forget to stop the server when you're done
+  async function stopOAuthServer() {
+    try {
+      await cancel(port);
+      console.log("OAuth server stopped");
+      port = undefined;
+      unlisten();
+    } catch (error) {
+      console.error("Error stopping OAuth server:", error);
+    }
+  }
 </script>
 
 <h1 class="mb-4">Settings</h1>
@@ -222,6 +267,8 @@
       <Button on:click={restart}>Restart</Button>
     {/if}
   </div>
+
+  <Button on:click={startOAuthFlow}>Connect to Twitch</Button>
 
   {#if validatedForm}
     <SettingsForm {validatedForm} onUpdated={onFormUpdate} />

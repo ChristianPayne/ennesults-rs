@@ -20,6 +20,8 @@
     "shell:allow-open",
     "shell:default",
     "updater:default",
+    "oauth:allow-start",
+    "oauth:allow-cancel",
     {
       "identifier": "fs:scope",
       "allow": [

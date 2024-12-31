@@ -183,8 +183,9 @@ pub async fn handle_incoming_chat(
 
 pub mod api {
     use crate::bot::Bot;
-    use std::ops::Deref;
-    use tauri::{AppHandle, Emitter};
+    use std::{collections::HashMap, ops::Deref};
+    use tauri::{http, AppHandle, Emitter, Listener, Url};
+    use url_builder::URLBuilder;
 
     use super::Client;
 
@@ -280,6 +281,52 @@ pub mod api {
                 client.part(channel_name.clone());
                 let _ = app_handle.emit("channel_part", channel_name.clone());
                 Ok(channel_name)
+            }
+        }
+    }
+
+    #[tauri::command]
+    pub fn open_auth_window(app_handle: AppHandle) {
+        let mut ub = URLBuilder::new();
+        ub.set_protocol("https")
+            .set_host("id.twitch.tv/oauth2/authorize")
+            .add_param("response_type", "token")
+            .add_param("client_id", "nbdppbmm4iicute0sl1cj663xyvbi4")
+            .add_param("redirect_uri", format!("http://localhost:{}", 4500).as_str())
+            .add_param("scope", "channel:bot moderator:read:chatters moderator:read:followers moderator:read:shoutouts moderator:manage:shoutouts chat:read whispers:read user:write:chat chat:edit".replace(":", "%3A").replace(" ", "%20").as_str())
+            .add_param("state", "ennesults-rocks");
+
+        let url = ub.build();
+
+        println!("{}", &url);
+
+        let webview_url = tauri::WebviewUrl::App(url.into());
+        // First window
+        let window_result =
+            tauri::WebviewWindowBuilder::new(&app_handle, "auth", webview_url.clone())
+                .title("Ennesults Authentication")
+                .incognito(true)
+                .build();
+
+        if let Ok(window) = window_result {}
+    }
+
+    #[tauri::command]
+    pub fn decode_auth_redirect(app_handle: AppHandle, url: String) {
+        let url = url.replace("#", "?");
+        let parsed_url = Url::parse(&url).unwrap();
+        let hash_query: HashMap<_, _> = parsed_url.query_pairs().into_owned().collect();
+
+        // If we got an access token back, let's save it.
+        match hash_query.get("access_token") {
+            None => {
+                // Send an emit to the front end that we didn't get the access token.
+                println!("Failed to get access token!");
+            }
+            Some(access_token) => {
+                // Save the access token.
+                println!("Successfully received access token: {}", &access_token);
+                // Do a second query to check to make sure we have the bot name.
             }
         }
     }

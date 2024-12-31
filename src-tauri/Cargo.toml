@@ -32,6 +32,8 @@ rand = "0.8.5"
 thiserror = "2.0.3"
 tauri-plugin-process = "2"
 serde-inline-default = "0.2.3"
+tauri-plugin-oauth = "2"
+url-builder = "0.1.1"
 
 
 [features]
