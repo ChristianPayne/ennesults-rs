@@ -17,7 +17,9 @@ const CHANGELOG: [ChangelogVersionNotes; 7] = [
         - Window now has Ennesults name.
         - Performance optimizations on the chat window.
         - New !version command for moderators.
-        - Creator user level added.",
+        - Creator user level added.
+        - Simple raid message with name and viewer count.
+        - Ennesults now triggers comebacks when using her emote.",
     },
     ChangelogVersionNotes {
         version: "v1.3.1",
