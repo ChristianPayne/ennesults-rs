@@ -5,13 +5,17 @@ use tokio::task::JoinHandle;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{ServerMessage, UserNoticeEvent};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
-use twitch_irc::TwitchIRCClient;
+use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 use super::{
     handle_whisper, process_comebacks, process_corrections, process_user_state, AnnouncementThread,
     Bot, BotData, InsultThread, SerializeRBGColor, TwitchMessage,
 };
+use crate::bot::api::get_bot_info;
+use crate::bot::AuthValidation;
 use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
+
+use serde_json::Value;
 
 // CLIENT
 #[derive(Debug, Default)]
@@ -49,6 +53,86 @@ impl Client {
                 insult_thread,
                 announcement_thread,
             } => Some(client.clone()),
+        }
+    }
+
+    pub fn connect_to_twitch(&mut self, app_handle: tauri::AppHandle) -> Result<(), String> {
+        println!("Connecting to Twitch...");
+        let state = app_handle.state::<Bot>();
+        let bot_info = get_bot_info(app_handle.state::<Bot>());
+
+        // Handle the disconnecting of existing client connections to Twitch and any threads that are currently running.
+        self.disconnect_from_twitch(app_handle.clone());
+
+        let auth_guard = state.auth.lock().expect("Failed to get Auth");
+        let config = match auth_guard.clone() {
+            AuthValidation::Valid {
+                access_token,
+                login,
+                expires_in,
+            } => ClientConfig::new_simple(StaticLoginCredentials::new(login, Some(access_token))),
+            _ => return Err("Failed to authenticate bot. Auth not valid.".to_string()),
+        };
+
+        let (incoming_messages, twitch_client) =
+            TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+
+        // First thing we should do is start consuming incoming messages, otherwise they will back up.
+        let twitch_client_thread_handle =
+            tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
+
+        let insult_thread = InsultThread::new(app_handle.clone(), bot_info.enable_insults);
+
+        let announcement_thread =
+            AnnouncementThread::new(app_handle.clone(), bot_info.enable_announcements);
+
+        *self = Client::new(
+            twitch_client,
+            twitch_client_thread_handle,
+            insult_thread,
+            announcement_thread,
+        );
+
+        Ok(())
+    }
+
+    pub fn disconnect_from_twitch(&mut self, app_handle: tauri::AppHandle) {
+        let bot_info = get_bot_info(app_handle.state::<Bot>());
+
+        match self {
+            Client::Disconnected => {}
+            Client::Connected {
+                client,
+                client_join_handle,
+                insult_thread,
+                announcement_thread,
+            } => {
+                // Shut down the insult thread if it is running.
+                if let InsultThread::Running {
+                    handle: insult_handle,
+                    sender: insult_sender,
+                } = insult_thread
+                {
+                    insult_sender.send(());
+                    insult_handle.abort();
+                }
+
+                // Shut down the announcement thread if it is running.
+                if let AnnouncementThread::Running {
+                    handle: announcement_handle,
+                    sender: announcement_sender,
+                } = announcement_thread
+                {
+                    announcement_sender.send(());
+                    announcement_handle.abort();
+                }
+
+                // Tell the client to leave the twitch channel.
+                client.part(bot_info.channel_name.clone());
+
+                // Update the state to reflect the client being disconnected.
+                *self = Client::Disconnected;
+            }
         }
     }
 }
@@ -162,7 +246,7 @@ pub async fn handle_incoming_chat(
                         "{} raiding with {} viewers!",
                         user_notice_message.sender.name, viewer_count
                     );
-                    dbg!(&user_notice_message.channel_id);
+                    // dbg!(&user_notice_message.channel_id);
                     let _ = say(app_handle.state::<Bot>(), &raid_message).await;
                 } else {
                     dbg!(user_notice_message);
@@ -181,14 +265,53 @@ pub async fn handle_incoming_chat(
     }
 }
 
+pub async fn validate_auth(access_token: String) -> Result<AuthValidation, String> {
+    let client = reqwest::Client::new();
+    let resp = client
+        .get("https://id.twitch.tv/oauth2/validate")
+        .header("Authorization", format!("OAuth {}", access_token))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())?;
+    let resp: Value = serde_json::from_str(&resp).map_err(|e| e.to_string())?;
+
+    match (
+        resp["login"].clone(),
+        resp["expires_in"].clone(),
+        resp["message"].clone(),
+    ) {
+        (Value::String(login), Value::Number(expires_in), _) => {
+            if let Some(expires_in) = expires_in.as_i64() {
+                Ok(AuthValidation::Valid {
+                    access_token,
+                    expires_in,
+                    login,
+                })
+            } else {
+                Err("Failed to convert expires_in value".to_string())
+            }
+        }
+        (Value::Null, Value::Null, Value::String(message)) => {
+            Ok(AuthValidation::Invalid { reason: message })
+        }
+        _ => Err("Failed to parse response contents".to_string()),
+    }
+}
+
 pub mod api {
-    use crate::bot::{AuthValidation, Bot};
-    use serde_json::Value;
+    use crate::{
+        bot::{AuthValidation, Bot},
+        file::{write_file, WriteFileError},
+    };
+    use serde_json::{json, Value};
     use std::{collections::HashMap, ops::Deref};
-    use tauri::{http, AppHandle, Emitter, Listener, Url};
+    use tauri::{http, AppHandle, Emitter, Listener, Manager, Url};
     use url_builder::URLBuilder;
 
-    use super::Client;
+    use super::{validate_auth, Client};
 
     #[tauri::command]
     pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
@@ -299,8 +422,6 @@ pub mod api {
 
         let url = ub.build();
 
-        println!("{}", &url);
-
         let webview_url = tauri::WebviewUrl::App(url.into());
         // First window
         let window_result =
@@ -313,7 +434,10 @@ pub mod api {
     }
 
     #[tauri::command]
-    pub async fn decode_auth_redirect(app_handle: AppHandle, url: String) -> Result<(), String> {
+    pub async fn decode_auth_redirect(
+        app_handle: AppHandle,
+        url: String,
+    ) -> Result<AuthValidation, String> {
         let url = url.replace("#", "?");
         let parsed_url = Url::parse(&url).unwrap();
         let hash_query: HashMap<_, _> = parsed_url.query_pairs().into_owned().collect();
@@ -333,46 +457,58 @@ pub mod api {
                 let auth_info = validate_auth(access_token.clone()).await?;
 
                 // Save auth info here.
-                dbg!(auth_info);
-                Ok(())
+                let write_result =
+                    write_file::<AuthValidation>(&app_handle, "auth.json", auth_info.clone());
+
+                if let Some(err) = write_result.err() {
+                    return match err {
+                        WriteFileError::FailedConvertJSON => {
+                            Err("Failed to convert to json.".to_string())
+                        }
+                        WriteFileError::FailedCreateFile => {
+                            Err("Failed to create file.".to_string())
+                        }
+                        WriteFileError::FailedWriteFile => {
+                            Err("Failed to write contents in file.".to_string())
+                        }
+                    };
+                }
+
+                let bot = app_handle.state::<Bot>();
+                let mut auth = bot.auth.lock().expect("Failed to get lock for Auth");
+                *auth = auth_info.clone();
+                Ok(auth_info)
             }
         }
     }
 
-    pub async fn validate_auth(access_token: String) -> Result<AuthValidation, String> {
-        let client = reqwest::Client::new();
-        let resp = client
-            .get("https://id.twitch.tv/oauth2/validate")
-            .header("Authorization", format!("OAuth {}", access_token))
-            .send()
-            .await
-            .map_err(|e| e.to_string())?
-            .text()
-            .await
-            .map_err(|e| e.to_string())?;
-        let resp: Value = serde_json::from_str(&resp).map_err(|e| e.to_string())?;
+    #[tauri::command]
+    pub fn sign_out_of_twitch(app_handle: AppHandle) -> Result<AuthValidation, String> {
+        let bot = app_handle.state::<Bot>();
 
-        match (
-            resp["login"].clone(),
-            resp["expires_in"].clone(),
-            resp["message"].clone(),
-        ) {
-            (Value::String(login), Value::Number(expires_in), _) => {
-                if let Some(expires_in) = expires_in.as_i64() {
-                    println!("{:#?} | {:#?}", login, expires_in);
-                    Ok(AuthValidation::Valid {
-                        access_token,
-                        expires_in,
-                        login,
-                    })
-                } else {
-                    Err("Failed to convert expires_in value".to_string())
+        let write_result = write_file::<Value>(&app_handle, "auth.json", Value::Null);
+
+        if let Some(err) = write_result.err() {
+            return match err {
+                WriteFileError::FailedConvertJSON => Err("Failed to convert to json.".to_string()),
+                WriteFileError::FailedCreateFile => Err("Failed to create file.".to_string()),
+                WriteFileError::FailedWriteFile => {
+                    Err("Failed to write contents in file.".to_string())
                 }
-            }
-            (Value::Null, Value::Null, Value::String(message)) => {
-                Ok(AuthValidation::Invalid { reason: message })
-            }
-            _ => Err("Failed to parse response contents".to_string()),
+            };
         }
+
+        {
+            // Disconnect from Twitch.
+            let mut client = bot.client.lock().expect("Failed to get lock for client");
+            client.disconnect_from_twitch(app_handle.clone());
+        }
+
+        {
+            let mut auth = bot.auth.lock().expect("Failed to get lock for auth");
+            *auth = AuthValidation::NotSignedIn;
+        }
+
+        Ok(AuthValidation::NotSignedIn)
     }
 }

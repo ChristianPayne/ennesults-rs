@@ -61,6 +61,7 @@ async fn main() {
             crate::bot::api::open_auth_window,
             crate::bot::api::decode_auth_redirect,
             crate::bot::api::get_auth_status,
+            crate::bot::api::sign_out_of_twitch,
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog
@@ -91,8 +92,11 @@ async fn main() {
             app.manage(bot);
 
             // Connect the bot to Twitch on startup.
-            let state = app.state::<Bot>();
-            match state.connect_to_twitch(app.handle().clone()) {
+            let bot = app.state::<Bot>();
+
+            let mut client = bot.client.lock().expect("Failed to get lock for client");
+
+            match client.connect_to_twitch(app.handle().clone()) {
                 Ok(_) => {
                     let _ = app.emit("alert", "Connecting to Twitch");
                 }
@@ -101,7 +105,7 @@ async fn main() {
                 }
             }
 
-            println!("Bot started successfully!");
+            println!("Setup complete!");
             Ok(())
         })
         .run(tauri::generate_context!())

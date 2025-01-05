@@ -1,42 +1,33 @@
 <script lang="ts">
-  import { exit, relaunch } from "@tauri-apps/plugin-process";
   import Button from "$lib/components/ui/button/button.svelte";
   import Input from "$lib/components/ui/input/input.svelte";
   import Label from "$lib/components/ui/label/label.svelte";
   import * as Select from "$lib/components/ui/select";
   import { onMount } from "svelte";
   import { invoke, Channel } from "@tauri-apps/api/core";
-  import { Checkbox } from "$lib/components/ui/checkbox";
-  import type { AuthValidation, BotInfo, DownloadEvent } from "$lib/types";
+  import type { BotInfo, DownloadEvent } from "$lib/types";
   import { toast } from "svelte-sonner";
   import { colorPalettes } from "$lib/colorPalettes";
   import { theme, setTheme, toggleMode } from "mode-watcher";
   import SettingsForm from "./settings-form.svelte";
   import { formSchema, type FormSchema } from "./schema";
-  import { start, cancel, onUrl } from "@fabianlars/tauri-plugin-oauth";
+
   import {
     superValidate,
     type SuperValidated,
     type Infer,
   } from "sveltekit-superforms";
   import { zod } from "sveltekit-superforms/adapters";
+  import ConnectToTwitch from "./connect-to-twitch.svelte";
+  import Updater from "./updater.svelte";
 
   let validatedForm: SuperValidated<any, any, any>;
-
-  let authStatus: AuthValidation;
-
-  let updateAvailable = false;
-  let updateButtonDisabled = false;
-  let checkForUpdateButtonMessage = "Check for Update";
-  let pendingRestart = false;
 
   onMount(async () => {
     const botInfo = await invoke<BotInfo>("get_bot_info");
     const usersAllowedToWhisperResult = await invoke<string[]>(
       "get_users_allowed_to_whisper",
     );
-
-    authStatus = await invoke<AuthValidation>("get_auth_status");
 
     let settings = {
       autoConnectOnStartup: botInfo.auto_connect_on_startup,
@@ -132,96 +123,6 @@
       return colorPalettes["ennesults"];
     }
   }
-
-  async function checkForUpdate() {
-    updateButtonDisabled = true;
-    if (updateAvailable === false) {
-      checkForUpdateButtonMessage = "Checking!";
-      let result = await invoke<{
-        version: string;
-        currentVersion: string;
-      } | null>("fetch_update");
-      if (result === null) {
-        checkForUpdateButtonMessage = "Up to date!";
-        setTimeout(() => {
-          checkForUpdateButtonMessage = "Check for Update";
-          updateButtonDisabled = false;
-        }, 3000);
-      } else {
-        updateAvailable = true;
-        checkForUpdateButtonMessage = `Update to v.${result.version}!`;
-        updateButtonDisabled = false;
-      }
-    } else {
-      const onEvent = new Channel<DownloadEvent>();
-      onEvent.onmessage = (message) => {
-        switch (message.event) {
-          case "Started": {
-            checkForUpdateButtonMessage = `Starting update...`;
-            break;
-          }
-          case "Progress": {
-            checkForUpdateButtonMessage = `Installing update...`;
-            break;
-          }
-          case "Finished": {
-            pendingRestart = true;
-            break;
-          }
-        }
-      };
-
-      let updater = await invoke("install_update", { onEvent });
-    }
-  }
-
-  async function restart() {
-    await relaunch();
-  }
-
-  let port: number = undefined;
-  let unlisten: () => void = undefined;
-  let tryParse = true;
-
-  async function startOAuthFlow() {
-    try {
-      port = await start({
-        ports: [4500, 4501, 4502],
-        response:
-          "Thank you for authenticating Ennesults! You can close this window now.",
-      });
-      tryParse = true;
-      console.log(`OAuth server started on port ${port}`);
-
-      // Set up listeners for OAuth results
-      unlisten = await onUrl(async (url) => {
-        if (port && tryParse) {
-          tryParse = false;
-          // console.log("Received OAuth URL:", url);
-          // Handle the OAuth redirect
-          await invoke("decode_auth_redirect", { url });
-          stopOAuthServer();
-        }
-      });
-
-      // Initiate your OAuth flow here
-      await invoke("open_auth_window");
-    } catch (error) {
-      console.error("Error starting OAuth server:", error);
-    }
-  }
-
-  // Don't forget to stop the server when you're done
-  async function stopOAuthServer() {
-    try {
-      await cancel(port);
-      console.log("OAuth server stopped");
-      port = undefined;
-      unlisten();
-    } catch (error) {
-      console.error("Error stopping OAuth server:", error);
-    }
-  }
 </script>
 
 <h1 class="mb-4">Settings</h1>
@@ -261,27 +162,11 @@
         />
       </svg>
     </Button>
-    {#if !pendingRestart}
-      <Button on:click={checkForUpdate} disabled={updateButtonDisabled}
-        >{checkForUpdateButtonMessage}</Button
-      >
-    {:else}
-      <Button on:click={restart}>Restart</Button>
-    {/if}
+    <!-- UPDATER -->
+    <Updater />
   </div>
 
-  <div class="ml-8">
-    {#if authStatus?.["Valid"]}
-      <Button>Disconnect from Twitch</Button>
-    {:else if authStatus?.["Invalid"]}
-      <p>Invalid Authentication from Twitch!</p>
-      <Button>Disconnect from Twitch</Button>
-    {:else}
-      <Button on:click={startOAuthFlow}>Connect to Twitch</Button>
-    {/if}
-  </div>
-
-  <!-- {JSON.stringify(authStatus)} -->
+  <ConnectToTwitch />
 
   {#if validatedForm}
     <SettingsForm {validatedForm} onUpdated={onFormUpdate} />
