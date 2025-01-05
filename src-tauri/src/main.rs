@@ -17,7 +17,7 @@ mod file;
 mod migrations;
 mod updater;
 
-use bot::{Announcements, Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Announcements, AuthValidation, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
@@ -60,6 +60,7 @@ async fn main() {
             crate::bot::api::save_announcements,
             crate::bot::api::open_auth_window,
             crate::bot::api::decode_auth_redirect,
+            crate::bot::api::get_auth_status,
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog
@@ -75,6 +76,8 @@ async fn main() {
             println!("Setting up bot...");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
+            let auth =
+                read_json_file::<AuthValidation>(app.handle(), "auth.json").unwrap_or_default();
             let comebacks =
                 read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
             let insults =
@@ -84,13 +87,18 @@ async fn main() {
                 .unwrap_or_default();
 
             let bot_data = BotData::new(comebacks, insults, users, announcements);
-            let bot = Bot::new(bot_info, bot_data);
+            let bot = Bot::new(bot_info, bot_data, auth);
             app.manage(bot);
 
             // Connect the bot to Twitch on startup.
             let state = app.state::<Bot>();
-            if let Err(error) = state.connect_to_twitch(app.handle().clone()) {
-                println!("{}", error)
+            match state.connect_to_twitch(app.handle().clone()) {
+                Ok(_) => {
+                    let _ = app.emit("alert", "Connecting to Twitch");
+                }
+                Err(e) => {
+                    let _ = app.emit("error", e.as_str());
+                }
             }
 
             println!("Bot started successfully!");

@@ -59,7 +59,7 @@
       <Form.FieldErrors />
     </Form.Field>
 
-    <Form.Field {form} name="botName">
+    <!-- <Form.Field {form} name="botName">
       <Form.Control let:attrs>
         <Form.Label class="block mb-2">Bot name</Form.Label>
         <Input
@@ -90,7 +90,7 @@
         >What is the oAuth token of the bot account?</Form.Description
       >
       <Form.FieldErrors />
-    </Form.Field>
+    </Form.Field> -->
   </div>
 
   <h2>Announcements</h2>

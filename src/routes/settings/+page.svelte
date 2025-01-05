@@ -7,7 +7,7 @@
   import { onMount } from "svelte";
   import { invoke, Channel } from "@tauri-apps/api/core";
   import { Checkbox } from "$lib/components/ui/checkbox";
-  import type { BotInfo, DownloadEvent } from "$lib/types";
+  import type { AuthValidation, BotInfo, DownloadEvent } from "$lib/types";
   import { toast } from "svelte-sonner";
   import { colorPalettes } from "$lib/colorPalettes";
   import { theme, setTheme, toggleMode } from "mode-watcher";
@@ -23,6 +23,8 @@
 
   let validatedForm: SuperValidated<any, any, any>;
 
+  let authStatus: AuthValidation;
+
   let updateAvailable = false;
   let updateButtonDisabled = false;
   let checkForUpdateButtonMessage = "Check for Update";
@@ -34,11 +36,11 @@
       "get_users_allowed_to_whisper",
     );
 
+    authStatus = await invoke<AuthValidation>("get_auth_status");
+
     let settings = {
       autoConnectOnStartup: botInfo.auto_connect_on_startup,
       channelName: botInfo.channel_name,
-      botName: botInfo.bot_name,
-      oauthTokenValue: botInfo.oauth_token,
       enableWhispers: botInfo.enable_whispers,
       usersAllowedToWhisper: usersAllowedToWhisperResult.join(", "),
       enableAnnouncements: botInfo.enable_announcements,
@@ -84,8 +86,8 @@
     await invoke<BotInfo>("save_bot_info", {
       botInfo: {
         channel_name: validatedData.channelName,
-        bot_name: validatedData.botName,
-        oauth_token: validatedData.oauthTokenValue,
+        // bot_name: validatedData.botName,
+        // oauth_token: validatedData.oauthTokenValue,
         auto_connect_on_startup: validatedData.autoConnectOnStartup,
         enable_whispers: validatedData.enableWhispers,
         users_allowed_to_whisper: validatedData.usersAllowedToWhisper
@@ -223,7 +225,7 @@
 </script>
 
 <h1 class="mb-4">Settings</h1>
-<div class="ml-2 space-y-8">
+<div class="ml-2 space-y-6">
   <div class="flex items-end space-x-2">
     <div class="md:ml-8">
       <Label>Theme</Label>
@@ -268,7 +270,18 @@
     {/if}
   </div>
 
-  <Button on:click={startOAuthFlow}>Connect to Twitch</Button>
+  <div class="ml-8">
+    {#if authStatus?.["Valid"]}
+      <Button>Disconnect from Twitch</Button>
+    {:else if authStatus?.["Invalid"]}
+      <p>Invalid Authentication from Twitch!</p>
+      <Button>Disconnect from Twitch</Button>
+    {:else}
+      <Button on:click={startOAuthFlow}>Connect to Twitch</Button>
+    {/if}
+  </div>
+
+  <!-- {JSON.stringify(authStatus)} -->
 
   {#if validatedForm}
     <SettingsForm {validatedForm} onUpdated={onFormUpdate} />

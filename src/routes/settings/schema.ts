@@ -3,8 +3,9 @@ import { z } from "zod";
 export const formSchema = z.object({
   autoConnectOnStartup: z.boolean(),
   channelName: z.string().min(2),
-  botName: z.string().min(2).optional(),
-  oauthTokenValue: z.string().min(30).max(30).optional(),
+  // botName: z.string().min(2).optional(),
+  // oauthTokenValue: z.string().min(30).max(30).optional(),
+
   enableWhispers: z.boolean(),
   usersAllowedToWhisper: z.string(),
   enableAnnouncements: z.boolean(),

@@ -182,7 +182,8 @@ pub async fn handle_incoming_chat(
 }
 
 pub mod api {
-    use crate::bot::Bot;
+    use crate::bot::{AuthValidation, Bot};
+    use serde_json::Value;
     use std::{collections::HashMap, ops::Deref};
     use tauri::{http, AppHandle, Emitter, Listener, Url};
     use url_builder::URLBuilder;
@@ -312,7 +313,7 @@ pub mod api {
     }
 
     #[tauri::command]
-    pub fn decode_auth_redirect(app_handle: AppHandle, url: String) {
+    pub async fn decode_auth_redirect(app_handle: AppHandle, url: String) -> Result<(), String> {
         let url = url.replace("#", "?");
         let parsed_url = Url::parse(&url).unwrap();
         let hash_query: HashMap<_, _> = parsed_url.query_pairs().into_owned().collect();
@@ -321,13 +322,57 @@ pub mod api {
         match hash_query.get("access_token") {
             None => {
                 // Send an emit to the front end that we didn't get the access token.
-                println!("Failed to get access token!");
+                let _ = app_handle.emit("error", "Failed to decode access token!");
+                Err("Failed to decode access token!".to_string())
             }
             Some(access_token) => {
                 // Save the access token.
-                println!("Successfully received access token: {}", &access_token);
+                println!("Successfully received access token: {}", access_token);
+
                 // Do a second query to check to make sure we have the bot name.
+                let auth_info = validate_auth(access_token.clone()).await?;
+
+                // Save auth info here.
+                dbg!(auth_info);
+                Ok(())
             }
+        }
+    }
+
+    pub async fn validate_auth(access_token: String) -> Result<AuthValidation, String> {
+        let client = reqwest::Client::new();
+        let resp = client
+            .get("https://id.twitch.tv/oauth2/validate")
+            .header("Authorization", format!("OAuth {}", access_token))
+            .send()
+            .await
+            .map_err(|e| e.to_string())?
+            .text()
+            .await
+            .map_err(|e| e.to_string())?;
+        let resp: Value = serde_json::from_str(&resp).map_err(|e| e.to_string())?;
+
+        match (
+            resp["login"].clone(),
+            resp["expires_in"].clone(),
+            resp["message"].clone(),
+        ) {
+            (Value::String(login), Value::Number(expires_in), _) => {
+                if let Some(expires_in) = expires_in.as_i64() {
+                    println!("{:#?} | {:#?}", login, expires_in);
+                    Ok(AuthValidation::Valid {
+                        access_token,
+                        expires_in,
+                        login,
+                    })
+                } else {
+                    Err("Failed to convert expires_in value".to_string())
+                }
+            }
+            (Value::Null, Value::Null, Value::String(message)) => {
+                Ok(AuthValidation::Invalid { reason: message })
+            }
+            _ => Err("Failed to parse response contents".to_string()),
         }
     }
 }
