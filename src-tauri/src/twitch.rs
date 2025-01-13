@@ -4,7 +4,6 @@ use tauri::{AppHandle, Manager};
 use crate::bot::Bot;
 
 /// Gets the id of the channel that we are wanting to join.
-#[tauri::command]
 pub async fn get_broadcaster_id(
     app_handle: AppHandle,
     client_id: String,

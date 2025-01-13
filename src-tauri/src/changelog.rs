@@ -10,7 +10,7 @@ pub struct ChangelogVersionNotes {
 const CHANGELOG: [ChangelogVersionNotes; 8] = [
     ChangelogVersionNotes {
         version: "v1.4.0",
-        title: Some("Raid Messages"),
+        title: Some("Twitch API Integration"),
         notes: r"- ",
     },
     ChangelogVersionNotes {

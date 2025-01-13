@@ -24,6 +24,8 @@
 
   export let data;
 
+  let authentication: Authentication;
+
   let connectionStatus = false;
   let channelName = "";
   let botName = "";
@@ -33,13 +35,24 @@
 
   onMount(async () => {
     tauriVersion = await getVersion();
-    await invoke("connect_to_twitch");
-    await getBotInfo();
     changelog = await invoke("get_changelog");
+    await invoke<Authentication>("connect_to_twitch").catch((e: string) => {
+      alertNotification("Error", {
+        title: "Error",
+        description: e,
+      });
+    });
+
+    authentication = await invoke<Authentication>("get_auth_status");
+    await getBotInfo();
 
     listen("bot_info_save", async (event) => {
       let botInfo = event.payload as BotInfo;
       await getBotInfo(botInfo);
+    });
+
+    listen("auth", async (event) => {
+      authentication = event.payload as Authentication;
     });
 
     listen("channel_join", (event) => {
@@ -84,29 +97,34 @@
       botInfo ??
       (await invoke<BotInfo>("get_bot_info").catch((e) => console.error(e)));
 
-    let auth = await invoke<Authentication>("get_auth_status");
+    if (!currentInfo) return;
 
-    if (currentInfo) {
-      channelName = currentInfo.channel_name;
-      botName = auth["Valid"]?.login ?? "Ennesults";
-      if (currentInfo.auto_connect_on_startup) {
-        let [wanted, joined] =
-          await invoke<[boolean, boolean]>("get_channel_status");
+    channelName = currentInfo.channel_name;
+    botName = authentication["Valid"]?.details?.login ?? "Ennesults";
 
-        if (wanted == false && joined == false) {
-          await connectToChannel();
-        }
+    if (!currentInfo.auto_connect_on_startup) return;
 
-        if (wanted == true && joined == true) {
-          connectionStatus = true;
-        }
+    try {
+      let [wanted, joined] =
+        await invoke<[boolean, boolean]>("get_channel_status");
 
-        if (wanted == true && joined == false) {
-          alertNotification("Warn", {
-            title: `Still connecting to ${channelName}...`,
-          });
-        }
+      if (wanted === undefined || joined === undefined) return;
+
+      if (wanted == false && joined == false) {
+        await connectToChannel();
       }
+
+      if (wanted == true && joined == true) {
+        connectionStatus = true;
+      }
+
+      if (wanted == true && joined == false) {
+        alertNotification("Warn", {
+          title: `Still connecting to ${channelName}...`,
+        });
+      }
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -132,11 +150,6 @@
       });
     }
   }
-
-  async function getBroadcasterId() {
-    let result = await invoke("get_broadcaster_id");
-    console.log(result);
-  }
 </script>
 
 <ModeWatcher />
@@ -148,9 +161,6 @@
       {botName || "Ennesults"}
     </Button>
     <div class="sm:flex sm:space-x-2 items-center">
-      <Button variant="ghost" on:click={getBroadcasterId}
-        >getBroadcasterId</Button
-      >
       <Button variant="ghost" href="/announcements">Announcements</Button>
       <Button variant="ghost" href="/insults">Insults</Button>
       <Button variant="ghost" href="/comebacks">Comebacks</Button>
@@ -163,7 +173,7 @@
   <!-- Main Content -->
   <div class="grow px-4 xl:mx-auto xl:w-1/2 my-2 overflow-y-scroll">
     {#key data.pathname}
-      <div in:fade={{ duration: 150, delay: 200 }} out:fade={{ duration: 150 }}>
+      <div in:fade={{ duration: 100, delay: 100 }} out:fade={{ duration: 100 }}>
         <slot />
       </div>
     {/key}
@@ -194,74 +204,74 @@
     <div class="grow"></div>
     <!-- Badges -->
     <div class="flex space-x-2 items-center">
-      <Popover.Root>
-        <Popover.Trigger>
-          <Badge variant={connectionStatus ? "secondary" : "destructive"}>
-            {#if connectionStatus}
-              <p>{channelName}</p>
-            {:else}
-              <p class="mr-2">Disconnected</p>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="size-4"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                />
-              </svg>
-            {/if}
-          </Badge>
-        </Popover.Trigger>
-
-        <Popover.Content class="space-y-2 w-96">
-          {#if connectionStatus}
-            <h1>Channel</h1>
-            <p class="flex gap-1">
-              Connected to
-              <a
-                href="https://twitch.tv/{channelName}"
-                target="_blank"
-                class="text-primary flex gap-1 items-center"
-              >
+      {#if authentication}
+        <Popover.Root>
+          <Popover.Trigger>
+            <Badge variant={connectionStatus ? "secondary" : "destructive"}>
+              {#if authentication["Valid"]}
                 {channelName}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-5"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                  />
-                </svg>
-              </a>
-            </p>
+              {:else if authentication["Invalid"]}
+                Invalid Authentication
+              {:else}
+                Not Signed In
+              {/if}
+            </Badge>
+          </Popover.Trigger>
 
-            <div class="flex gap-2">
-              <Button variant="destructive" on:click={leave_channel}>
-                Leave Channel
-              </Button>
+          <Popover.Content class="space-y-2 w-96">
+            {#if authentication["Valid"]}
+              <h1>Channel</h1>
+              {#if connectionStatus}
+                <p class="flex gap-1">
+                  Connected to
+                  <a
+                    href="https://twitch.tv/{channelName}"
+                    target="_blank"
+                    class="text-primary flex gap-1 items-center"
+                  >
+                    {channelName}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="size-5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                      />
+                    </svg>
+                  </a>
+                </p>
 
-              <SpeakAsEnnesults {connectionStatus} />
-            </div>
-          {:else}
-            <p>Not connected to a channel.</p>
-            <Button on:click={connectToChannel}>
-              Connect to {channelName || "Channel"}
-            </Button>
-          {/if}
-        </Popover.Content>
-      </Popover.Root>
+                <div class="flex gap-2">
+                  <Button variant="destructive" on:click={leave_channel}>
+                    Leave Channel
+                  </Button>
+
+                  <SpeakAsEnnesults {connectionStatus} />
+                </div>
+              {:else}
+                <p>Not connected to a channel.</p>
+                <Button on:click={connectToChannel}>
+                  Connect to {channelName || "Channel"}
+                </Button>
+              {/if}
+            {:else if authentication["Invalid"]}
+              <h1>Twitch Authentication is Invalid!</h1>
+              <p>Please log in again using the settings page.</p>
+              <Button variant="default" href="settings">Go to Settings</Button>
+            {:else if authentication === "NotSignedIn"}
+              <h1>Not Signed In</h1>
+              <p>Connecting to Twitch can be done in the settings page.</p>
+              <Button variant="default" href="settings">Go to Settings</Button>
+            {/if}
+          </Popover.Content>
+        </Popover.Root>
+      {/if}
     </div>
   </div>
 </div>

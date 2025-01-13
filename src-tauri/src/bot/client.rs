@@ -210,16 +210,25 @@ pub mod api {
         // Handle the disconnecting of existing client connections to Twitch and any threads that are currently running.
         disconnect_from_twitch(app_handle.clone());
 
-        println!("Connecting to Twitch...");
+        println!("🤖 Connecting to Twitch...");
         let mut existing_auth = {
             let auth = state.auth.lock().expect("Failed to get lock for auth");
             auth.clone()
         };
 
-        dbg!(&existing_auth);
+        // dbg!(&existing_auth);
 
-        let Authentication::Valid { details, .. } = existing_auth else {
-            return Err("Authentication was not valid when connecting to Twitch.".to_string());
+        let details = match existing_auth {
+            Authentication::Valid { details, .. } => details,
+            Authentication::Invalid { reason } => {
+                return Err("Authentication was not valid when connecting to Twitch.".to_string());
+            }
+            Authentication::NotSignedIn => {
+                return Err(
+                    "Not signed into Twitch. Please connect your account in the settings page."
+                        .to_string(),
+                );
+            }
         };
 
         // Validate authentication details.
@@ -234,6 +243,7 @@ pub mod api {
         {
             let mut auth = state.auth.lock().expect("Failed to get lock for auth");
             *auth = authentication.clone();
+            app_handle.emit("auth", authentication.clone());
         }
 
         let config = match &authentication {
@@ -278,6 +288,8 @@ pub mod api {
             announcement_thread,
         );
 
+        println!("✅ Connected to Twitch!");
+
         Ok(authentication.clone())
     }
 
@@ -320,6 +332,7 @@ pub mod api {
 
                 // Tell the client to leave the twitch channel.
                 twitch_client.part(bot_info.channel_name.clone());
+                let _ = app_handle.emit("channel_part", bot_info.channel_name.clone());
 
                 // Update the state to reflect the client being disconnected.
                 *client = Client::Disconnected;
@@ -359,8 +372,8 @@ pub mod api {
             _ => {
                 // join a channel
                 match client.join(channel_name.clone()) {
-                    Ok(x) => {
-                        println!("Connected to channel! {:?}", x);
+                    Ok(_) => {
+                        println!("✅ Connected to {}!", channel_name.clone());
                         Ok(channel_name.clone())
                     }
                     Err(e) => Err(format!("Could not join channel! {}", e)),
@@ -382,13 +395,8 @@ pub mod api {
             return Err("Channel name not found.".into());
         }
 
-        let client;
-        {
-            client = state.client.lock().unwrap().get_client();
-        }
-
-        let Some(client) = client else {
-            return Err("Could not get client.".into());
+        let Some(client) = state.client.lock().unwrap().get_client() else {
+            return Err("Can't get channel status. Not connected to Twitch.".into());
         };
 
         let channel_status = client.get_channel_status(channel_name).await;

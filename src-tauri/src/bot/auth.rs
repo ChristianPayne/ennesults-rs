@@ -105,7 +105,7 @@ pub async fn validate_auth(
     app_handle: AppHandle,
     access_token: String,
 ) -> Result<Authentication, AuthenticationError> {
-    println!("Validating details through Twitch");
+    println!("🤖 Validating details through Twitch...");
     // Make a request to the validation endpoint.
     let client = reqwest::Client::new();
     let resp = client
@@ -144,6 +144,8 @@ pub async fn validate_auth(
                 get_broadcaster_id(app_handle.clone(), client_id.clone(), access_token.clone())
                     .await
                     .map_err(|e| AuthenticationError::ParsingError(e))?;
+
+            println!("✅ Validated!");
 
             Ok(Authentication::Valid {
                 details: AuthenticationDetails {
@@ -223,13 +225,13 @@ pub mod api {
         app_handle: AppHandle,
         url: String,
     ) -> Result<Authentication, String> {
-        println!("URL from Twitch redirect: {}", url);
+        // println!("URL from Twitch redirect: {}", url);
 
         let url = url.replace("#", "?");
         let parsed_url = Url::parse(&url).unwrap();
         let hash_query: HashMap<_, _> = parsed_url.query_pairs().into_owned().collect();
 
-        dbg!(&hash_query);
+        // dbg!(&hash_query);
 
         let Some(access_token) = hash_query.get("access_token") else {
             // Send an emit to the front end that we didn't get the access token.
@@ -238,7 +240,7 @@ pub mod api {
         };
 
         // Save the access token.
-        println!("Successfully received access token: {}", access_token);
+        // println!("Successfully received access token: {}", access_token);
 
         // let Some(id_token) = hash_query.get("id_token") else {
         //     // Send an emit to the front end that we didn't get the access token.
@@ -254,7 +256,7 @@ pub mod api {
             return Err("Failed to validate auth during auth decoding".to_string());
         };
 
-        dbg!(&auth_validation);
+        // dbg!(&auth_validation);
 
         if let Err(err) =
             write_file::<Authentication>(&app_handle, "auth.json", auth_validation.clone())
@@ -273,6 +275,7 @@ pub mod api {
         {
             let mut auth = bot.auth.lock().expect("Failed to get lock for Auth");
             *auth = auth_validation.clone();
+            app_handle.emit("auth", auth_validation.clone());
         }
 
         connect_to_twitch(app_handle.clone());
@@ -302,6 +305,7 @@ pub mod api {
         {
             let mut auth = bot.auth.lock().expect("Failed to get lock for auth");
             *auth = Authentication::NotSignedIn;
+            app_handle.emit("auth", Authentication::NotSignedIn);
         }
 
         Ok(Authentication::NotSignedIn)

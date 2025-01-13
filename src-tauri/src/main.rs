@@ -65,7 +65,6 @@ async fn main() {
             crate::bot::api::decode_auth_redirect,
             crate::bot::api::get_auth_status,
             crate::bot::api::sign_out_of_twitch,
-            crate::twitch::get_broadcaster_id,
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog
@@ -75,10 +74,11 @@ async fn main() {
             app.manage(updater::PendingUpdate(Mutex::new(None)));
 
             // Run any migrations on the data files before loading the files into the bot.
-            println!("Checking for migrations...");
+            println!("🤖 Checking for migrations...");
             run_migrations(app.handle().clone());
+            println!("✅ Migrations complete!");
 
-            println!("Setting up bot...");
+            println!("🤖 Setting up bot...");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
             let auth =
@@ -95,21 +95,7 @@ async fn main() {
             let bot = Bot::new(bot_info, bot_data, auth);
             app.manage(bot);
 
-            // Connect the bot to Twitch on startup.
-            // let bot = app.state::<Bot>();
-
-            // let mut client = bot.client.lock().expect("Failed to get lock for client");
-
-            // match client.connect_to_twitch(app.handle().clone()).await {
-            //     Ok(_) => {
-            //         let _ = app.emit("alert", "Connecting to Twitch");
-            //     }
-            //     Err(e) => {
-            //         let _ = app.emit("error", e.as_str());
-            //     }
-            // }
-
-            println!("Setup complete!");
+            println!("✅ Setup complete!");
             Ok(())
         })
         .run(tauri::generate_context!())
