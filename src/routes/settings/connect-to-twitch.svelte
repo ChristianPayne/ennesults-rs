@@ -1,14 +1,14 @@
 <script lang="ts">
   import Button from "$lib/components/ui/button/button.svelte";
-  import type { AuthValidation } from "$lib/types";
+  import type { Authentication } from "$lib/types";
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
   import { start, cancel, onUrl } from "@fabianlars/tauri-plugin-oauth";
 
-  let authStatus: AuthValidation;
+  let authStatus: Authentication;
 
   onMount(async () => {
-    authStatus = await invoke<AuthValidation>("get_auth_status");
+    authStatus = await invoke<Authentication>("get_auth_status");
   });
 
   let port: number = undefined;

@@ -5,9 +5,11 @@ export type Alert = "System" | "Info" | "Warn" | "Error";
 
 export type Announcement = { id: string, value: string, };
 
-export type AuthValidation = { "Valid": { access_token: string, login: string, expires_in: bigint, } } | { "Invalid": { reason: string, } } | "NotSignedIn";
+export type Authentication = { "Valid": { details: AuthenticationDetails, last_validated: string | null, } } | { "Invalid": { reason: string, } } | "NotSignedIn";
 
-export type BotInfo = { channel_name: string, auth: AuthValidation, auto_connect_on_startup: boolean, enable_whispers: boolean, users_allowed_to_whisper: Array<string>, enable_announcements: boolean, randomize_announcements: boolean, time_between_announcements: number, enable_insults: boolean, time_between_insults: number, lurk_time: number, enable_comebacks: boolean, percent_chance_of_comeback: number, comeback_exceptions: Array<string>, enable_corrections: boolean, percent_chance_of_correction: number, correction_exceptions: Array<string>, };
+export type AuthenticationDetails = { access_token: string, client_id: string, broadcaster_id: string, login: string, expires_in: bigint, };
+
+export type BotInfo = { channel_name: string, auto_connect_on_startup: boolean, enable_whispers: boolean, users_allowed_to_whisper: Array<string>, enable_announcements: boolean, randomize_announcements: boolean, time_between_announcements: number, enable_insults: boolean, time_between_insults: number, lurk_time: number, enable_comebacks: boolean, percent_chance_of_comeback: number, comeback_exceptions: Array<string>, enable_corrections: boolean, percent_chance_of_correction: number, correction_exceptions: Array<string>, };
 
 export type Comeback = { id: string, value: string, };
 

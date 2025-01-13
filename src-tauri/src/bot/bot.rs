@@ -8,6 +8,7 @@ use std::ops::{Deref, DerefMut};
 use crate::bot::{announcement_thread_loop, insult_thread_loop, AnnouncementThread, InsultThread};
 
 use super::{api::get_bot_info, handle_incoming_chat, BotData, BotInfo, Client};
+use super::{validate_auth, Authentication, AuthenticationDetails};
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -38,14 +39,14 @@ pub enum Alert {
 #[derive(Debug)]
 pub struct Bot {
     pub bot_info: Mutex<BotInfo>,
-    pub auth: Mutex<AuthValidation>,
+    pub auth: Mutex<Authentication>,
     pub bot_data: BotData,
     pub client: Mutex<Client>,
     pub chat_messages: Mutex<Vec<TwitchMessage>>,
 }
 
 impl Bot {
-    pub fn new(bot_info: BotInfo, bot_data: BotData, auth: AuthValidation) -> Self {
+    pub fn new(bot_info: BotInfo, bot_data: BotData, auth: Authentication) -> Self {
         Self {
             bot_info: Mutex::new(bot_info),
             auth: Mutex::new(auth),
@@ -56,19 +57,20 @@ impl Bot {
     }
 
     pub fn get_bot_name(&self) -> Option<String> {
-        let auth_guard = self.auth.lock().expect("Failed to get lock for Auth");
+        let authentication = self.auth.lock().expect("Failed to get lock for Auth");
 
-        match auth_guard.clone() {
-            AuthValidation::Valid { login, .. } => Some(login),
-            AuthValidation::Invalid { .. } | AuthValidation::NotSignedIn => None,
+        match authentication.clone() {
+            Authentication::Valid { details, .. } => Some(details.login),
+            Authentication::Invalid { .. } | Authentication::NotSignedIn => None,
         }
     }
 
-    pub async fn get_channel_name(&self) -> String {
+    pub fn get_channel_name(&self) -> String {
         self.bot_info.lock().unwrap().channel_name.clone()
     }
+
     pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
-        let channel_name = self.get_channel_name().await;
+        let channel_name = self.get_channel_name();
         let client = self.client.lock().unwrap();
         match client.deref() {
             Client::Disconnected => None,
@@ -80,12 +82,30 @@ impl Bot {
             } => Some(client.get_channel_status(channel_name).await),
         }
     }
+
+    pub fn get_auth_token(&self) -> Option<String> {
+        let auth = self.auth.lock().expect("Failed to get lock for auth");
+
+        match auth.clone() {
+            Authentication::Valid { details, .. } => Some(details.access_token),
+            Authentication::NotSignedIn | Authentication::Invalid { .. } => None,
+        }
+    }
+
+    pub fn get_client_id(&self) -> Option<String> {
+        let auth = self.auth.lock().expect("Failed to get lock for auth");
+
+        match auth.clone() {
+            Authentication::Valid { details, .. } => Some(details.client_id),
+            Authentication::NotSignedIn | Authentication::Invalid { .. } => None,
+        }
+    }
 }
 impl Default for Bot {
     fn default() -> Self {
         Self {
             bot_info: Mutex::new(BotInfo::default()),
-            auth: Mutex::new(AuthValidation::default()),
+            auth: Mutex::new(Authentication::default()),
             bot_data: BotData::default(),
             client: Mutex::new(Client::default()),
             chat_messages: Mutex::new(Vec::new()),
@@ -93,30 +113,10 @@ impl Default for Bot {
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, TS)]
-#[ts(export, export_to = "../../src/lib/types.ts")]
-pub enum AuthValidation {
-    Valid {
-        access_token: String,
-        login: String,
-        expires_in: i64,
-    },
-    Invalid {
-        reason: String,
-    },
-    NotSignedIn,
-}
-
-impl Default for AuthValidation {
-    fn default() -> Self {
-        Self::NotSignedIn
-    }
-}
-
 pub mod api {
     use crate::bot::{Bot, TwitchMessage};
 
-    use super::AuthValidation;
+    use super::Authentication;
 
     #[tauri::command]
     pub fn get_chat_messages(state: tauri::State<'_, Bot>) -> Result<Vec<TwitchMessage>, String> {
@@ -137,7 +137,7 @@ pub mod api {
     }
 
     #[tauri::command]
-    pub fn get_auth_status(state: tauri::State<Bot>) -> Result<AuthValidation, String> {
+    pub fn get_auth_status(state: tauri::State<Bot>) -> Result<Authentication, String> {
         let auth_guard = state.auth.lock();
 
         match auth_guard {

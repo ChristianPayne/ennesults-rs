@@ -1,4 +1,5 @@
 mod announcements;
+mod auth;
 mod bot;
 mod bot_data;
 mod bot_info;
@@ -10,6 +11,7 @@ mod users;
 mod whispers;
 
 pub use announcements::*;
+pub use auth::*;
 pub use bot::*;
 pub use bot_data::*;
 pub use bot_info::*;
@@ -22,6 +24,7 @@ pub use whispers::*;
 
 pub mod api {
     use super::announcements;
+    use super::auth;
     use super::bot;
     use super::bot_info;
     use super::client;
@@ -31,6 +34,7 @@ pub mod api {
     use super::whispers;
 
     pub use announcements::api::*;
+    pub use auth::api::*;
     pub use bot::api::*;
     pub use bot_info::api::*;
     pub use client::api::*;

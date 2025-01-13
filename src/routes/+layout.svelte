@@ -14,7 +14,7 @@
   import * as Tooltip from "$lib/components/ui/tooltip";
   import * as Dialog from "$lib/components/ui/dialog";
 
-  import type { BotInfo } from "$lib/types";
+  import type { Authentication, BotInfo } from "$lib/types";
   import SpeakAsEnnesults from "$lib/components/speakAsEnnesults.svelte";
   import NotificationsPanel from "$lib/components/notifications/notificationsPanel.svelte";
   import { alertNotification } from "$lib/components/notifications/notifications";
@@ -33,6 +33,7 @@
 
   onMount(async () => {
     tauriVersion = await getVersion();
+    await invoke("connect_to_twitch");
     await getBotInfo();
     changelog = await invoke("get_changelog");
 
@@ -83,9 +84,11 @@
       botInfo ??
       (await invoke<BotInfo>("get_bot_info").catch((e) => console.error(e)));
 
+    let auth = await invoke<Authentication>("get_auth_status");
+
     if (currentInfo) {
       channelName = currentInfo.channel_name;
-      botName = currentInfo.bot_name;
+      botName = auth["Valid"]?.login ?? "Ennesults";
       if (currentInfo.auto_connect_on_startup) {
         let [wanted, joined] =
           await invoke<[boolean, boolean]>("get_channel_status");
@@ -129,6 +132,11 @@
       });
     }
   }
+
+  async function getBroadcasterId() {
+    let result = await invoke("get_broadcaster_id");
+    console.log(result);
+  }
 </script>
 
 <ModeWatcher />
@@ -140,6 +148,9 @@
       {botName || "Ennesults"}
     </Button>
     <div class="sm:flex sm:space-x-2 items-center">
+      <Button variant="ghost" on:click={getBroadcasterId}
+        >getBroadcasterId</Button
+      >
       <Button variant="ghost" href="/announcements">Announcements</Button>
       <Button variant="ghost" href="/insults">Insults</Button>
       <Button variant="ghost" href="/comebacks">Comebacks</Button>

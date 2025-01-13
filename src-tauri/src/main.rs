@@ -15,9 +15,10 @@ mod commands;
 mod date;
 mod file;
 mod migrations;
+mod twitch;
 mod updater;
 
-use bot::{Announcements, AuthValidation, Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Announcements, Authentication, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
@@ -32,6 +33,8 @@ async fn main() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             crate::bot::say,
+            crate::bot::api::connect_to_twitch,
+            crate::bot::api::disconnect_from_twitch,
             crate::bot::api::connect_to_channel,
             crate::bot::api::leave_channel,
             crate::bot::api::get_channel_status,
@@ -62,6 +65,7 @@ async fn main() {
             crate::bot::api::decode_auth_redirect,
             crate::bot::api::get_auth_status,
             crate::bot::api::sign_out_of_twitch,
+            crate::twitch::get_broadcaster_id,
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog
@@ -78,7 +82,7 @@ async fn main() {
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
             let auth =
-                read_json_file::<AuthValidation>(app.handle(), "auth.json").unwrap_or_default();
+                read_json_file::<Authentication>(app.handle(), "auth.json").unwrap_or_default();
             let comebacks =
                 read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
             let insults =
@@ -92,18 +96,18 @@ async fn main() {
             app.manage(bot);
 
             // Connect the bot to Twitch on startup.
-            let bot = app.state::<Bot>();
+            // let bot = app.state::<Bot>();
 
-            let mut client = bot.client.lock().expect("Failed to get lock for client");
+            // let mut client = bot.client.lock().expect("Failed to get lock for client");
 
-            match client.connect_to_twitch(app.handle().clone()) {
-                Ok(_) => {
-                    let _ = app.emit("alert", "Connecting to Twitch");
-                }
-                Err(e) => {
-                    let _ = app.emit("error", e.as_str());
-                }
-            }
+            // match client.connect_to_twitch(app.handle().clone()).await {
+            //     Ok(_) => {
+            //         let _ = app.emit("alert", "Connecting to Twitch");
+            //     }
+            //     Err(e) => {
+            //         let _ = app.emit("error", e.as_str());
+            //     }
+            // }
 
             println!("Setup complete!");
             Ok(())
