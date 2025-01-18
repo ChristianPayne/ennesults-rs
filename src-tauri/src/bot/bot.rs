@@ -5,12 +5,10 @@ use ts_rs::TS;
 
 use std::ops::{Deref, DerefMut};
 
-use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
-
 use crate::bot::{announcement_thread_loop, insult_thread_loop, AnnouncementThread, InsultThread};
 
 use super::{api::get_bot_info, handle_incoming_chat, BotData, BotInfo, Client};
+use super::{validate_auth, Authentication, AuthenticationDetails};
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -40,26 +38,39 @@ pub enum Alert {
 // BOT
 #[derive(Debug)]
 pub struct Bot {
-    pub bot_info: Arc<Mutex<BotInfo>>,
+    pub bot_info: Mutex<BotInfo>,
+    pub auth: Mutex<Authentication>,
     pub bot_data: BotData,
-    pub client: Arc<Mutex<Client>>,
-    pub chat_messages: Arc<Mutex<Vec<TwitchMessage>>>,
+    pub client: Mutex<Client>,
+    pub chat_messages: Mutex<Vec<TwitchMessage>>,
 }
 
 impl Bot {
-    pub fn new(bot_info: BotInfo, bot_data: BotData) -> Self {
+    pub fn new(bot_info: BotInfo, bot_data: BotData, auth: Authentication) -> Self {
         Self {
-            bot_info: Arc::new(Mutex::new(bot_info)),
+            bot_info: Mutex::new(bot_info),
+            auth: Mutex::new(auth),
             bot_data,
-            client: Arc::new(Mutex::new(Client::default())),
-            chat_messages: Arc::new(Mutex::new(Vec::new())),
+            client: Mutex::new(Client::default()),
+            chat_messages: Mutex::new(Vec::new()),
         }
     }
-    pub async fn get_channel_name(&self) -> String {
+
+    pub fn get_bot_name(&self) -> Option<String> {
+        let authentication = self.auth.lock().expect("Failed to get lock for Auth");
+
+        match authentication.clone() {
+            Authentication::Valid { details, .. } => Some(details.login),
+            Authentication::Invalid { .. } | Authentication::NotSignedIn => None,
+        }
+    }
+
+    pub fn get_channel_name(&self) -> String {
         self.bot_info.lock().unwrap().channel_name.clone()
     }
+
     pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
-        let channel_name = self.get_channel_name().await;
+        let channel_name = self.get_channel_name();
         let client = self.client.lock().unwrap();
         match client.deref() {
             Client::Disconnected => None,
@@ -72,103 +83,42 @@ impl Bot {
         }
     }
 
-    pub fn connect_to_twitch(&self, app_handle: tauri::AppHandle) -> Result<(), &str> {
-        println!("Connecting to Twitch...");
-        let _ = app_handle.emit("alert", "Connecting to Twitch");
-        // default configuration is to join chat as anonymous.
-        let bot_info = get_bot_info(app_handle.state::<Bot>());
+    pub fn get_auth_token(&self) -> Option<String> {
+        let auth = self.auth.lock().expect("Failed to get lock for auth");
 
-        // Handle the disconnecting of existing client connections to Twitch and any threads that are currently running.
-        {
-            let existing_client = &mut self
-                .client
-                .lock()
-                .expect("Failed to get lock on bot client");
-
-            match existing_client.deref_mut() {
-                Client::Disconnected => {}
-                Client::Connected {
-                    client,
-                    client_join_handle,
-                    insult_thread,
-                    announcement_thread,
-                } => {
-                    // Shut down the insult thread if it is running.
-                    if let InsultThread::Running {
-                        handle: insult_handle,
-                        sender: insult_sender,
-                    } = insult_thread
-                    {
-                        insult_sender.send(());
-                        insult_handle.abort();
-                    }
-
-                    // Shut down the announcement thread if it is running.
-                    if let AnnouncementThread::Running {
-                        handle: announcement_handle,
-                        sender: announcement_sender,
-                    } = announcement_thread
-                    {
-                        announcement_sender.send(());
-                        announcement_handle.abort();
-                    }
-
-                    // Tell the client to leave the twitch channel.
-                    client.part(bot_info.channel_name.clone());
-
-                    // Update the state to reflect the client being disconnected.
-                    **existing_client = Client::Disconnected;
-                }
-            }
+        match auth.clone() {
+            Authentication::Valid { details, .. } => Some(details.access_token),
+            Authentication::NotSignedIn | Authentication::Invalid { .. } => None,
         }
+    }
 
-        let config = if bot_info.bot_name.is_empty() || bot_info.oauth_token.is_empty() {
-            ClientConfig::default()
-        } else {
-            ClientConfig::new_simple(StaticLoginCredentials::new(
-                bot_info.bot_name,
-                Some(bot_info.oauth_token),
-            ))
-        };
+    pub fn get_client_id(&self) -> Option<String> {
+        let auth = self.auth.lock().expect("Failed to get lock for auth");
 
-        let (incoming_messages, twitch_client) =
-            TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
-
-        // First thing we should do is start consuming incoming messages, otherwise they will back up.
-        let twitch_client_thread_handle =
-            tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
-
-        let insult_thread = InsultThread::new(app_handle.clone(), bot_info.enable_insults);
-
-        let announcement_thread =
-            AnnouncementThread::new(app_handle.clone(), bot_info.enable_announcements);
-
-        *self
-            .client
-            .lock()
-            .expect("Failed to get lock for client when connecting to twitch.") = Client::new(
-            twitch_client,
-            twitch_client_thread_handle,
-            insult_thread,
-            announcement_thread,
-        );
-
-        Ok(())
+        match auth.clone() {
+            Authentication::Valid { details, .. } => Some(details.client_id),
+            Authentication::NotSignedIn | Authentication::Invalid { .. } => None,
+        }
     }
 }
 impl Default for Bot {
     fn default() -> Self {
         Self {
-            bot_info: Arc::new(Mutex::new(BotInfo::default())),
+            bot_info: Mutex::new(BotInfo::default()),
+            auth: Mutex::new(Authentication::default()),
             bot_data: BotData::default(),
-            client: Arc::new(Mutex::new(Client::default())),
-            chat_messages: Arc::new(Mutex::new(Vec::new())),
+            client: Mutex::new(Client::default()),
+            chat_messages: Mutex::new(Vec::new()),
         }
     }
 }
 
 pub mod api {
+    use tauri::{AppHandle, Manager};
+
     use crate::bot::{Bot, TwitchMessage};
+
+    use super::Authentication;
 
     #[tauri::command]
     pub fn get_chat_messages(state: tauri::State<'_, Bot>) -> Result<Vec<TwitchMessage>, String> {
@@ -186,5 +136,16 @@ pub mod api {
             .expect("Failed to get lock for chat messages.")
             .clone()
             .len())
+    }
+
+    #[tauri::command]
+    pub fn get_auth_status(app_handle: AppHandle) -> Result<Authentication, String> {
+        let state = app_handle.state::<Bot>();
+        let auth_guard = state.auth.lock();
+
+        match auth_guard {
+            Err(_) => Err("Failed to get lock for Auth".to_string()),
+            Ok(auth) => Ok(auth.clone()),
+        }
     }
 }
