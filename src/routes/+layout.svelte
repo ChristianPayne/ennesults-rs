@@ -44,6 +44,7 @@
     });
 
     authentication = await invoke<Authentication>("get_auth_status");
+    console.log(authentication);
     await getBotInfo();
 
     listen("bot_info_save", async (event) => {
@@ -271,6 +272,8 @@
             {/if}
           </Popover.Content>
         </Popover.Root>
+      {:else}
+        <p>No Authentication</p>
       {/if}
     </div>
   </div>

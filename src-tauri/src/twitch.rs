@@ -1,17 +1,12 @@
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
-use crate::bot::Bot;
-
 /// Gets the id of the channel that we are wanting to join.
 pub async fn get_broadcaster_id(
-    app_handle: AppHandle,
     client_id: String,
     access_token: String,
+    channel_name: String,
 ) -> Result<String, String> {
-    let bot = app_handle.state::<Bot>();
-    let channel_name = bot.get_channel_name();
-
     let client = reqwest::Client::new();
 
     let resp = client

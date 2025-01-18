@@ -99,7 +99,7 @@ pub mod api {
         connect_to_twitch(app_handle.clone());
 
         if bot_info.auto_connect_on_startup {
-            let _ = connect_to_channel(app_handle.state::<Bot>()).await;
+            let _ = connect_to_channel(app_handle.clone()).await;
         }
 
         let write_result = write_file::<BotInfo>(&app_handle, "bot_info.json", bot_info.clone());

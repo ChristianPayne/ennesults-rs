@@ -189,14 +189,17 @@ pub async fn handle_incoming_chat(
 pub mod api {
     use crate::{
         bot::{
-            handle_incoming_chat, validate_auth, AnnouncementThread, Authentication,
-            AuthenticationBuilder, AuthenticationDetails, AuthenticationError, Bot, InsultThread,
+            api::get_auth_status, handle_incoming_chat, validate_auth, AnnouncementThread,
+            Authentication, AuthenticationBuilder, AuthenticationDetails, AuthenticationError, Bot,
+            ChannelDetails, InsultThread,
         },
         file::{write_file, WriteFileError},
+        twitch::get_broadcaster_id,
     };
     use serde_json::{json, Value};
     use std::{collections::HashMap, ops::Deref};
     use tauri::{http, AppHandle, Emitter, Listener, Manager, Url};
+    use twitch_api::eventsub::user::authorization;
     use twitch_irc::{
         login::StaticLoginCredentials, ClientConfig, SecureTCPTransport, TwitchIRCClient,
     };
@@ -343,43 +346,78 @@ pub mod api {
     }
 
     #[tauri::command]
-    pub async fn connect_to_channel(state: tauri::State<'_, Bot>) -> Result<String, String> {
-        let channel_name = state
-            .bot_info
-            .lock()
-            .expect("Failed to get lock for bot info")
-            .channel_name
-            .clone();
+    pub async fn connect_to_channel(app_handle: AppHandle) -> Result<String, String> {
+        let state = app_handle.state::<Bot>();
+        let channel_name = {
+            state
+                .bot_info
+                .lock()
+                .expect("Failed to get lock for bot info")
+                .channel_name
+                .clone()
+        };
 
         if channel_name.is_empty() {
             return Err("Channel name not found.".into());
         }
 
-        let client;
-        {
-            client = state.client.lock().unwrap().get_client();
-        }
-
-        let Some(client) = client else {
-            return Err("Could not get client.".into());
+        let mut authentication = {
+            state
+                .auth
+                .lock()
+                .expect("Failed to get lock for auth")
+                .clone()
         };
 
-        let channel_status = client.get_channel_status(channel_name.clone()).await;
+        // The idea here is that we want to alter the authentication to hold onto a connection status of the channel. That way we don't have to keep track of multiple things in different places.
 
-        match channel_status {
-            (true, false) => Err("Already joining a channel.".into()),
-            (true, true) => Err("Already connected to a channel.".into()),
-            _ => {
-                // join a channel
-                match client.join(channel_name.clone()) {
-                    Ok(_) => {
-                        println!("✅ Connected to {}!", channel_name.clone());
-                        Ok(channel_name.clone())
+        let result = match &mut authentication {
+            Authentication::Valid { details, .. } => {
+                let broadcaster_id = get_broadcaster_id(
+                    details.client_id.clone(),
+                    details.access_token.clone(),
+                    channel_name.clone(),
+                )
+                .await?;
+
+                let Some(client) = state.client.lock().unwrap().get_client() else {
+                    return Err("Could not get client.".into());
+                };
+
+                let channel_status = client.get_channel_status(channel_name.clone()).await;
+
+                match channel_status {
+                    (true, false) => Err("Already joining a channel.".into()),
+                    (true, true) => Err("Already connected to a channel.".into()),
+                    _ => {
+                        // join a channel
+                        match client.join(channel_name.clone()) {
+                            Ok(_) => {
+                                println!("✅ Connected to {}!", channel_name.clone());
+                                details.set_channel_details(ChannelDetails::Connected {
+                                    channel_id: broadcaster_id,
+                                });
+                                Ok(channel_name.clone())
+                            }
+                            Err(e) => Err(format!("Could not join channel! {}", e)),
+                        }
                     }
-                    Err(e) => Err(format!("Could not join channel! {}", e)),
                 }
             }
-        }
+            Authentication::NotSignedIn | Authentication::Invalid { .. } => {
+                Err("Authorization not valid. Can't connect to channel.".to_string())
+            }
+        };
+
+        // save authentication back to state
+        let mut auth = state
+            .auth
+            .lock()
+            .expect("Failed to get authentication lock.");
+
+        *auth = authentication;
+
+        result
     }
 
     #[tauri::command]

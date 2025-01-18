@@ -114,6 +114,8 @@ impl Default for Bot {
 }
 
 pub mod api {
+    use tauri::{AppHandle, Manager};
+
     use crate::bot::{Bot, TwitchMessage};
 
     use super::Authentication;
@@ -137,7 +139,8 @@ pub mod api {
     }
 
     #[tauri::command]
-    pub fn get_auth_status(state: tauri::State<Bot>) -> Result<Authentication, String> {
+    pub fn get_auth_status(app_handle: AppHandle) -> Result<Authentication, String> {
+        let state = app_handle.state::<Bot>();
         let auth_guard = state.auth.lock();
 
         match auth_guard {

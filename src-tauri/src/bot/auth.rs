@@ -10,12 +10,29 @@ pub struct AuthenticationDetails {
     pub access_token: String,
     // pub id_token: String,
     pub client_id: String,
-    pub broadcaster_id: String,
+    // pub broadcaster_id: String,
     pub login: String,
     pub expires_in: i64,
+    pub channel_details: ChannelDetails,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, TS)]
+impl AuthenticationDetails {
+    pub fn set_channel_details(&mut self, channel_details: ChannelDetails) {
+        self.channel_details = channel_details;
+    }
+}
+
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize, Clone, TS)]
+#[ts(export, export_to = "../../src/lib/types.ts")]
+pub enum ChannelDetails {
+    Connected {
+        channel_id: String,
+    },
+    #[default]
+    Disconnected,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, TS, Default)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub enum Authentication {
     Valid {
@@ -23,23 +40,16 @@ pub enum Authentication {
         last_validated: Option<String>,
     },
     /// Probably invalid because the user disconnected the bot from their account.
-    Invalid {
-        reason: String,
-    },
+    Invalid { reason: String },
+    #[default]
     NotSignedIn,
-}
-
-impl Default for Authentication {
-    fn default() -> Self {
-        Self::NotSignedIn
-    }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct AuthenticationBuilder {
     access_token: Option<String>,
     client_id: Option<String>,
-    broadcaster_id: Option<String>,
+    // broadcaster_id: Option<String>,
     login: Option<String>,
     expires_in: Option<i64>,
 }
@@ -55,9 +65,9 @@ impl AuthenticationBuilder {
     pub fn client_id(&mut self, client_id: String) {
         self.client_id = Some(client_id);
     }
-    pub fn broadcaster_id(&mut self, broadcaster_id: String) {
-        self.broadcaster_id = Some(broadcaster_id);
-    }
+    // pub fn broadcaster_id(&mut self, broadcaster_id: String) {
+    //     self.broadcaster_id = Some(broadcaster_id);
+    // }
     pub fn login(&mut self, login: String) {
         self.login = Some(login);
     }
@@ -69,7 +79,7 @@ impl AuthenticationBuilder {
         // Check if all values are present.
         if self.access_token.is_some()
             && self.client_id.is_some()
-            && self.broadcaster_id.is_some()
+            // && self.broadcaster_id.is_some()
             && self.login.is_some()
             && self.expires_in.is_some()
         {
@@ -81,9 +91,10 @@ impl AuthenticationBuilder {
                     access_token: copy.access_token.unwrap(),
                     // id_token: copy.id_token.unwrap(),
                     client_id: copy.client_id.unwrap(),
-                    broadcaster_id: copy.broadcaster_id.unwrap(),
+                    // broadcaster_id: copy.broadcaster_id.unwrap(),
                     login: copy.login.unwrap(),
                     expires_in: copy.expires_in.unwrap(),
+                    channel_details: ChannelDetails::Disconnected,
                 },
                 last_validated: None,
             }
@@ -140,21 +151,16 @@ pub async fn validate_auth(
                 ));
             };
 
-            let broadcaster_id =
-                get_broadcaster_id(app_handle.clone(), client_id.clone(), access_token.clone())
-                    .await
-                    .map_err(|e| AuthenticationError::ParsingError(e))?;
-
             println!("✅ Validated!");
 
             Ok(Authentication::Valid {
                 details: AuthenticationDetails {
                     access_token,
-                    broadcaster_id,
                     client_id,
                     // id_token: authentication_details.id_token,
                     login,
                     expires_in,
+                    channel_details: ChannelDetails::Disconnected,
                 },
                 last_validated: Some(get_local_now_formatted()),
             })
