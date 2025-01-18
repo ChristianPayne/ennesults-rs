@@ -43,13 +43,17 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
             return false;
         }
 
-        // Get bot name
-        (
-            bot_info.bot_name.clone(),
-            bot_info.percent_chance_of_comeback,
-            comeback_options.0.clone(),
-            bot_info.channel_name.clone(),
-        )
+        if let Some(bot_name) = state.get_bot_name() {
+            // Get bot name
+            (
+                bot_name,
+                bot_info.percent_chance_of_comeback,
+                comeback_options.0.clone(),
+                bot_info.channel_name.clone(),
+            )
+        } else {
+            return false;
+        }
     };
 
     // Check if bot name is in msg.
