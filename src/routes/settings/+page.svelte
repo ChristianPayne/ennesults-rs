@@ -1,31 +1,27 @@
 <script lang="ts">
-  import { exit, relaunch } from "@tauri-apps/plugin-process";
   import Button from "$lib/components/ui/button/button.svelte";
   import Input from "$lib/components/ui/input/input.svelte";
   import Label from "$lib/components/ui/label/label.svelte";
   import * as Select from "$lib/components/ui/select";
   import { onMount } from "svelte";
   import { invoke, Channel } from "@tauri-apps/api/core";
-  import { Checkbox } from "$lib/components/ui/checkbox";
   import type { BotInfo, DownloadEvent } from "$lib/types";
   import { toast } from "svelte-sonner";
   import { colorPalettes } from "$lib/colorPalettes";
   import { theme, setTheme, toggleMode } from "mode-watcher";
   import SettingsForm from "./settings-form.svelte";
   import { formSchema, type FormSchema } from "./schema";
+
   import {
     superValidate,
     type SuperValidated,
     type Infer,
   } from "sveltekit-superforms";
   import { zod } from "sveltekit-superforms/adapters";
+  import ConnectToTwitch from "./connect-to-twitch.svelte";
+  import Updater from "./updater.svelte";
 
   let validatedForm: SuperValidated<any, any, any>;
-
-  let updateAvailable = false;
-  let updateButtonDisabled = false;
-  let checkForUpdateButtonMessage = "Check for Update";
-  let pendingRestart = false;
 
   onMount(async () => {
     const botInfo = await invoke<BotInfo>("get_bot_info");
@@ -36,8 +32,6 @@
     let settings = {
       autoConnectOnStartup: botInfo.auto_connect_on_startup,
       channelName: botInfo.channel_name,
-      botName: botInfo.bot_name,
-      oauthTokenValue: botInfo.oauth_token,
       enableWhispers: botInfo.enable_whispers,
       usersAllowedToWhisper: usersAllowedToWhisperResult.join(", "),
       enableAnnouncements: botInfo.enable_announcements,
@@ -76,15 +70,13 @@
   async function save(validatedData: Infer<FormSchema>) {
     toast.info("Saving settings...");
 
-    await invoke<string>("leave_channel").catch(async (e) => {
-      toast.info(e);
-    });
+    await invoke<string>("leave_channel");
 
     await invoke<BotInfo>("save_bot_info", {
       botInfo: {
         channel_name: validatedData.channelName,
-        bot_name: validatedData.botName,
-        oauth_token: validatedData.oauthTokenValue,
+        // bot_name: validatedData.botName,
+        // oauth_token: validatedData.oauthTokenValue,
         auto_connect_on_startup: validatedData.autoConnectOnStartup,
         enable_whispers: validatedData.enableWhispers,
         users_allowed_to_whisper: validatedData.usersAllowedToWhisper
@@ -113,7 +105,14 @@
           .filter(Boolean)
           .map((user) => user.trim().toLowerCase()),
       },
-    });
+    })
+      .then((botInfo) => {
+        toast.info("Saved settings!");
+        console.log(botInfo);
+      })
+      .catch((e) => {
+        toast.error("Error saving settings...");
+      });
   }
 
   function onColorPaletteChange(value: any) {
@@ -129,56 +128,10 @@
       return colorPalettes["ennesults"];
     }
   }
-
-  async function checkForUpdate() {
-    updateButtonDisabled = true;
-    if (updateAvailable === false) {
-      checkForUpdateButtonMessage = "Checking!";
-      let result = await invoke<{
-        version: string;
-        currentVersion: string;
-      } | null>("fetch_update");
-      if (result === null) {
-        checkForUpdateButtonMessage = "Up to date!";
-        setTimeout(() => {
-          checkForUpdateButtonMessage = "Check for Update";
-          updateButtonDisabled = false;
-        }, 3000);
-      } else {
-        updateAvailable = true;
-        checkForUpdateButtonMessage = `Update to v.${result.version}!`;
-        updateButtonDisabled = false;
-      }
-    } else {
-      const onEvent = new Channel<DownloadEvent>();
-      onEvent.onmessage = (message) => {
-        switch (message.event) {
-          case "Started": {
-            checkForUpdateButtonMessage = `Starting update...`;
-            break;
-          }
-          case "Progress": {
-            checkForUpdateButtonMessage = `Installing update...`;
-            break;
-          }
-          case "Finished": {
-            pendingRestart = true;
-            break;
-          }
-        }
-      };
-
-      let updater = await invoke("install_update", { onEvent });
-    }
-  }
-
-  async function restart() {
-    await relaunch();
-  }
 </script>
 
 <h1 class="mb-4">Settings</h1>
-<div class="ml-2 space-y-8">
+<div class="ml-2 space-y-6">
   <div class="flex items-end space-x-2">
     <div class="md:ml-8">
       <Label>Theme</Label>
@@ -214,14 +167,11 @@
         />
       </svg>
     </Button>
-    {#if !pendingRestart}
-      <Button on:click={checkForUpdate} disabled={updateButtonDisabled}
-        >{checkForUpdateButtonMessage}</Button
-      >
-    {:else}
-      <Button on:click={restart}>Restart</Button>
-    {/if}
+    <!-- UPDATER -->
+    <Updater />
   </div>
+
+  <ConnectToTwitch />
 
   {#if validatedForm}
     <SettingsForm {validatedForm} onUpdated={onFormUpdate} />

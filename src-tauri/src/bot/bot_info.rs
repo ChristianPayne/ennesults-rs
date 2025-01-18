@@ -5,8 +5,8 @@ use ts_rs::TS;
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct BotInfo {
     pub channel_name: String,
-    pub bot_name: String,
-    pub oauth_token: String,
+    // pub bot_name: String,
+    // pub oauth_token: String,
     pub auto_connect_on_startup: bool,
 
     pub enable_whispers: bool,
@@ -33,8 +33,8 @@ impl Default for BotInfo {
     fn default() -> Self {
         Self {
             channel_name: "".into(),
-            bot_name: "".into(),
-            oauth_token: "".into(),
+            // bot_name: "".into(),
+            // oauth_token: "".into(),
             auto_connect_on_startup: false,
             enable_whispers: false,
             users_allowed_to_whisper: vec![],
@@ -57,7 +57,7 @@ impl Default for BotInfo {
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::api::connect_to_channel;
+    use crate::bot::api::{connect_to_channel, connect_to_twitch};
     use crate::bot::{Bot, BotInfo};
     use crate::file::{write_file, WriteFileError};
 
@@ -96,9 +96,10 @@ pub mod api {
                 .expect("Failed to get lock for bot info") = bot_info.clone();
         }
 
-        let _ = state.connect_to_twitch(app_handle.clone());
+        let _ = connect_to_twitch(app_handle.clone()).await;
+
         if bot_info.auto_connect_on_startup {
-            let _ = connect_to_channel(app_handle.state::<Bot>()).await;
+            let _ = connect_to_channel(app_handle.clone()).await;
         }
 
         let write_result = write_file::<BotInfo>(&app_handle, "bot_info.json", bot_info.clone());

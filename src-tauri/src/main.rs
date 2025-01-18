@@ -15,14 +15,16 @@ mod commands;
 mod date;
 mod file;
 mod migrations;
+mod twitch;
 mod updater;
 
-use bot::{Announcements, Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Announcements, Authentication, Bot, BotData, BotInfo, Comebacks, Insults, Users};
 use file::read_json_file;
 
 #[tokio::main]
 async fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_oauth::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
@@ -31,6 +33,8 @@ async fn main() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             crate::bot::say,
+            crate::bot::api::connect_to_twitch,
+            crate::bot::api::disconnect_from_twitch,
             crate::bot::api::connect_to_channel,
             crate::bot::api::leave_channel,
             crate::bot::api::get_channel_status,
@@ -57,6 +61,10 @@ async fn main() {
             crate::bot::api::update_announcement,
             crate::bot::api::delete_announcement,
             crate::bot::api::save_announcements,
+            crate::bot::api::open_auth_window,
+            crate::bot::api::decode_auth_redirect,
+            crate::bot::api::get_auth_status,
+            crate::bot::api::sign_out_of_twitch,
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog
@@ -66,12 +74,15 @@ async fn main() {
             app.manage(updater::PendingUpdate(Mutex::new(None)));
 
             // Run any migrations on the data files before loading the files into the bot.
-            println!("Checking for migrations...");
+            println!("🤖 Checking for migrations...");
             run_migrations(app.handle().clone());
+            println!("✅ Migrations complete!");
 
-            println!("Setting up bot...");
+            println!("🤖 Setting up bot...");
             let bot_info =
                 read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
+            let auth =
+                read_json_file::<Authentication>(app.handle(), "auth.json").unwrap_or_default();
             let comebacks =
                 read_json_file::<Comebacks>(app.handle(), "comebacks.json").unwrap_or_default();
             let insults =
@@ -81,16 +92,10 @@ async fn main() {
                 .unwrap_or_default();
 
             let bot_data = BotData::new(comebacks, insults, users, announcements);
-            let bot = Bot::new(bot_info, bot_data);
+            let bot = Bot::new(bot_info, bot_data, auth);
             app.manage(bot);
 
-            // Connect the bot to Twitch on startup.
-            let state = app.state::<Bot>();
-            if let Err(error) = state.connect_to_twitch(app.handle().clone()) {
-                println!("{}", error)
-            }
-
-            println!("Bot started successfully!");
+            println!("✅ Setup complete!");
             Ok(())
         })
         .run(tauri::generate_context!())
