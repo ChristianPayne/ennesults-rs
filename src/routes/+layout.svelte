@@ -44,7 +44,6 @@
     });
 
     authentication = await invoke<Authentication>("get_auth_status");
-    console.log(authentication);
     await getBotInfo();
 
     listen("bot_info_save", async (event) => {
@@ -159,7 +158,7 @@
   <!-- Title -->
   <div class="flex flex-col sm:flex-row justify-between mb-2 p-2">
     <Button variant="ghost" href="/" class="text-2xl font-bold space-x-2">
-      {botName || "Ennesults"}
+      Ennesults
     </Button>
     <div class="sm:flex sm:space-x-2 items-center">
       <Button variant="ghost" href="/announcements">Announcements</Button>
@@ -210,7 +209,7 @@
           <Popover.Trigger>
             <Badge variant={connectionStatus ? "secondary" : "destructive"}>
               {#if authentication["Valid"]}
-                {channelName}
+                {channelName || "Configure channel name"}
               {:else if authentication["Invalid"]}
                 Invalid Authentication
               {:else}
@@ -221,45 +220,52 @@
 
           <Popover.Content class="space-y-2 w-96">
             {#if authentication["Valid"]}
-              <h1>Channel</h1>
-              {#if connectionStatus}
-                <p class="flex gap-1">
-                  Connected to
-                  <a
-                    href="https://twitch.tv/{channelName}"
-                    target="_blank"
-                    class="text-primary flex gap-1 items-center"
-                  >
-                    {channelName}
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
-                      class="size-5"
+              {#if channelName}
+                {#if connectionStatus}
+                  <h1>Channel</h1>
+                  <p class="flex gap-1">
+                    Connected to
+                    <a
+                      href="https://twitch.tv/{channelName}"
+                      target="_blank"
+                      class="text-primary flex gap-1 items-center"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                      />
-                    </svg>
-                  </a>
-                </p>
+                      {channelName}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="size-5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                        />
+                      </svg>
+                    </a>
+                  </p>
 
-                <div class="flex gap-2">
-                  <Button variant="destructive" on:click={leave_channel}>
-                    Leave Channel
+                  <div class="flex gap-2">
+                    <Button variant="destructive" on:click={leave_channel}>
+                      Leave Channel
+                    </Button>
+
+                    <SpeakAsEnnesults {connectionStatus} />
+                  </div>
+                {:else}
+                  <p>Not connected to a channel.</p>
+                  <Button on:click={connectToChannel}>
+                    Connect to {channelName || "Channel"}
                   </Button>
-
-                  <SpeakAsEnnesults {connectionStatus} />
-                </div>
+                {/if}
               {:else}
-                <p>Not connected to a channel.</p>
-                <Button on:click={connectToChannel}>
-                  Connect to {channelName || "Channel"}
-                </Button>
+                <h1>Channel name not configured</h1>
+                <p>Set up what channel you want to the bot to connect to.</p>
+                <Button variant="default" href="settings">Go to Settings</Button
+                >
               {/if}
             {:else if authentication["Invalid"]}
               <h1>Twitch Authentication is Invalid!</h1>
@@ -272,8 +278,6 @@
             {/if}
           </Popover.Content>
         </Popover.Root>
-      {:else}
-        <p>No Authentication</p>
       {/if}
     </div>
   </div>

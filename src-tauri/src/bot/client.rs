@@ -454,10 +454,7 @@ pub mod api {
             .clone();
         let client = state.client.lock().unwrap();
         match client.deref() {
-            Client::Disconnected => Err(format!(
-                "Failed to leave {}. No client connected.",
-                channel_name
-            )),
+            Client::Disconnected => Ok("No client connected.".to_string()),
             Client::Connected {
                 client,
                 client_join_handle,

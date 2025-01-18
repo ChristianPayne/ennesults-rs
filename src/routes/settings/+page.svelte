@@ -70,9 +70,7 @@
   async function save(validatedData: Infer<FormSchema>) {
     toast.info("Saving settings...");
 
-    await invoke<string>("leave_channel").catch(async (e) => {
-      toast.info(e);
-    });
+    await invoke<string>("leave_channel");
 
     await invoke<BotInfo>("save_bot_info", {
       botInfo: {
@@ -107,7 +105,14 @@
           .filter(Boolean)
           .map((user) => user.trim().toLowerCase()),
       },
-    });
+    })
+      .then((botInfo) => {
+        toast.info("Saved settings!");
+        console.log(botInfo);
+      })
+      .catch((e) => {
+        toast.error("Error saving settings...");
+      });
   }
 
   function onColorPaletteChange(value: any) {
