@@ -11,7 +11,9 @@ const CHANGELOG: [ChangelogVersionNotes; 8] = [
     ChangelogVersionNotes {
         version: "v1.4.0",
         title: Some("Twitch API Integration"),
-        notes: r"- ",
+        notes: r"- New connection UI on the settings page to authenticate the bot.
+        - New UI for the badge at the bottom to show your status.
+        - Connection to the Twitch API for future features to query data outside of your chat.",
     },
     ChangelogVersionNotes {
         version: "v1.3.2",
