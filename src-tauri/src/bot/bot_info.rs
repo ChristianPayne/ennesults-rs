@@ -96,7 +96,7 @@ pub mod api {
                 .expect("Failed to get lock for bot info") = bot_info.clone();
         }
 
-        connect_to_twitch(app_handle.clone());
+        let _ = connect_to_twitch(app_handle.clone()).await;
 
         if bot_info.auto_connect_on_startup {
             let _ = connect_to_channel(app_handle.clone()).await;

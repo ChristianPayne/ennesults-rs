@@ -224,9 +224,11 @@ pub mod api {
         let details = match existing_auth {
             Authentication::Valid { details, .. } => details,
             Authentication::Invalid { reason } => {
+                println!("❌ Failed to connect to Twitch. Auth invalid.");
                 return Err("Authentication was not valid when connecting to Twitch.".to_string());
             }
             Authentication::NotSignedIn => {
+                println!("❌ Failed to connect to Twitch. Not signed in.");
                 return Err(
                     "Not signed into Twitch. Please connect your account in the settings page."
                         .to_string(),
@@ -239,7 +241,10 @@ pub mod api {
         let authentication = validate_auth(app_handle.clone(), details.access_token.clone())
             .await
             .map_err(|e| match e {
-                AuthenticationError::ParsingError(message) => message.clone(),
+                AuthenticationError::ParsingError(message) => {
+                    println!("❌ Authentication Error. Auth invalid. {}", &message);
+                    message.clone()
+                }
             })?;
 
         // Save our new valid authentication
@@ -259,10 +264,14 @@ pub mod api {
                 ))
             }
             Authentication::Invalid { reason } => {
-                return Err(format!("Failed to authenticate bot. {}", reason))
+                let err = format!("Failed to authenticate bot. {}", reason);
+                dbg!(&err);
+                return Err(err);
             }
             Authentication::NotSignedIn => {
-                return Err(format!("Failed to authenticate bot. Not signed in."))
+                let err = "Failed to authenticate bot. Not signed in.";
+                dbg!(&err);
+                return Err(err.to_string());
             }
         };
 

@@ -4,6 +4,8 @@ use ts_rs::TS;
 
 use crate::{date::get_local_now_formatted, twitch::get_broadcaster_id};
 
+const CLIENT_ID: &str = "nbdppbmm4iicute0sl1cj663xyvbi4";
+
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub struct AuthenticationDetails {
@@ -96,7 +98,7 @@ impl AuthenticationBuilder {
                     expires_in: copy.expires_in.unwrap(),
                     channel_details: ChannelDetails::Disconnected,
                 },
-                last_validated: None,
+                last_validated: Some(get_local_now_formatted()),
             }
         } else {
             Authentication::Invalid {
@@ -185,13 +187,13 @@ pub mod api {
 
     use crate::{
         bot::{
-            api::{connect_to_twitch, disconnect_from_twitch},
+            api::{connect_to_channel, connect_to_twitch, disconnect_from_twitch},
             Bot,
         },
         file::{write_file, WriteFileError},
     };
 
-    use super::{validate_auth, Authentication, AuthenticationBuilder};
+    use super::{validate_auth, Authentication, AuthenticationBuilder, CLIENT_ID};
 
     /// Opens a new window from Ennesults to log in the user.
     #[tauri::command]
@@ -200,13 +202,11 @@ pub mod api {
             return Err("Authentication Builder state is already being managed.".to_string());
         }
 
-        let client_id = "nbdppbmm4iicute0sl1cj663xyvbi4".to_string();
-
         let mut ub = URLBuilder::new();
         ub.set_protocol("https")
             .set_host("id.twitch.tv/oauth2/authorize")
             .add_param("response_type", "token")
-            .add_param("client_id", &client_id)
+            .add_param("client_id", CLIENT_ID)
             .add_param("redirect_uri", format!("http://localhost:{}", 4500).as_str())
             .add_param("scope", "channel:bot moderator:read:chatters moderator:read:followers moderator:read:shoutouts moderator:manage:shoutouts chat:read whispers:read user:write:chat chat:edit".replace(":", "%3A").replace(" ", "%20").as_str())
             .add_param("state", "ennesults-rocks");
@@ -284,7 +284,8 @@ pub mod api {
             app_handle.emit("auth", auth_validation.clone());
         }
 
-        connect_to_twitch(app_handle.clone());
+        connect_to_twitch(app_handle.clone()).await;
+        connect_to_channel(app_handle.clone()).await;
 
         Ok(auth_validation)
     }
