@@ -11,7 +11,8 @@ const CHANGELOG: [ChangelogVersionNotes; 9] = [
     ChangelogVersionNotes {
         version: "v1.4.1",
         title: None,
-        notes: r"- Fixed deadlock issue for authentication on Windows.",
+        notes: r"- Fixed deadlock issue for authentication on Windows.
+        - New migration script for bot_info rename to settings.",
     },
     ChangelogVersionNotes {
         version: "v1.4.0",
