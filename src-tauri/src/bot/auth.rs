@@ -196,8 +196,9 @@ pub mod api {
     use super::{validate_auth, Authentication, AuthenticationBuilder, CLIENT_ID};
 
     /// Opens a new window from Ennesults to log in the user.
+    /// Note the async function. Tauri has a bug where Windows will deadlock when creating windows in a sync function.
     #[tauri::command]
-    pub fn open_auth_window(app_handle: AppHandle) -> Result<(), String> {
+    pub async fn open_auth_window(app_handle: AppHandle) -> Result<(), String> {
         if !app_handle.manage(AuthenticationBuilder::new()) {
             return Err("Authentication Builder state is already being managed.".to_string());
         }
