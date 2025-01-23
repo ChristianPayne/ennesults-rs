@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::{say, Bot, BotInfo};
+use crate::bot::{say, Bot, Settings};
 
 use super::BotData;
 
@@ -23,13 +23,13 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
     let state = app_handle.state::<Bot>();
 
     let (bot_name, percent_chance_of_comeback, comeback_options, channel_name) = {
-        let bot_info = state
-            .bot_info
+        let settings = state
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info.");
+            .expect("Failed to get lock for settings.");
 
         // Check to make sure comebacks are enabled in the settings.
-        if !bot_info.enable_comebacks {
+        if !settings.enable_comebacks {
             return false;
         }
 
@@ -47,9 +47,9 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
             // Get bot name
             (
                 bot_name,
-                bot_info.percent_chance_of_comeback,
+                settings.percent_chance_of_comeback,
                 comeback_options.0.clone(),
-                bot_info.channel_name.clone(),
+                settings.channel_name.clone(),
             )
         } else {
             return false;
@@ -149,7 +149,7 @@ pub mod api {
             .bot_data
             .comebacks
             .lock()
-            .expect("Failed to get lock for bot info") = comebacks.clone();
+            .expect("Failed to get lock for settings") = comebacks.clone();
 
         let write_result =
             write_file::<Comebacks>(&app_handle, "comebacks.json", comebacks.clone());

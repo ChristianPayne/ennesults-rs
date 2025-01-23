@@ -2,7 +2,7 @@ use rand::Rng;
 use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use super::{say, Bot, BotInfo};
+use super::{say, Bot, Settings};
 
 pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) -> bool {
     if !msg.message_text.to_lowercase().contains("en") {
@@ -13,19 +13,19 @@ pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) ->
 
     // Get values from state and lock the value back up.
     let (correction_exceptions, percent_chance_of_correction) = {
-        let bot_info = state
-            .bot_info
+        let settings = state
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info.");
+            .expect("Failed to get lock for settings.");
 
         // Check to make sure comebacks are enabled in the settings.
-        if !bot_info.enable_corrections {
+        if !settings.enable_corrections {
             return false;
         }
 
         (
-            bot_info.correction_exceptions.clone(),
-            bot_info.percent_chance_of_correction,
+            settings.correction_exceptions.clone(),
+            settings.percent_chance_of_correction,
         )
     };
 

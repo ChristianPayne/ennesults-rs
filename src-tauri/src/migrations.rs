@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use tauri::{Emitter, Manager};
 
-use crate::bot::{Bot, BotData, Insult, InsultTag, Insults};
-use crate::file::{read_json_file, write_file, WriteFileError};
+use crate::bot::{Bot, BotData, Insult, InsultTag, Insults, Settings};
+use crate::file::{delete_file, read_json_file, write_file, WriteFileError};
 
 /// Migrations allow us to change the shape of the file system before running the application.  
 /// Each migration block should read from the file system and write back to the file system. No state should be touched in any of them as the state has not been managed by Tauri yet.
@@ -17,6 +17,11 @@ pub fn run_migrations(app_handle: tauri::AppHandle) -> Result<(), String> {
     if !migrations_previously_run.contains(&"migrate_insult_tags".to_string()) {
         migrate_insult_tags(app_handle.clone())?;
         migrations_run.push("migrate_insult_tags".to_string());
+    }
+
+    if !migrations_previously_run.contains(&"migrate_bot_info_to_settings".to_string()) {
+        migrate_bot_info_to_settings(app_handle.clone())?;
+        migrations_run.push("migrate_bot_info_to_settings".to_string());
     }
 
     // Save the new list of migrations to the file.
@@ -61,7 +66,34 @@ pub fn migrate_insult_tags(app_handle: tauri::AppHandle) -> Result<(), String> {
         }
     }
 
-    println!("Insults migrated: {}", insults_migrated);
+    println!("🚀 Insults migrated: {}", insults_migrated);
+
+    Ok(())
+}
+
+/// 2025-01-22 - Migration to rename bot_info to settings. This migration will change the file name of the existing bot_info.json file to settings.json
+pub fn migrate_bot_info_to_settings(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let Ok(mut bot_info) = read_json_file::<Settings>(&app_handle, "bot_info.json") else {
+        return Err("bot_info.json does not exist".to_string());
+    };
+
+    let write_result = write_file::<Settings>(&app_handle, "settings.json", bot_info);
+
+    if let Some(err) = write_result.err() {
+        match err {
+            WriteFileError::FailedConvertJSON => {
+                return Err("Failed to convert to json.".to_string())
+            }
+            WriteFileError::FailedCreateFile => return Err("Failed to create file.".to_string()),
+            WriteFileError::FailedWriteFile => {
+                return Err("Failed to write contents in file.".to_string())
+            }
+        }
+    }
+
+    delete_file(&app_handle, "bot_info.json");
+
+    println!("🚀 Bot Info migrated to Settings");
 
     Ok(())
 }

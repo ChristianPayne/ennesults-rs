@@ -1,7 +1,7 @@
 use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::WhisperMessage;
 
-use crate::bot::{say, Bot, BotData, BotInfo};
+use crate::bot::{say, Bot, BotData, Settings};
 
 pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
     let bot = app_handle.state::<Bot>();
@@ -9,16 +9,16 @@ pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
     println!("{} whispered {}", msg.sender.name, msg.message_text);
 
     let users_allowed_to_whisper = {
-        let bot_info = bot
-            .bot_info
+        let settings = bot
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info.");
+            .expect("Failed to get lock for settings.");
 
-        if !bot_info.enable_whispers {
+        if !settings.enable_whispers {
             return;
         }
 
-        bot_info.users_allowed_to_whisper.clone()
+        settings.users_allowed_to_whisper.clone()
     };
 
     let sender_allowed_to_whisper =
@@ -55,10 +55,10 @@ pub mod api {
     pub fn get_users_allowed_to_whisper(
         state: tauri::State<'_, Bot>,
     ) -> Result<Vec<String>, String> {
-        let bot_info = state
-            .bot_info
+        let settings = state
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info.");
-        Ok(bot_info.users_allowed_to_whisper.clone())
+            .expect("Failed to get lock for settings.");
+        Ok(settings.users_allowed_to_whisper.clone())
     }
 }

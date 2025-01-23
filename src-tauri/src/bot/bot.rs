@@ -7,7 +7,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::bot::{announcement_thread_loop, insult_thread_loop, AnnouncementThread, InsultThread};
 
-use super::{api::get_bot_info, handle_incoming_chat, BotData, BotInfo, Client};
+use super::{api::get_settings, handle_incoming_chat, BotData, Client, Settings};
 use super::{validate_auth, Authentication, AuthenticationDetails};
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
@@ -38,7 +38,7 @@ pub enum Alert {
 // BOT
 #[derive(Debug)]
 pub struct Bot {
-    pub bot_info: Mutex<BotInfo>,
+    pub settings: Mutex<Settings>,
     pub auth: Mutex<Authentication>,
     pub bot_data: BotData,
     pub client: Mutex<Client>,
@@ -46,9 +46,9 @@ pub struct Bot {
 }
 
 impl Bot {
-    pub fn new(bot_info: BotInfo, bot_data: BotData, auth: Authentication) -> Self {
+    pub fn new(settings: Settings, bot_data: BotData, auth: Authentication) -> Self {
         Self {
-            bot_info: Mutex::new(bot_info),
+            settings: Mutex::new(settings),
             auth: Mutex::new(auth),
             bot_data,
             client: Mutex::new(Client::default()),
@@ -66,7 +66,7 @@ impl Bot {
     }
 
     pub fn get_channel_name(&self) -> String {
-        self.bot_info.lock().unwrap().channel_name.clone()
+        self.settings.lock().unwrap().channel_name.clone()
     }
 
     pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
@@ -104,7 +104,7 @@ impl Bot {
 impl Default for Bot {
     fn default() -> Self {
         Self {
-            bot_info: Mutex::new(BotInfo::default()),
+            settings: Mutex::new(Settings::default()),
             auth: Mutex::new(Authentication::default()),
             bot_data: BotData::default(),
             client: Mutex::new(Client::default()),

@@ -102,17 +102,17 @@ pub fn get_random_user(
     user_must_be_consented: bool,
 ) -> Option<&User> {
     let bot_state = app_handle.state::<Bot>();
-    let bot_info = bot_state
-        .bot_info
+    let settings = bot_state
+        .settings
         .lock()
-        .expect("Failed to get lock for bot info");
+        .expect("Failed to get lock for settings");
 
     users
         .0
         .values()
         .filter(|user| {
             // If it is the streamer, check if we want to include them.
-            if user.username == bot_info.channel_name {
+            if user.username == settings.channel_name {
                 return streamer_inclusive;
             }
             // Check lurk status of all users.
@@ -121,7 +121,7 @@ pub fn get_random_user(
                 Err(_) => false,
                 // Calculate if the user's last seen date is within the lurk timer.
                 Ok(user_last_seen) => {
-                    let time_min_ago = get_date_time_minutes_ago(bot_info.lurk_time);
+                    let time_min_ago = get_date_time_minutes_ago(settings.lurk_time);
                     date_time_is_greater_than_reference(time_min_ago, user_last_seen.into())
                 }
             };

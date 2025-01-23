@@ -18,7 +18,7 @@ mod migrations;
 mod twitch;
 mod updater;
 
-use bot::{Announcements, Authentication, Bot, BotData, BotInfo, Comebacks, Insults, Users};
+use bot::{Announcements, Authentication, Bot, BotData, Comebacks, Insults, Settings, Users};
 use file::read_json_file;
 
 #[tokio::main]
@@ -39,9 +39,9 @@ async fn main() {
             crate::bot::api::leave_channel,
             crate::bot::api::get_channel_status,
             crate::bot::api::get_channel_name,
-            crate::bot::api::save_bot_info,
+            crate::bot::api::save_settings,
             crate::bot::api::get_users_allowed_to_whisper,
-            crate::bot::api::get_bot_info,
+            crate::bot::api::get_settings,
             crate::bot::api::get_chat_messages,
             crate::bot::api::get_chat_messages_count,
             crate::bot::api::get_users,
@@ -79,8 +79,8 @@ async fn main() {
             println!("✅ Migrations complete!");
 
             println!("🤖 Setting up bot...");
-            let bot_info =
-                read_json_file::<BotInfo>(app.handle(), "bot_info.json").unwrap_or_default();
+            let settings =
+                read_json_file::<Settings>(app.handle(), "settings.json").unwrap_or_default();
             let auth =
                 read_json_file::<Authentication>(app.handle(), "auth.json").unwrap_or_default();
             let comebacks =
@@ -92,7 +92,7 @@ async fn main() {
                 .unwrap_or_default();
 
             let bot_data = BotData::new(comebacks, insults, users, announcements);
-            let bot = Bot::new(bot_info, bot_data, auth);
+            let bot = Bot::new(settings, bot_data, auth);
             app.manage(bot);
 
             println!("✅ Setup complete!");

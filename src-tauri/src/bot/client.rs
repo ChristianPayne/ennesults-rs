@@ -11,7 +11,7 @@ use super::{
     handle_whisper, process_comebacks, process_corrections, process_user_state, AnnouncementThread,
     Bot, BotData, InsultThread, SerializeRBGColor, TwitchMessage,
 };
-use crate::bot::api::get_bot_info;
+use crate::bot::api::get_settings;
 use crate::bot::Authentication;
 use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
 use crate::twitch::get_broadcaster_id;
@@ -61,15 +61,15 @@ impl Client {
 #[tauri::command]
 pub async fn say(state: tauri::State<'_, Bot>, message: &str) -> Result<(), String> {
     let channel_name = {
-        let bot_info = state
-            .bot_info
+        let settings = state
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info.");
+            .expect("Failed to get lock for settings.");
 
-        if bot_info.channel_name.is_empty() {
+        if settings.channel_name.is_empty() {
             return Err("Channel name not found.".into());
         }
-        bot_info.channel_name.clone()
+        settings.channel_name.clone()
     };
 
     let Some(client) = ({
@@ -282,15 +282,15 @@ pub mod api {
         let twitch_client_thread_handle =
             tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
 
-        let bot_info = state
-            .bot_info
+        let settings = state
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info");
+            .expect("Failed to get lock for settings");
 
-        let insult_thread = InsultThread::new(app_handle.clone(), bot_info.enable_insults);
+        let insult_thread = InsultThread::new(app_handle.clone(), settings.enable_insults);
 
         let announcement_thread =
-            AnnouncementThread::new(app_handle.clone(), bot_info.enable_announcements);
+            AnnouncementThread::new(app_handle.clone(), settings.enable_announcements);
 
         let mut client = state.client.lock().expect("Failed to get lock for client");
         *client = Client::new(
@@ -309,10 +309,10 @@ pub mod api {
     pub fn disconnect_from_twitch(app_handle: AppHandle) -> Result<(), String> {
         let state = app_handle.state::<Bot>();
         let mut client = state.client.lock().expect("Failed to get lock for client");
-        let bot_info = state
-            .bot_info
+        let settings = state
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info");
+            .expect("Failed to get lock for settings");
 
         match &mut *client {
             Client::Disconnected => Err("Client already disconnected".to_string()),
@@ -343,8 +343,8 @@ pub mod api {
                 }
 
                 // Tell the client to leave the twitch channel.
-                twitch_client.part(bot_info.channel_name.clone());
-                let _ = app_handle.emit("channel_part", bot_info.channel_name.clone());
+                twitch_client.part(settings.channel_name.clone());
+                let _ = app_handle.emit("channel_part", settings.channel_name.clone());
 
                 // Update the state to reflect the client being disconnected.
                 *client = Client::Disconnected;
@@ -359,9 +359,9 @@ pub mod api {
         let state = app_handle.state::<Bot>();
         let channel_name = {
             state
-                .bot_info
+                .settings
                 .lock()
-                .expect("Failed to get lock for bot info")
+                .expect("Failed to get lock for settings")
                 .channel_name
                 .clone()
         };
@@ -432,7 +432,7 @@ pub mod api {
     #[tauri::command]
     pub async fn get_channel_status(state: tauri::State<'_, Bot>) -> Result<(bool, bool), String> {
         let channel_name = state
-            .bot_info
+            .settings
             .lock()
             .expect("Failed to get lock")
             .channel_name
@@ -456,7 +456,7 @@ pub mod api {
         state: tauri::State<'_, Bot>,
     ) -> Result<String, String> {
         let channel_name = state
-            .bot_info
+            .settings
             .lock()
             .expect("Failed to get lock")
             .channel_name
