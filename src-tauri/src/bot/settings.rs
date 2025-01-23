@@ -3,7 +3,7 @@ use ts_rs::TS;
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, TS)]
 #[serde(default = "Default::default")]
 #[ts(export, export_to = "../../src/lib/types.ts")]
-pub struct BotInfo {
+pub struct Settings {
     pub channel_name: String,
     // pub bot_name: String,
     // pub oauth_token: String,
@@ -29,7 +29,7 @@ pub struct BotInfo {
     pub correction_exceptions: Vec<String>,
 }
 
-impl Default for BotInfo {
+impl Default for Settings {
     fn default() -> Self {
         Self {
             channel_name: "".into(),
@@ -58,51 +58,51 @@ pub mod api {
     use tauri::{Emitter, Manager};
 
     use crate::bot::api::{connect_to_channel, connect_to_twitch};
-    use crate::bot::{Bot, BotInfo};
+    use crate::bot::{Bot, Settings};
     use crate::file::{write_file, WriteFileError};
 
     #[tauri::command]
     pub fn get_channel_name(state: tauri::State<'_, Bot>) -> Result<String, String> {
         Ok(state
-            .bot_info
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info")
+            .expect("Failed to get lock for settings")
             .channel_name
             .clone())
     }
 
     #[tauri::command]
-    pub fn get_bot_info(state: tauri::State<'_, Bot>) -> BotInfo {
-        let bot_info = state
-            .bot_info
+    pub fn get_settings(state: tauri::State<'_, Bot>) -> Settings {
+        let settings = state
+            .settings
             .lock()
-            .expect("Failed to get lock for bot info")
+            .expect("Failed to get lock for settings")
             .clone();
-        bot_info
+        settings
     }
 
     #[tauri::command]
-    pub async fn save_bot_info(
+    pub async fn save_settings(
         app_handle: tauri::AppHandle,
-        bot_info: BotInfo,
-    ) -> Result<BotInfo, String> {
+        settings: Settings,
+    ) -> Result<Settings, String> {
         let state = app_handle.state::<Bot>();
-        let mut bot_info = bot_info;
-        bot_info.channel_name = bot_info.channel_name.to_lowercase();
+        let mut settings = settings;
+        settings.channel_name = settings.channel_name.to_lowercase();
         {
             *state
-                .bot_info
+                .settings
                 .lock()
-                .expect("Failed to get lock for bot info") = bot_info.clone();
+                .expect("Failed to get lock for settings") = settings.clone();
         }
 
         let _ = connect_to_twitch(app_handle.clone()).await;
 
-        if bot_info.auto_connect_on_startup {
+        if settings.auto_connect_on_startup {
             let _ = connect_to_channel(app_handle.clone()).await;
         }
 
-        let write_result = write_file::<BotInfo>(&app_handle, "bot_info.json", bot_info.clone());
+        let write_result = write_file::<Settings>(&app_handle, "settings.json", settings.clone());
 
         if let Some(err) = write_result.err() {
             return match err {
@@ -114,8 +114,8 @@ pub mod api {
             };
         }
 
-        let _ = app_handle.emit("bot_info_save", bot_info.clone());
+        let _ = app_handle.emit("settings_save", settings.clone());
 
-        Ok(bot_info)
+        Ok(settings)
     }
 }

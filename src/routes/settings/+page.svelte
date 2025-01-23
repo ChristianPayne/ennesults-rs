@@ -5,7 +5,7 @@
   import * as Select from "$lib/components/ui/select";
   import { onMount } from "svelte";
   import { invoke, Channel } from "@tauri-apps/api/core";
-  import type { BotInfo, DownloadEvent } from "$lib/types";
+  import type { Settings, DownloadEvent } from "$lib/types";
   import { toast } from "svelte-sonner";
   import { colorPalettes } from "$lib/colorPalettes";
   import { theme, setTheme, toggleMode } from "mode-watcher";
@@ -24,30 +24,30 @@
   let validatedForm: SuperValidated<any, any, any>;
 
   onMount(async () => {
-    const botInfo = await invoke<BotInfo>("get_bot_info");
+    const settings = await invoke<Settings>("get_settings");
     const usersAllowedToWhisperResult = await invoke<string[]>(
       "get_users_allowed_to_whisper",
     );
 
-    let settings = {
-      autoConnectOnStartup: botInfo.auto_connect_on_startup,
-      channelName: botInfo.channel_name,
-      enableWhispers: botInfo.enable_whispers,
+    let formattedSettings = {
+      autoConnectOnStartup: settings.auto_connect_on_startup,
+      channelName: settings.channel_name,
+      enableWhispers: settings.enable_whispers,
       usersAllowedToWhisper: usersAllowedToWhisperResult.join(", "),
-      enableAnnouncements: botInfo.enable_announcements,
-      timeBetweenAnnouncements: botInfo.time_between_announcements,
-      randomizeAnnouncements: botInfo.randomize_announcements,
-      enableInsults: botInfo.enable_insults,
-      timeBetweenInsults: botInfo.time_between_insults,
-      lurkTime: botInfo.lurk_time,
-      enableComebacks: botInfo.enable_comebacks,
-      percentChanceOfComeback: botInfo.percent_chance_of_comeback,
-      enableCorrections: botInfo.enable_corrections,
-      percentChanceOfCorrection: botInfo.percent_chance_of_correction,
-      correctionExceptions: botInfo.correction_exceptions.join(", "),
+      enableAnnouncements: settings.enable_announcements,
+      timeBetweenAnnouncements: settings.time_between_announcements,
+      randomizeAnnouncements: settings.randomize_announcements,
+      enableInsults: settings.enable_insults,
+      timeBetweenInsults: settings.time_between_insults,
+      lurkTime: settings.lurk_time,
+      enableComebacks: settings.enable_comebacks,
+      percentChanceOfComeback: settings.percent_chance_of_comeback,
+      enableCorrections: settings.enable_corrections,
+      percentChanceOfCorrection: settings.percent_chance_of_correction,
+      correctionExceptions: settings.correction_exceptions.join(", "),
     };
 
-    validatedForm = await superValidate(settings, zod(formSchema));
+    validatedForm = await superValidate(formattedSettings, zod(formSchema));
   });
 
   async function onFormUpdate(event: {
@@ -72,8 +72,8 @@
 
     await invoke<string>("leave_channel");
 
-    await invoke<BotInfo>("save_bot_info", {
-      botInfo: {
+    await invoke<Settings>("save_settings", {
+      settings: {
         channel_name: validatedData.channelName,
         // bot_name: validatedData.botName,
         // oauth_token: validatedData.oauthTokenValue,
@@ -106,9 +106,9 @@
           .map((user) => user.trim().toLowerCase()),
       },
     })
-      .then((botInfo) => {
+      .then((settings) => {
         toast.info("Saved settings!");
-        console.log(botInfo);
+        console.log(settings);
       })
       .catch((e) => {
         toast.error("Error saving settings...");

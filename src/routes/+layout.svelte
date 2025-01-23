@@ -14,7 +14,7 @@
   import * as Tooltip from "$lib/components/ui/tooltip";
   import * as Dialog from "$lib/components/ui/dialog";
 
-  import type { Authentication, BotInfo } from "$lib/types";
+  import type { Authentication, Settings } from "$lib/types";
   import SpeakAsEnnesults from "$lib/components/speakAsEnnesults.svelte";
   import NotificationsPanel from "$lib/components/notifications/notificationsPanel.svelte";
   import { alertNotification } from "$lib/components/notifications/notifications";
@@ -44,11 +44,11 @@
     });
 
     authentication = await invoke<Authentication>("get_auth_status");
-    await getBotInfo();
+    await getSettings();
 
-    listen("bot_info_save", async (event) => {
-      let botInfo = event.payload as BotInfo;
-      await getBotInfo(botInfo);
+    listen("settings_save", async (event) => {
+      let settings = event.payload as Settings;
+      await getSettings(settings);
     });
 
     listen("auth", async (event) => {
@@ -92,10 +92,10 @@
     });
   });
 
-  async function getBotInfo(botInfo?: BotInfo) {
+  async function getSettings(settings?: Settings) {
     let currentInfo =
-      botInfo ??
-      (await invoke<BotInfo>("get_bot_info").catch((e) => console.error(e)));
+      settings ??
+      (await invoke<Settings>("get_settings").catch((e) => console.error(e)));
 
     if (!currentInfo) return;
 

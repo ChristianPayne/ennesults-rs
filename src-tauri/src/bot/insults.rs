@@ -86,12 +86,12 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
         let state = app_handle.state::<Bot>();
 
         let (enable_insults, time_between_insults) = {
-            let bot_info = state
-                .bot_info
+            let settings = state
+                .settings
                 .lock()
-                .expect("Failed to get lock for bot_info");
+                .expect("Failed to get lock for settings");
 
-            (bot_info.enable_insults, bot_info.time_between_insults)
+            (settings.enable_insults, settings.time_between_insults)
         };
 
         let sleep_time = Duration::from_secs(time_between_insults as u64);
@@ -203,8 +203,8 @@ pub fn format_insult(
     if formatted_message.contains("{{streamer}}") {
         let channel_name = {
             let state = app_handle.state::<Bot>();
-            let bot_info = state.bot_info.lock().expect("Failed to get bot_info");
-            bot_info.channel_name.clone()
+            let settings = state.settings.lock().expect("Failed to get settings");
+            settings.channel_name.clone()
         };
 
         formatted_message = formatted_message.replace("{{streamer}}", channel_name.as_str())
@@ -348,7 +348,7 @@ pub mod api {
             .bot_data
             .insults
             .lock()
-            .expect("Failed to get lock for bot info") = insults.clone();
+            .expect("Failed to get lock for settings") = insults.clone();
 
         let write_result = write_file::<Insults>(&app_handle, "insults.json", insults.clone());
 

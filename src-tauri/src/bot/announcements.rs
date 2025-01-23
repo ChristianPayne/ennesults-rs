@@ -62,15 +62,15 @@ pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
     loop {
         let state = app_handle.state::<Bot>();
         let (enable_announcements, randomize_announcements, time_between_announcements) = {
-            let bot_info = state
-                .bot_info
+            let settings = state
+                .settings
                 .lock()
-                .expect("Failed to get lock for bot_info");
+                .expect("Failed to get lock for settings");
 
             (
-                bot_info.enable_announcements,
-                bot_info.randomize_announcements,
-                bot_info.time_between_announcements,
+                settings.enable_announcements,
+                settings.randomize_announcements,
+                settings.time_between_announcements,
             )
         };
 
@@ -190,7 +190,7 @@ pub mod api {
             .bot_data
             .announcements
             .lock()
-            .expect("Failed to get lock for bot info") = announcements.clone();
+            .expect("Failed to get lock for settings") = announcements.clone();
 
         let write_result =
             write_file::<Announcements>(&app_handle, "announcements.json", announcements.clone());
