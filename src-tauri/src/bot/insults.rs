@@ -2,17 +2,12 @@ use std::collections::HashSet;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::{thread, time::Duration};
 
-use serde_inline_default::serde_inline_default;
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
-use rand::seq::{IteratorRandom, SliceRandom};
-use rand::Rng;
+use rand::seq::SliceRandom;
 
-use crate::bot::{get_random_user, BotData};
-use crate::date::{
-    date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now, parse_date_time,
-};
+use crate::bot::get_random_user;
 
 use super::{say, Bot, User, Users};
 
@@ -81,17 +76,17 @@ impl InsultThread {
 }
 
 pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
-    println!("Starting new insult thread!");
+    println!("🔄 Starting new insult thread!");
     'thread_loop: loop {
         let state = app_handle.state::<Bot>();
 
-        let (enable_insults, time_between_insults) = {
+        let time_between_insults = {
             let settings = state
                 .settings
                 .lock()
                 .expect("Failed to get lock for settings");
 
-            (settings.enable_insults, settings.time_between_insults)
+            settings.time_between_insults
         };
 
         let sleep_time = Duration::from_secs(time_between_insults as u64);
@@ -105,40 +100,31 @@ pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
             Err(TryRecvError::Empty) => {}
         }
 
-        let insults = {
-            let insults = state
-                .bot_data
-                .insults
-                .lock()
-                .expect("Failed to get lock for insults.");
+        // let insults = {
+        //     let insults = state
+        //         .bot_data
+        //         .insults
+        //         .lock()
+        //         .expect("Failed to get lock for insults.");
 
-            insults.0.clone()
-        };
+        //     insults.0.clone()
+        // };
 
         // Pick a random insult.
         let random_insult = choose_random_insult(app_handle.clone(), Some(vec![InsultTag::Insult]));
 
         match random_insult {
             Some(insult) => {
-                let formatted_insult = format_insult(
-                    app_handle.clone(),
-                    &insult,
-                    FormattingOptions::Random { users: None },
-                );
-
-                match formatted_insult {
-                    None => continue 'thread_loop,
-                    Some(insult) => {
-                        // Say it in chat.
-                        let _ = say(state.clone(), insult.as_str()).await;
-                    }
+                if let Some(insult) = format_insult(app_handle.clone(), &insult, None, None) {
+                    // Say it in chat.
+                    let _ = say(state.clone(), insult.as_str()).await;
                 }
             }
             None => {
-                println!("Could not get a random insult.")
+                println!("❌ Could not get a random insult.")
             }
         }
-        println!("Looping insult thread.");
+        println!("🔄 Looping insult thread.");
     }
 }
 
@@ -186,20 +172,36 @@ pub fn choose_random_insult(
     rand_insult.cloned()
 }
 
-pub enum FormattingOptions {
-    Unconsent { user: User },
-    Consent { user: User },
-    Random { users: Option<Vec<User>> },
-}
+// pub enum FormattingOptions {
+//     Targeted { user: User },
+//     Consent { user: User },
+//     Random { users: Option<Vec<User>> },
+// }
 
 pub fn format_insult(
     app_handle: tauri::AppHandle,
     insult: &Insult,
-    formatting_options: FormattingOptions,
+    user: Option<User>,
+    user_pool: Option<Vec<User>>,
 ) -> Option<String> {
     let state = app_handle.state::<Bot>();
     let mut formatted_message = insult.value.clone();
 
+    let mut users: Users = {
+        match user_pool {
+            None => {
+                let users_state = state
+                    .bot_data
+                    .users
+                    .lock()
+                    .expect("Failed to get lock for users.");
+                users_state.clone()
+            }
+            Some(users) => Users::from(users),
+        }
+    };
+
+    // Format for any streamer tags.
     if formatted_message.contains("{{streamer}}") {
         let channel_name = {
             let state = app_handle.state::<Bot>();
@@ -210,73 +212,62 @@ pub fn format_insult(
         formatted_message = formatted_message.replace("{{streamer}}", channel_name.as_str())
     }
 
+    // Format for any user tags.
     if formatted_message.contains("{{user}}") {
-        match formatting_options {
-            FormattingOptions::Consent { user } | FormattingOptions::Unconsent { user } => {
-                // If we are consenting or unconsenting, the formatted message can contain the same username multiple times.
-                let users = Users::from(vec![user]);
-                while formatted_message.contains("{{user}}") {
-                    let random_user = get_random_user(
-                        app_handle.clone(),
-                        !insult.value.contains("{{streamer}}"),
-                        &users,
-                        false,
-                    )
-                    .cloned();
+        match user {
+            Some(user) => {
+                formatted_message = formatted_message.replace("{{user}}", user.username.as_str());
+            }
+            None => {
+                let random_user = get_random_user(
+                    app_handle.clone(),
+                    !insult.value.contains("{{streamer}}"),
+                    &users,
+                    true,
+                )
+                .cloned();
 
-                    match random_user {
-                        Some(user) => {
-                            formatted_message =
-                                formatted_message.replacen("{{user}}", user.username.as_str(), 1);
-                        }
-                        None => {
-                            println!("No users available after filters to insult.");
-                            return None;
-                        }
+                match random_user {
+                    Some(user) => {
+                        // Remove the user so that we don't pick it in the random stage.
+                        users.0.remove(&user.username);
+
+                        formatted_message =
+                            formatted_message.replace("{{user}}", user.username.as_str());
+                    }
+                    None => {
+                        println!("🟡 No consented users available to insult.");
+                        return None;
                     }
                 }
             }
-            FormattingOptions::Random { users } => {
-                // If we are picking a random option for formatting, we remove each picked user from the user pool.
-                let mut users: Users = {
-                    match users {
-                        None => {
-                            let users_state = state
-                                .bot_data
-                                .users
-                                .lock()
-                                .expect("Failed to get lock for users.");
-                            users_state.clone()
-                        }
-                        Some(users) => Users::from(users),
-                    }
-                };
+        }
+    }
 
-                while formatted_message.contains("{{user}}") {
-                    let random_user = get_random_user(
-                        app_handle.clone(),
-                        !insult.value.contains("{{streamer}}"),
-                        &users,
-                        true,
-                    )
-                    .cloned();
+    // Format for any random tags.
+    while formatted_message.contains("{{random}}") {
+        let random_user = get_random_user(
+            app_handle.clone(),
+            !insult.value.contains("{{streamer}}"),
+            &users,
+            true,
+        )
+        .cloned();
 
-                    match random_user {
-                        Some(user) => {
-                            // How do we deal with removing users?
-                            users.0.remove(&user.username);
+        match random_user {
+            Some(user) => {
+                // Remove the user so that we don't pick it again if we go around again.
+                users.0.remove(&user.username);
 
-                            formatted_message =
-                                formatted_message.replacen("{{user}}", user.username.as_str(), 1);
-                        }
-                        None => {
-                            println!("No users available after filters to insult.");
-                            return None;
-                        }
-                    }
-                }
+                // Replace just the first instance of the tag.
+                formatted_message =
+                    formatted_message.replacen("{{random}}", user.username.as_str(), 1);
             }
-        };
+            None => {
+                println!("🟡 Not enough random consented users available to insult.");
+                return None;
+            }
+        }
     }
 
     Some(formatted_message)
@@ -285,10 +276,10 @@ pub fn format_insult(
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{Bot, BotData};
+    use crate::bot::Bot;
     use crate::file::{write_file, WriteFileError};
 
-    use super::{Insult, InsultTag, Insults};
+    use super::{Insult, Insults};
 
     #[tauri::command]
     pub fn get_insults(app_handle: tauri::AppHandle) -> Vec<Insult> {
@@ -389,7 +380,7 @@ pub mod api {
             insults.clone()
         };
 
-        save_insults(app_handle.clone(), insults);
+        let _ = save_insults(app_handle.clone(), insults);
 
         Ok(())
     }
