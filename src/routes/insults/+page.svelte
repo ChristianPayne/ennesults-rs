@@ -89,10 +89,14 @@
           <AlertDialog.Description>
             <span class="font-semibold"
               >&lbrace;&lbrace;user&rbrace;&rbrace;</span
+            >: Replaced with a random user that is active and has consented.
+            This can be used multiple times and will be the same user each time.
+          </AlertDialog.Description>
+          <AlertDialog.Description>
+            <span class="font-semibold"
+              >&lbrace;&lbrace;random&rbrace;&rbrace;</span
             >: Replaced with a random user that is active and has consented. You
-            can use multiple of these tags to get more random users. When using
-            them on consent or unconsent insults, they represent the user who
-            said the command.
+            can use multiple of these templates to get more random users.
           </AlertDialog.Description>
         </AlertDialog.Header>
         <AlertDialog.Footer>
