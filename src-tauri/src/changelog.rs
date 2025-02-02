@@ -7,7 +7,12 @@ pub struct ChangelogVersionNotes {
     notes: &'static str,
 }
 
-const CHANGELOG: [ChangelogVersionNotes; 9] = [
+const CHANGELOG: [ChangelogVersionNotes; 10] = [
+    ChangelogVersionNotes {
+        version: "v1.4.2",
+        title: None,
+        notes: r"- Added a random formatting template.",
+    },
     ChangelogVersionNotes {
         version: "v1.4.1",
         title: None,
