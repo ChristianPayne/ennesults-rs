@@ -62,7 +62,7 @@
               </div>
               <button
                 on:click={() => markNotificationAsSeen(notification.id)}
-                class="rounded-sm focus:outline-none p-2"
+                class="rounded-sm focus:outline-hidden p-2"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

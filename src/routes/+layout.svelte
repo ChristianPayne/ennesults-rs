@@ -153,7 +153,7 @@
 </script>
 
 <ModeWatcher />
-<Toaster position="bottom-left" />
+<Toaster position="bottom-left" visibleToasts={10}/>
 <div class="flex flex-col h-full">
   <!-- Title -->
   <div class="flex flex-col sm:flex-row justify-between mb-2 p-2">

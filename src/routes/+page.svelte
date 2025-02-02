@@ -72,7 +72,7 @@
 <h1>Dashboard</h1>
 
 <div
-  class="grid grid-cols-1 sm:grid-cols-3 gap-2 my-4 sm:gap-4 children:border children:rounded-xl children:p-4 children:sm:p-6 hover:children:bg-muted children:w-full children:text-left children:items-end"
+  class="grid grid-cols-1 sm:grid-cols-3 gap-2 my-4 sm:gap-4 children:border children:rounded-xl children:p-4 sm:children:p-6 children:hover:bg-muted children:w-full children:text-left children:items-end"
 >
   <button on:click={() => goto("/insults")}>
     <p class="text-lg font-semibold">Insults</p>

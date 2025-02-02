@@ -69,7 +69,7 @@
         return createRender(Checkbox, {
           checked: value,
           disabled: true,
-          class: "!opacity-100",
+          class: "opacity-100!",
         });
       },
     }),
