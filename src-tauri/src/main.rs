@@ -1,14 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![allow(unused)]
 extern crate dotenv_codegen;
 use std::sync::Mutex;
-
-use migrations::run_migrations;
-//Tauri
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 
 // Ennesults
+use migrations::run_migrations;
 mod bot;
 mod changelog;
 mod commands;
@@ -75,7 +72,7 @@ async fn main() {
 
             // Run any migrations on the data files before loading the files into the bot.
             println!("🤖 Checking for migrations...");
-            run_migrations(app.handle().clone());
+            let _ = run_migrations(app.handle().clone());
             println!("✅ Migrations complete!");
 
             println!("🤖 Setting up bot...");

@@ -1,7 +1,4 @@
-use rand::{
-    seq::{IteratorRandom, SliceRandom},
-    Rng,
-};
+use rand::seq::SliceRandom;
 use std::{
     sync::mpsc::{self, Receiver, Sender, TryRecvError},
     thread,
@@ -11,7 +8,7 @@ use tauri::{AppHandle, Manager};
 use tokio::task::JoinHandle;
 use ts_rs::TS;
 
-use super::{say, Bot, User};
+use super::{say, Bot};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -61,14 +58,13 @@ pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
 
     loop {
         let state = app_handle.state::<Bot>();
-        let (enable_announcements, randomize_announcements, time_between_announcements) = {
+        let (randomize_announcements, time_between_announcements) = {
             let settings = state
                 .settings
                 .lock()
                 .expect("Failed to get lock for settings");
 
             (
-                settings.enable_announcements,
                 settings.randomize_announcements,
                 settings.time_between_announcements,
             )
@@ -134,7 +130,7 @@ pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{Bot, BotData, Insults};
+    use crate::bot::Bot;
     use crate::file::{write_file, WriteFileError};
 
     use super::{Announcement, Announcements};
@@ -238,7 +234,7 @@ pub mod api {
             announcements.clone()
         };
 
-        save_announcements(app_handle.clone(), announcements);
+        let _ = save_announcements(app_handle.clone(), announcements);
 
         Ok(())
     }

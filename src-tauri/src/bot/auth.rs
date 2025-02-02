@@ -2,7 +2,7 @@ use serde_json::Value;
 use tauri::AppHandle;
 use ts_rs::TS;
 
-use crate::{date::get_local_now_formatted, twitch::get_broadcaster_id};
+use crate::date::get_local_now_formatted;
 
 const CLIENT_ID: &str = "nbdppbmm4iicute0sl1cj663xyvbi4";
 
@@ -179,7 +179,7 @@ pub async fn validate_auth(
 }
 
 pub mod api {
-    use std::{collections::HashMap, sync::Mutex};
+    use std::collections::HashMap;
 
     use serde_json::Value;
     use tauri::{AppHandle, Emitter, Manager, Url};

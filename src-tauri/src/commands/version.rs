@@ -2,7 +2,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
 use crate::{
-    bot::{choose_random_insult, format_insult, Bot, BotData, FormattingOptions, InsultTag, User},
+    bot::{choose_random_insult, format_insult, Bot, BotData, InsultTag, User},
     file::write_file,
 };
 
