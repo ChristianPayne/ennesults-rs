@@ -7,7 +7,12 @@ pub struct ChangelogVersionNotes {
     notes: &'static str,
 }
 
-const CHANGELOG: [ChangelogVersionNotes; 10] = [
+const CHANGELOG: [ChangelogVersionNotes; 11] = [
+    ChangelogVersionNotes {
+        version: "v1.4.3",
+        title: None,
+        notes: r"- Fixed a deadlock issue for consent and unconsent getting users.",
+    },
     ChangelogVersionNotes {
         version: "v1.4.2",
         title: None,
