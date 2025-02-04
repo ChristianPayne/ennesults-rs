@@ -23,11 +23,7 @@ impl Command for UnconsentCommand {
         app_handle: AppHandle,
     ) -> Option<String> {
         let state = app_handle.state::<Bot>();
-        let mut users = state
-            .bot_data
-            .users
-            .lock()
-            .expect("Failed to get lock for bot data.");
+        let mut users = state.bot_data.get_users();
 
         let consent_target = match args.len() {
             0 => Some(msg.sender.name.clone()),

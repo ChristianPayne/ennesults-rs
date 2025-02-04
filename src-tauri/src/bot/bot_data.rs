@@ -24,6 +24,12 @@ impl BotData {
             announcements: Mutex::new(announcements),
         }
     }
+
+    pub fn get_users(&self) -> Users {
+        let users_guard = self.users.lock().expect("Failed to get lock for users.");
+
+        users_guard.clone()
+    }
 }
 
 impl Default for BotData {

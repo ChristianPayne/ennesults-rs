@@ -189,14 +189,7 @@ pub fn format_insult(
 
     let mut users: Users = {
         match user_pool {
-            None => {
-                let users_state = state
-                    .bot_data
-                    .users
-                    .lock()
-                    .expect("Failed to get lock for users.");
-                users_state.clone()
-            }
+            None => state.bot_data.get_users(),
             Some(users) => Users::from(users),
         }
     };
