@@ -5,7 +5,7 @@ pub fn get_local_now() -> DateTime<Local> {
 }
 
 pub fn get_local_now_formatted() -> String {
-    Local::now().to_rfc2822()
+    get_local_now().to_rfc2822()
 }
 
 pub fn parse_date_time(date_time: &str) -> ParseResult<DateTime<FixedOffset>> {
@@ -13,7 +13,7 @@ pub fn parse_date_time(date_time: &str) -> ParseResult<DateTime<FixedOffset>> {
 }
 
 pub fn get_date_time_minutes_ago(minutes: u32) -> DateTime<Local> {
-    Local::now() - Duration::minutes(minutes.into())
+    get_local_now() - Duration::minutes(minutes.into())
 }
 
 pub fn date_time_is_greater_than_reference(

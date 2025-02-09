@@ -1,7 +1,7 @@
 use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::WhisperMessage;
 
-use crate::bot::{say, Bot, BotData, Settings};
+use crate::bot::{say, Bot};
 
 pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
     let bot = app_handle.state::<Bot>();
@@ -46,10 +46,7 @@ pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
 }
 
 pub mod api {
-    use tauri::Manager;
-
-    use crate::bot::{Bot, BotData};
-    use crate::file::{write_file, WriteFileError};
+    use crate::bot::Bot;
 
     #[tauri::command]
     pub fn get_users_allowed_to_whisper(

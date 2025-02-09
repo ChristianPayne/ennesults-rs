@@ -1,22 +1,16 @@
-use api::get_channel_status;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{ServerMessage, UserNoticeEvent};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
-use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
+use twitch_irc::TwitchIRCClient;
 
 use super::{
     handle_whisper, process_comebacks, process_corrections, process_user_state, AnnouncementThread,
-    Bot, BotData, InsultThread, SerializeRBGColor, TwitchMessage,
+    Bot, InsultThread, SerializeRBGColor, TwitchMessage,
 };
-use crate::bot::api::get_settings;
-use crate::bot::Authentication;
 use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
-use crate::twitch::get_broadcaster_id;
-
-use serde_json::Value;
 
 // CLIENT
 #[derive(Debug, Default)]
@@ -48,12 +42,7 @@ impl Client {
     pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
         match self {
             Client::Disconnected => None,
-            Client::Connected {
-                client,
-                client_join_handle,
-                insult_thread,
-                announcement_thread,
-            } => Some(client.clone()),
+            Client::Connected { client, .. } => Some(client.clone()),
         }
     }
 }
@@ -84,7 +73,7 @@ pub async fn say(state: tauri::State<'_, Bot>, message: &str) -> Result<(), Stri
 
     let (_, channel_joined) = client.get_channel_status(channel_name.clone()).await;
 
-    if (!channel_joined) {
+    if !channel_joined {
         return Err("No channel joined".to_string());
     }
 
@@ -145,8 +134,10 @@ pub async fn handle_incoming_chat(
                     }
                 } else if process_comebacks(app_handle.clone(), &msg).await {
                     // Should we do something?
+                    println!("🤖 Comeback complete!");
                 } else if process_corrections(app_handle.clone(), &msg).await {
                     // Should we do something?
+                    println!("🤖 Correction complete!");
                 }
             }
             ServerMessage::GlobalUserState(_) => (),
@@ -160,7 +151,7 @@ pub async fn handle_incoming_chat(
             ServerMessage::UserNotice(user_notice_message) => {
                 if let UserNoticeEvent::Raid {
                     viewer_count,
-                    profile_image_url,
+                    profile_image_url: _,
                 } = user_notice_message.event
                 {
                     let raid_message = format!(
@@ -189,21 +180,16 @@ pub async fn handle_incoming_chat(
 pub mod api {
     use crate::{
         bot::{
-            api::get_auth_status, handle_incoming_chat, validate_auth, AnnouncementThread,
-            Authentication, AuthenticationBuilder, AuthenticationDetails, AuthenticationError, Bot,
-            ChannelDetails, InsultThread,
+            handle_incoming_chat, validate_auth, AnnouncementThread, Authentication,
+            AuthenticationError, Bot, ChannelDetails, InsultThread,
         },
-        file::{write_file, WriteFileError},
         twitch::get_broadcaster_id,
     };
-    use serde_json::{json, Value};
-    use std::{collections::HashMap, ops::Deref};
-    use tauri::{http, AppHandle, Emitter, Listener, Manager, Url};
-    use twitch_api::eventsub::user::authorization;
+    use std::ops::Deref;
+    use tauri::{AppHandle, Emitter, Manager};
     use twitch_irc::{
         login::StaticLoginCredentials, ClientConfig, SecureTCPTransport, TwitchIRCClient,
     };
-    use url_builder::URLBuilder;
 
     use super::Client;
 
@@ -211,10 +197,10 @@ pub mod api {
     pub async fn connect_to_twitch(app_handle: AppHandle) -> Result<Authentication, String> {
         let state = app_handle.state::<Bot>();
         // Handle the disconnecting of existing client connections to Twitch and any threads that are currently running.
-        disconnect_from_twitch(app_handle.clone());
+        let _ = disconnect_from_twitch(app_handle.clone());
 
         println!("🤖 Connecting to Twitch...");
-        let mut existing_auth = {
+        let existing_auth = {
             let auth = state.auth.lock().expect("Failed to get lock for auth");
             auth.clone()
         };
@@ -223,7 +209,7 @@ pub mod api {
 
         let details = match existing_auth {
             Authentication::Valid { details, .. } => details,
-            Authentication::Invalid { reason } => {
+            Authentication::Invalid { reason: _ } => {
                 println!("❌ Failed to connect to Twitch. Auth invalid.");
                 return Err("Authentication was not valid when connecting to Twitch.".to_string());
             }
@@ -251,7 +237,7 @@ pub mod api {
         {
             let mut auth = state.auth.lock().expect("Failed to get lock for auth");
             *auth = authentication.clone();
-            app_handle.emit("auth", authentication.clone());
+            let _ = app_handle.emit("auth", authentication.clone());
         }
 
         let config = match &authentication {
@@ -323,28 +309,16 @@ pub mod api {
                 announcement_thread,
             } => {
                 // Shut down the insult thread if it is running.
-                if let InsultThread::Running {
-                    handle: insult_handle,
-                    sender: insult_sender,
-                } = insult_thread
-                {
-                    insult_sender.send(());
-                    insult_handle.abort();
-                }
+                let _ = insult_thread.shutdown();
 
                 // Shut down the announcement thread if it is running.
-                if let AnnouncementThread::Running {
-                    handle: announcement_handle,
-                    sender: announcement_sender,
-                } = announcement_thread
-                {
-                    announcement_sender.send(());
-                    announcement_handle.abort();
-                }
+                let _ = announcement_thread.shutdown();
 
                 // Tell the client to leave the twitch channel.
                 twitch_client.part(settings.channel_name.clone());
                 let _ = app_handle.emit("channel_part", settings.channel_name.clone());
+
+                client_join_handle.abort();
 
                 // Update the state to reflect the client being disconnected.
                 *client = Client::Disconnected;
@@ -464,12 +438,7 @@ pub mod api {
         let client = state.client.lock().unwrap();
         match client.deref() {
             Client::Disconnected => Ok("No client connected.".to_string()),
-            Client::Connected {
-                client,
-                client_join_handle,
-                insult_thread,
-                announcement_thread,
-            } => {
+            Client::Connected { client, .. } => {
                 client.part(channel_name.clone());
                 let _ = app_handle.emit("channel_part", channel_name.clone());
                 Ok(channel_name)

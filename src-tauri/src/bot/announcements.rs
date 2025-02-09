@@ -49,6 +49,18 @@ impl AnnouncementThread {
             Self::Stopped
         }
     }
+
+    pub fn shutdown(&mut self) -> Result<(), AnnouncementThreadShutdownError> {
+        match self {
+            AnnouncementThread::Stopped => Err(AnnouncementThreadShutdownError::ThreadNotRunning),
+            AnnouncementThread::Running { sender, handle } => {
+                let _ = sender.send(());
+                handle.abort();
+                *self = AnnouncementThread::Stopped;
+                Ok(())
+            }
+        }
+    }
 }
 
 pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {

@@ -4,8 +4,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 use twitch_irc::message::TwitchUserBasics;
 
-use rand::seq::{IteratorRandom, SliceRandom};
-use rand::Rng;
+use rand::seq::IteratorRandom;
 
 use crate::{
     date::{
@@ -15,7 +14,7 @@ use crate::{
     file::write_file,
 };
 
-use super::{Bot, BotData};
+use super::Bot;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -141,7 +140,7 @@ pub mod api {
     use tauri::{Emitter, Manager};
 
     use crate::{
-        bot::{Bot, BotData, User},
+        bot::{Bot, User},
         file::write_file,
     };
 
