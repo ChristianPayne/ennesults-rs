@@ -75,28 +75,33 @@
       </AlertDialog.Trigger>
       <AlertDialog.Content>
         <AlertDialog.Header>
-          <AlertDialog.Title>Insult Substitutions</AlertDialog.Title>
+          <AlertDialog.Title>Substitutions</AlertDialog.Title>
           <AlertDialog.Description>
-            Insults can have dynamic data inside of them. Use the
+            Ennesults can use dynamic data. Use the
             &lbrace;&lbrace;handlebars&rbrace;&rbrace; syntax to swap out the
             dynamic data.
           </AlertDialog.Description>
           <AlertDialog.Description>
-            <span class="font-semibold"
+            <span class="font-semibold select-text"
               >&lbrace;&lbrace;streamer&rbrace;&rbrace;</span
             >: Replaced with the channel name.
           </AlertDialog.Description>
           <AlertDialog.Description>
-            <span class="font-semibold"
+            <span class="font-semibold select-text"
               >&lbrace;&lbrace;user&rbrace;&rbrace;</span
             >: Replaced with a random user that is active and has consented.
             This can be used multiple times and will be the same user each time.
           </AlertDialog.Description>
           <AlertDialog.Description>
-            <span class="font-semibold"
+            <span class="font-semibold select-text"
               >&lbrace;&lbrace;random&rbrace;&rbrace;</span
             >: Replaced with a random user that is active and has consented. You
             can use multiple of these templates to get more random users.
+          </AlertDialog.Description>
+          <AlertDialog.Description>
+            <span class="font-semibold select-text"
+              >&lbrace;&lbrace;version&rbrace;&rbrace;</span
+            >: Replaced with the current version number of the bot.
           </AlertDialog.Description>
         </AlertDialog.Header>
         <AlertDialog.Footer>

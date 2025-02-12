@@ -1,10 +1,7 @@
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::{
-    bot::{choose_random_insult, format_insult, Bot, BotData, InsultTag, User},
-    file::write_file,
-};
+use crate::bot::{choose_random_insult, format_insult, Bot, InsultTag};
 
 use super::{meets_minimum_user_level, parse_msg_for_user_level, Command, UserLevel};
 
@@ -77,15 +74,7 @@ impl Command for UnconsentCommand {
             },
         };
 
-        if let Err(error) = write_file(&app_handle, "users.json", users.clone()) {
-            println!("Failed to write users.json file to disk! {:?}", error);
-            let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
-        } else {
-            let _ = app_handle.emit(
-                "users_update",
-                users.0.clone().into_values().collect::<Vec<User>>(),
-            );
-        }
+        let _ = state.bot_data.save_users(app_handle.clone(), &users);
 
         command_reply
     }

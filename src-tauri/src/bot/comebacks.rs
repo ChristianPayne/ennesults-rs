@@ -4,9 +4,7 @@ use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::{say, Bot, Settings};
-
-use super::BotData;
+use crate::bot::{say, Bot};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -64,7 +62,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
         || msg.message_text.to_lowercase().contains("ennegisults"))
         && rand::thread_rng().gen_ratio(percent_chance_of_comeback, 100)
     {
-        let mut random_comeback = comeback_options.choose(&mut rand::thread_rng());
+        let random_comeback = comeback_options.choose(&mut rand::thread_rng());
 
         if let Some(comeback) = random_comeback {
             let mut formatted_comeback = comeback.value.clone();
@@ -83,7 +81,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::{Bot, BotData, Comebacks};
+    use crate::bot::{Bot, Comebacks};
     use crate::file::{write_file, WriteFileError};
 
     use super::Comeback;
@@ -198,7 +196,7 @@ pub mod api {
             comebacks.clone()
         };
 
-        save_comebacks(app_handle.clone(), comebacks);
+        let _ = save_comebacks(app_handle.clone(), comebacks);
 
         Ok(())
     }

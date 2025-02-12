@@ -8,7 +8,7 @@ use tauri::{AppHandle, Manager};
 use tokio::task::JoinHandle;
 use ts_rs::TS;
 
-use super::{say, Bot};
+use super::{get_random_user, say, Bot, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -47,6 +47,18 @@ impl AnnouncementThread {
             }
         } else {
             Self::Stopped
+        }
+    }
+
+    pub fn shutdown(&mut self) -> Result<(), AnnouncementThreadShutdownError> {
+        match self {
+            AnnouncementThread::Stopped => Err(AnnouncementThreadShutdownError::ThreadNotRunning),
+            AnnouncementThread::Running { sender, handle } => {
+                let _ = sender.send(());
+                handle.abort();
+                *self = AnnouncementThread::Stopped;
+                Ok(())
+            }
         }
     }
 }
@@ -117,14 +129,81 @@ pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
 
         match announcement {
             Some(announcement) => {
-                // Say it in chat.
-                let _ = say(state.clone(), announcement.value.as_str()).await;
+                if let Some(message) = format_announcement(app_handle.clone(), announcement, None) {
+                    // Say it in chat.
+                    let _ = say(state.clone(), message.as_str()).await;
+                }
             }
             None => println!("Could not get an announcement to say."),
         }
 
         println!("Looping announcement thread.");
     }
+}
+
+pub fn format_announcement(
+    app_handle: tauri::AppHandle,
+    announcement: &Announcement,
+    user_pool: Option<Vec<User>>,
+) -> Option<String> {
+    let state = app_handle.state::<Bot>();
+    let mut formatted_message = announcement.value.clone();
+
+    // Format for any streamer tags.
+    if formatted_message.contains("{{streamer}}") {
+        let channel_name = {
+            let state = app_handle.state::<Bot>();
+            state.get_channel_name()
+        };
+
+        formatted_message = formatted_message.replace("{{streamer}}", channel_name.as_str())
+    }
+
+    // Format for any version tags.
+    if formatted_message.contains("{{version}}") {
+        let version = format!("v{}", app_handle.package_info().version.clone());
+
+        formatted_message = formatted_message.replace("{{version}}", &version)
+    }
+
+    if formatted_message.contains("{{random}}") {
+        let mut users: Users = {
+            match user_pool {
+                None => state.bot_data.get_users(),
+                Some(users) => Users::from(users),
+            }
+        };
+
+        // Format for any random tags.
+        while formatted_message.contains("{{random}}") {
+            let random_user = get_random_user(
+                app_handle.clone(),
+                !announcement.value.contains("{{streamer}}"),
+                &users,
+                true,
+            )
+            .cloned();
+
+            match random_user {
+                Some(user) => {
+                    // Remove the user so that we don't pick it again if we go around again.
+                    users.0.remove(&user.username);
+
+                    // Replace just the first instance of the tag.
+                    formatted_message =
+                        formatted_message.replacen("{{random}}", user.username.as_str(), 1);
+                }
+                None => {
+                    println!(
+                        "🟡 Not enough random consented users available to format announcement."
+                    );
+                    return None;
+                }
+            }
+        }
+    }
+
+    Some(formatted_message)
 }
 
 pub mod api {

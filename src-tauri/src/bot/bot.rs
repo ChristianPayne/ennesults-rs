@@ -1,14 +1,7 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
-use tauri::{self, Emitter, Manager};
+use super::Authentication;
+use super::{BotData, Client, Settings};
+use std::sync::Mutex;
 use ts_rs::TS;
-
-use std::ops::{Deref, DerefMut};
-
-use crate::bot::{announcement_thread_loop, insult_thread_loop, AnnouncementThread, InsultThread};
-
-use super::{api::get_settings, handle_incoming_chat, BotData, Client, Settings};
-use super::{validate_auth, Authentication, AuthenticationDetails};
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -24,6 +17,7 @@ pub struct SerializeRBGColor(pub u8, pub u8, pub u8);
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
+#[allow(dead_code)]
 pub enum Alert {
     /// System messages that are ephemeral
     System,
@@ -67,38 +61,6 @@ impl Bot {
 
     pub fn get_channel_name(&self) -> String {
         self.settings.lock().unwrap().channel_name.clone()
-    }
-
-    pub async fn get_channel_status(&self) -> Option<(bool, bool)> {
-        let channel_name = self.get_channel_name();
-        let client = self.client.lock().unwrap();
-        match client.deref() {
-            Client::Disconnected => None,
-            Client::Connected {
-                client,
-                client_join_handle,
-                insult_thread,
-                announcement_thread,
-            } => Some(client.get_channel_status(channel_name).await),
-        }
-    }
-
-    pub fn get_auth_token(&self) -> Option<String> {
-        let auth = self.auth.lock().expect("Failed to get lock for auth");
-
-        match auth.clone() {
-            Authentication::Valid { details, .. } => Some(details.access_token),
-            Authentication::NotSignedIn | Authentication::Invalid { .. } => None,
-        }
-    }
-
-    pub fn get_client_id(&self) -> Option<String> {
-        let auth = self.auth.lock().expect("Failed to get lock for auth");
-
-        match auth.clone() {
-            Authentication::Valid { details, .. } => Some(details.client_id),
-            Authentication::NotSignedIn | Authentication::Invalid { .. } => None,
-        }
     }
 }
 impl Default for Bot {

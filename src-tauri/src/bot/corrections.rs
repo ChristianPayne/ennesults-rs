@@ -2,7 +2,7 @@ use rand::Rng;
 use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use super::{say, Bot, Settings};
+use super::{say, Bot};
 
 pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) -> bool {
     if !msg.message_text.to_lowercase().contains("en") {
@@ -40,7 +40,7 @@ pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) ->
             msg.message_text.to_lowercase().replace("en", "ENNE")
         );
 
-        say(state, corrected_message.as_str()).await;
+        let _ = say(state, corrected_message.as_str()).await;
 
         return true;
     }

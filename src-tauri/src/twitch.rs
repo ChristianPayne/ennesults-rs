@@ -1,5 +1,4 @@
 use serde_json::Value;
-use tauri::{AppHandle, Manager};
 
 /// Gets the id of the channel that we are wanting to join.
 pub async fn get_broadcaster_id(

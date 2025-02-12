@@ -44,6 +44,7 @@ pub enum InsultTag {
     Lurk,
 }
 
+#[allow(dead_code)]
 pub enum InsultThreadShutdownError {
     ThreadNotRunning,
 }
@@ -66,8 +67,9 @@ impl InsultThread {
     pub fn shutdown(&mut self) -> Result<(), InsultThreadShutdownError> {
         match self {
             InsultThread::Stopped => Err(InsultThreadShutdownError::ThreadNotRunning),
-            InsultThread::Running { handle, sender } => {
-                sender.send(());
+            InsultThread::Running { sender, handle } => {
+                let _ = sender.send(());
+                handle.abort();
                 *self = InsultThread::Stopped;
                 Ok(())
             }
@@ -198,11 +200,17 @@ pub fn format_insult(
     if formatted_message.contains("{{streamer}}") {
         let channel_name = {
             let state = app_handle.state::<Bot>();
-            let settings = state.settings.lock().expect("Failed to get settings");
-            settings.channel_name.clone()
+            state.get_channel_name()
         };
 
         formatted_message = formatted_message.replace("{{streamer}}", channel_name.as_str())
+    }
+
+    // Format for any version tags.
+    if formatted_message.contains("{{version}}") {
+        let version = format!("v{}", app_handle.package_info().version.clone());
+
+        formatted_message = formatted_message.replace("{{version}}", &version)
     }
 
     // Format for any user tags.

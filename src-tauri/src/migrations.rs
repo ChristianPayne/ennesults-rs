@@ -1,8 +1,4 @@
-use std::collections::HashMap;
-
-use tauri::{Emitter, Manager};
-
-use crate::bot::{Bot, BotData, Insult, InsultTag, Insults, Settings};
+use crate::bot::{InsultTag, Insults, Settings};
 use crate::file::{delete_file, read_json_file, write_file, WriteFileError};
 
 /// Migrations allow us to change the shape of the file system before running the application.  
@@ -73,7 +69,7 @@ pub fn migrate_insult_tags(app_handle: tauri::AppHandle) -> Result<(), String> {
 
 /// 2025-01-22 - Migration to rename bot_info to settings. This migration will change the file name of the existing bot_info.json file to settings.json
 pub fn migrate_bot_info_to_settings(app_handle: tauri::AppHandle) -> Result<(), String> {
-    let Ok(mut bot_info) = read_json_file::<Settings>(&app_handle, "bot_info.json") else {
+    let Ok(bot_info) = read_json_file::<Settings>(&app_handle, "bot_info.json") else {
         return Err("bot_info.json does not exist".to_string());
     };
 
@@ -91,7 +87,7 @@ pub fn migrate_bot_info_to_settings(app_handle: tauri::AppHandle) -> Result<(), 
         }
     }
 
-    delete_file(&app_handle, "bot_info.json");
+    let _ = delete_file(&app_handle, "bot_info.json");
 
     println!("🚀 Bot Info migrated to Settings");
 
