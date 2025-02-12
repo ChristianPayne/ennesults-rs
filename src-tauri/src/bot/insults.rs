@@ -206,6 +206,13 @@ pub fn format_insult(
         formatted_message = formatted_message.replace("{{streamer}}", channel_name.as_str())
     }
 
+    // Format for any version tags.
+    if formatted_message.contains("{{version}}") {
+        let version = app_handle.package_info().version.clone().to_string();
+
+        formatted_message = formatted_message.replace("{{version}}", &version)
+    }
+
     // Format for any user tags.
     if formatted_message.contains("{{user}}") {
         match user {
