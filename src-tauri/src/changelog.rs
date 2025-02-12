@@ -12,7 +12,8 @@ const CHANGELOG: [ChangelogVersionNotes; 12] = [
         version: "v1.4.4",
         title: None,
         notes: r"- Added a {{version}} template option to dynamic data.
-        - Added dynamic data replacement to announcements.",
+        - Added dynamic data replacement to announcements.
+        - Fixed an issue where saving users what not saving to local state.",
     },
     ChangelogVersionNotes {
         version: "v1.4.3",

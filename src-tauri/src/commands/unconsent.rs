@@ -1,10 +1,7 @@
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::{
-    bot::{choose_random_insult, format_insult, Bot, InsultTag, User},
-    file::write_file,
-};
+use crate::bot::{choose_random_insult, format_insult, Bot, InsultTag};
 
 use super::{meets_minimum_user_level, parse_msg_for_user_level, Command, UserLevel};
 
@@ -77,7 +74,7 @@ impl Command for UnconsentCommand {
             },
         };
 
-        let _ = users.save(app_handle.clone());
+        let _ = state.bot_data.save_users(app_handle.clone(), &users);
 
         command_reply
     }

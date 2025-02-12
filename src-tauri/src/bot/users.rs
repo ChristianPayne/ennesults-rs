@@ -6,12 +6,9 @@ use twitch_irc::message::TwitchUserBasics;
 
 use rand::seq::IteratorRandom;
 
-use crate::{
-    date::{
-        date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now_formatted,
-        parse_date_time,
-    },
-    file::{write_file, WriteFileError},
+use crate::date::{
+    date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now_formatted,
+    parse_date_time,
 };
 
 use super::Bot;
@@ -29,20 +26,6 @@ impl Users {
         }
 
         Self(users_hash)
-    }
-
-    pub fn save(&self, app_handle: AppHandle) -> Result<(), WriteFileError> {
-        if let Err(error) = write_file(&app_handle, "users.json", self.clone()) {
-            println!("Failed to write users.json file to disk! {:?}", error);
-            let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
-            Err(error)
-        } else {
-            let _ = app_handle.emit(
-                "users_update",
-                self.0.clone().into_values().collect::<Vec<User>>(),
-            );
-            Ok(())
-        }
     }
 }
 
@@ -63,11 +46,7 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
 
     let state = app_handle.state::<Bot>();
 
-    let mut users = state
-        .bot_data
-        .users
-        .lock()
-        .expect("Failed to get lock for users state.");
+    let mut users = state.bot_data.get_users();
 
     match users.0.get_mut(&user.name) {
         // Create a new user
@@ -90,7 +69,7 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
 
     tokio::spawn(emit_active_users(app_handle.clone()));
 
-    let _ = users.save(app_handle.clone());
+    let _ = state.bot_data.save_users(app_handle.clone(), &users);
 }
 
 async fn emit_active_users(app_handle: AppHandle) {
@@ -143,12 +122,9 @@ pub fn get_random_user(
 }
 
 pub mod api {
-    use tauri::{Emitter, Manager};
+    use tauri::Manager;
 
-    use crate::{
-        bot::{Bot, User},
-        file::write_file,
-    };
+    use crate::bot::{Bot, User};
 
     #[tauri::command]
     pub async fn get_users(state: tauri::State<'_, Bot>) -> Result<Vec<User>, String> {
@@ -181,15 +157,11 @@ pub mod api {
         username: String,
     ) -> Result<String, String> {
         let state = app_handle.state::<Bot>();
-        let mut users = state
-            .bot_data
-            .users
-            .lock()
-            .expect("Failed to get lock for users state.");
 
+        let mut users = state.bot_data.get_users();
         let _ = users.0.remove(&username);
 
-        let _ = users.save(app_handle.clone());
+        let _ = state.bot_data.save_users(app_handle.clone(), &users);
 
         Ok(username)
     }

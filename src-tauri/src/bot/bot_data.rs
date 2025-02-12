@@ -1,6 +1,10 @@
 use std::sync::Mutex;
 
-use super::{Announcements, Comebacks, Insults, Users};
+use tauri::{AppHandle, Emitter};
+
+use crate::file::{write_file, WriteFileError};
+
+use super::{Announcements, Comebacks, Insults, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct BotData {
@@ -29,6 +33,23 @@ impl BotData {
         let users_guard = self.users.lock().expect("Failed to get lock for users.");
 
         users_guard.clone()
+    }
+
+    pub fn save_users(&self, app_handle: AppHandle, users: &Users) -> Result<(), WriteFileError> {
+        let mut users_guard = self.users.lock().expect("Failed to get lock for users.");
+
+        if let Err(error) = write_file(&app_handle, "users.json", users.clone()) {
+            println!("Failed to write users.json file to disk! {:?}", error);
+            let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
+            Err(error)
+        } else {
+            let _ = app_handle.emit(
+                "users_update",
+                users.0.clone().into_values().collect::<Vec<User>>(),
+            );
+            *users_guard = users.clone();
+            Ok(())
+        }
     }
 }
 
