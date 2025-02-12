@@ -208,7 +208,7 @@ pub fn format_insult(
 
     // Format for any version tags.
     if formatted_message.contains("{{version}}") {
-        let version = app_handle.package_info().version.clone().to_string();
+        let version = format!("v{}", app_handle.package_info().version.clone());
 
         formatted_message = formatted_message.replace("{{version}}", &version)
     }

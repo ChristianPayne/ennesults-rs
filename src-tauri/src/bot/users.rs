@@ -11,7 +11,7 @@ use crate::{
         date_time_is_greater_than_reference, get_date_time_minutes_ago, get_local_now_formatted,
         parse_date_time,
     },
-    file::write_file,
+    file::{write_file, WriteFileError},
 };
 
 use super::Bot;
@@ -29,6 +29,20 @@ impl Users {
         }
 
         Self(users_hash)
+    }
+
+    pub fn save(&self, app_handle: AppHandle) -> Result<(), WriteFileError> {
+        if let Err(error) = write_file(&app_handle, "users.json", self.clone()) {
+            println!("Failed to write users.json file to disk! {:?}", error);
+            let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
+            Err(error)
+        } else {
+            let _ = app_handle.emit(
+                "users_update",
+                self.0.clone().into_values().collect::<Vec<User>>(),
+            );
+            Ok(())
+        }
     }
 }
 
@@ -76,15 +90,7 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
 
     tokio::spawn(emit_active_users(app_handle.clone()));
 
-    if let Err(error) = write_file(&app_handle, "users.json", users.clone()) {
-        println!("Failed to write users.json file to disk! {:?}", error);
-        let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
-    } else {
-        let _ = app_handle.emit(
-            "users_update",
-            users.0.clone().into_values().collect::<Vec<User>>(),
-        );
-    }
+    let _ = users.save(app_handle.clone());
 }
 
 async fn emit_active_users(app_handle: AppHandle) {
@@ -183,15 +189,7 @@ pub mod api {
 
         let _ = users.0.remove(&username);
 
-        if let Err(error) = write_file(&app_handle, "users.json", users.clone()) {
-            println!("Failed to write users.json file to disk! {:?}", error);
-            let _ = app_handle.emit("error", "Failed to write users.json file to disk!");
-        } else {
-            let _ = app_handle.emit(
-                "users_update",
-                users.0.clone().into_values().collect::<Vec<User>>(),
-            );
-        }
+        let _ = users.save(app_handle.clone());
 
         Ok(username)
     }

@@ -76,19 +76,19 @@
       </AlertDialog.Trigger>
       <AlertDialog.Content>
         <AlertDialog.Header>
-          <AlertDialog.Title>Insult Substitutions</AlertDialog.Title>
+          <AlertDialog.Title>Substitutions</AlertDialog.Title>
           <AlertDialog.Description>
-            Insults can have dynamic data inside of them. Use the
+            Ennesults can use dynamic data. Use the
             &lbrace;&lbrace;handlebars&rbrace;&rbrace; syntax to swap out the
             dynamic data.
           </AlertDialog.Description>
           <AlertDialog.Description>
-            <span class="font-semibold"
+            <span class="font-semibold select-text"
               >&lbrace;&lbrace;streamer&rbrace;&rbrace;</span
             >: Replaced with the channel name.
           </AlertDialog.Description>
           <AlertDialog.Description>
-            <span class="font-semibold"
+            <span class="font-semibold select-text"
               >&lbrace;&lbrace;user&rbrace;&rbrace;</span
             >: Replaced with the user that @-ed the bot.
           </AlertDialog.Description>
