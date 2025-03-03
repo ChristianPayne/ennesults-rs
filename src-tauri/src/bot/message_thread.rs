@@ -1,5 +1,6 @@
 use crate::helpers::{date::get_local_now, queue::Queue};
 use chrono::{DateTime, Local};
+use rand::Rng;
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
@@ -107,7 +108,7 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
                 }
                 mpsc::error::TryRecvError::Disconnected => {
                     println!("🔴 Message thread channel disconnected.");
-                    None
+                    break;
                 }
             },
             Ok(thread_message) => Some(thread_message),
@@ -132,22 +133,37 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         if settings.enable_insults && now > context.next_insult_message_time_stamp {
             // Run the insult function.
             if let Some(insult) = run_insult(app_handle.clone()) {
-                println!("📝 Queuing insult message.'{}'", &insult);
-                context.message_queue.enqueue(insult);
-
+                let random_time = rand::thread_rng().gen_range(
+                    settings.minimum_time_between_insults..settings.maximum_time_between_insults,
+                );
                 context.next_insult_message_time_stamp =
-                    get_local_now() + Duration::from_secs(settings.time_between_insults as u64);
+                    get_local_now() + Duration::from_secs(random_time as u64);
+
+                println!(
+                    "📝 Queuing insult message in {} seconds.'{}'",
+                    random_time, &insult
+                );
+
+                context.message_queue.enqueue(insult);
             }
         }
 
         if settings.enable_announcements && now > context.next_announcement_message_time_stamp {
             // Run the announcement function.
             if let Some(announcement) = run_announcement(app_handle.clone()) {
-                println!("📝 Queuing announcement message.'{}'", &announcement);
-                context.message_queue.enqueue(announcement);
+                let random_time = rand::thread_rng().gen_range(
+                    settings.minimum_time_between_announcements
+                        ..settings.maximum_time_between_announcements,
+                );
+                context.next_announcement_message_time_stamp =
+                    get_local_now() + Duration::from_secs(random_time as u64);
 
-                context.next_announcement_message_time_stamp = get_local_now()
-                    + Duration::from_secs(settings.time_between_announcements as u64);
+                println!(
+                    "📝 Queuing announcement message in {} seconds.'{}'",
+                    random_time, &announcement
+                );
+
+                context.message_queue.enqueue(announcement);
             }
         }
 

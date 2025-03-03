@@ -14,10 +14,12 @@ pub struct Settings {
 
     pub enable_announcements: bool,
     pub randomize_announcements: bool,
-    pub time_between_announcements: u32,
+    pub minimum_time_between_announcements: u32,
+    pub maximum_time_between_announcements: u32,
 
     pub enable_insults: bool,
-    pub time_between_insults: u32,
+    pub minimum_time_between_insults: u32,
+    pub maximum_time_between_insults: u32,
     pub lurk_time: u32,
 
     pub enable_comebacks: bool,
@@ -33,16 +35,16 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             channel_name: "".into(),
-            // bot_name: "".into(),
-            // oauth_token: "".into(),
             auto_connect_on_startup: false,
             enable_whispers: false,
             users_allowed_to_whisper: vec![],
             enable_announcements: false,
             randomize_announcements: false,
-            time_between_announcements: 300,
+            minimum_time_between_announcements: 300,
+            maximum_time_between_announcements: 300,
             enable_insults: false,
-            time_between_insults: 300,
+            minimum_time_between_insults: 300,
+            maximum_time_between_insults: 300,
             lurk_time: 5,
             enable_comebacks: false,
             percent_chance_of_comeback: 20,

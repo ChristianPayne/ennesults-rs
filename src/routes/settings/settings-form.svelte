@@ -112,18 +112,31 @@
       >
       <Form.FieldErrors />
     </Form.Field>
-    <Form.Field {form} name="timeBetweenAnnouncements">
+    <Form.Field {form} name="minimumTimeBetweenAnnouncements">
       <Form.Control let:attrs>
-        <Form.Label>Time Between Announcements</Form.Label>
+        <Form.Label>Minimum Time Between Announcements</Form.Label>
         <Input
           {...attrs}
           type="number"
-          bind:value={$formData.timeBetweenAnnouncements}
+          bind:value={$formData.minimumTimeBetweenAnnouncements}
         />
       </Form.Control>
       <Form.Description
-        >How much time (seconds) do you want to pass before saying the next
-        announcement?</Form.Description
+        >The minimum amount of time (seconds) between announcements.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="maximumTimeBetweenAnnouncements">
+      <Form.Control let:attrs>
+        <Form.Label>Maximum Time Between Announcements</Form.Label>
+        <Input
+          {...attrs}
+          type="number"
+          bind:value={$formData.maximumTimeBetweenAnnouncements}
+        />
+      </Form.Control>
+      <Form.Description
+        >The maximum amount of time (seconds) between announcements.</Form.Description
       >
       <Form.FieldErrors />
     </Form.Field>
@@ -169,18 +182,27 @@
       >
       <Form.FieldErrors />
     </Form.Field>
-    <Form.Field {form} name="timeBetweenInsults">
+    <Form.Field {form} name="minimumTimeBetweenInsults">
       <Form.Control let:attrs>
-        <Form.Label>Time Between Insults</Form.Label>
+        <Form.Label>Minimum Time Between Insults</Form.Label>
         <Input
           {...attrs}
           type="number"
-          bind:value={$formData.timeBetweenInsults}
+          bind:value={$formData.minimumTimeBetweenInsults}
         />
       </Form.Control>
       <Form.Description
-        >How much time (seconds) do you want to pass before saying another
-        random insult?</Form.Description
+        >The minimum amount of time (seconds) between insults.</Form.Description
+      >
+      <Form.FieldErrors />
+    </Form.Field>
+    <Form.Field {form} name="maximumTimeBetweenInsults">
+      <Form.Control let:attrs>
+        <Form.Label>Maximum Time Between Insults</Form.Label>
+        <Input {...attrs} type="number" bind:value={$formData.maximumTimeBetweenInsults} />
+      </Form.Control>
+      <Form.Description
+        >The maximum amount of time (seconds) between insults.</Form.Description
       >
       <Form.FieldErrors />
     </Form.Field>
