@@ -1,14 +1,8 @@
 use rand::seq::SliceRandom;
-use std::{
-    sync::mpsc::{self, Receiver, Sender, TryRecvError},
-    thread,
-    time::Duration,
-};
 use tauri::{AppHandle, Manager};
-use tokio::task::JoinHandle;
 use ts_rs::TS;
 
-use super::{get_random_user, say, Bot, User, Users};
+use super::{get_random_user, Bot, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -159,7 +153,7 @@ pub mod api {
     use crate::bot::Bot;
     use crate::helpers::file::{write_file, WriteFileError};
 
-    use super::{Announcement, Announcements};
+    use super::Announcement;
 
     #[tauri::command]
     pub fn get_announcements(app_handle: tauri::AppHandle) -> Vec<Announcement> {

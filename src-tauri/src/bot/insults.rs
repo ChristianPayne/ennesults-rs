@@ -1,6 +1,4 @@
 use std::collections::HashSet;
-use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::{thread, time::Duration};
 
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
@@ -9,7 +7,7 @@ use rand::seq::SliceRandom;
 
 use crate::bot::get_random_user;
 
-use super::{say, Bot, Client, MessageThread, User, Users};
+use super::{Bot, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]

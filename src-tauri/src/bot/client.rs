@@ -44,12 +44,14 @@ impl Client {
         }
     }
 
-    // pub fn say_with_queue(&mut self, message: String) {
-    //     match self {
-    //         Client::Connected { message_thread, .. } => message_thread.queue_message(message),
-    //         Client::Disconnected => (),
-    //     }
-    // }
+    pub async fn queue_message(&self, message: String) {
+        match self {
+            Client::Connected { message_thread, .. } => {
+                message_thread.queue_message(message).await;
+            }
+            Client::Disconnected => (),
+        }
+    }
 }
 
 #[tauri::command]
@@ -98,7 +100,6 @@ pub async fn handle_incoming_chat(
         match message {
             ServerMessage::Privmsg(msg) => {
                 {
-                    // dbg!(&msg);
                     let mut chat_messages = bot
                         .chat_messages
                         .lock()
@@ -115,9 +116,12 @@ pub async fn handle_incoming_chat(
 
                     chat_messages.push(twitch_message.clone());
 
-                    app_handle.emit("message", twitch_message).unwrap();
+                    app_handle
+                        .emit("message", twitch_message)
+                        .expect("Failed to emit twitch message.");
                 }
 
+                // Always process user state first so we keep track of the last seen time.
                 process_user_state(app_handle.clone(), &msg.sender);
 
                 // Chained if else statements so we only do one of the options.

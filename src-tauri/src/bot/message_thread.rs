@@ -72,14 +72,16 @@ impl MessageThread {
         }
     }
 
-    // pub fn queue_message(&mut self, message: String) {
-    //     match self {
-    //         MessageThread::Running { sender, .. } => {
-    //             let _ = sender.send(MessageThreadMessage::QueueMessage(message));
-    //         }
-    //         MessageThread::Stopped => (),
-    //     }
-    // }
+    pub async fn queue_message(&self, message: String) {
+        match self {
+            MessageThread::Running { sender, .. } => {
+                let _ = sender
+                    .send(MessageThreadMessage::QueueMessage(message))
+                    .await;
+            }
+            MessageThread::Stopped => (),
+        }
+    }
 }
 
 async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<MessageThreadMessage>) {
@@ -99,7 +101,6 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
     loop {
         // println!("🔄 Looping message thread.");
         // Receive messages from the channel and handle them.
-        // let thread_message = rx.recv().await.unwrap();
         let thread_message = match rx.try_recv() {
             Err(err) => match err {
                 mpsc::error::TryRecvError::Empty => {
@@ -140,8 +141,8 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
                     get_local_now() + Duration::from_secs(random_time as u64);
 
                 println!(
-                    "📝 Queuing insult message in {} seconds.'{}'",
-                    random_time, &insult
+                    "📝 Queuing insult message {}. Next insult in {} seconds.",
+                    insult, random_time
                 );
 
                 context.message_queue.enqueue(insult);
@@ -159,8 +160,8 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
                     get_local_now() + Duration::from_secs(random_time as u64);
 
                 println!(
-                    "📝 Queuing announcement message in {} seconds.'{}'",
-                    random_time, &announcement
+                    "📝 Queuing announcement message {}. Next announcement in {} seconds.",
+                    announcement, random_time
                 );
 
                 context.message_queue.enqueue(announcement);
@@ -173,12 +174,8 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         {
             // Send a message from the queue.
             let message = context.message_queue.dequeue();
-            // let _ = say(app_handle.state::<Bot>().clone(), &message).await;
-            println!("🚀 Sending message: {}", message);
-            println!(
-                "🔍 Remaining queue length: {}",
-                context.message_queue.length()
-            );
+            let _ = say(app_handle.state::<Bot>().clone(), &message).await;
+            // println!("🚀 Sending message: {}", message);
             context.last_message_time = now;
         }
 
