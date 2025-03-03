@@ -12,7 +12,19 @@ use super::{get_random_user, say, Bot, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
-pub struct Announcements(pub Vec<Announcement>);
+pub struct Announcements {
+    pub announcements: Vec<Announcement>,
+    pub next_announcement_index: usize,
+}
+
+impl Announcements {
+    pub fn from(announcements: Vec<Announcement>) -> Self {
+        Self {
+            announcements,
+            next_announcement_index: 0,
+        }
+    }
+}
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
@@ -22,8 +34,6 @@ pub struct Announcement {
 }
 
 pub fn run_announcement(app_handle: AppHandle) -> Option<String> {
-    let mut next_announcement_index: usize = 0;
-
     let state = app_handle.state::<Bot>();
     let randomize_announcements = {
         let settings = state
@@ -34,8 +44,6 @@ pub fn run_announcement(app_handle: AppHandle) -> Option<String> {
         settings.randomize_announcements
     };
 
-    let state = app_handle.state::<Bot>();
-
     let announcements = {
         let announcements = state
             .bot_data
@@ -43,7 +51,7 @@ pub fn run_announcement(app_handle: AppHandle) -> Option<String> {
             .lock()
             .expect("Failed to get lock for insults.");
 
-        announcements.0.clone()
+        announcements.announcements.clone()
     };
 
     // Pick a random announcement.
@@ -55,15 +63,18 @@ pub fn run_announcement(app_handle: AppHandle) -> Option<String> {
             if announcements.is_empty() {
                 None
             } else {
-                let x = &announcements[next_announcement_index];
+                let mut existing_announcements = state
+                    .bot_data
+                    .announcements
+                    .lock()
+                    .expect("Failed to get lock for insults.");
 
-                next_announcement_index += 1;
+                let index = existing_announcements.next_announcement_index;
+                let chosen_announcement = &announcements[index];
 
-                if next_announcement_index == announcements.len() {
-                    next_announcement_index = 0
-                }
+                existing_announcements.next_announcement_index = (index + 1) % announcements.len();
 
-                Some(x)
+                Some(chosen_announcement)
             }
         }
     };
@@ -159,7 +170,7 @@ pub mod api {
                 .announcements
                 .lock()
                 .expect("Failed to get lock for announcements.")
-                .0
+                .announcements
                 .clone()
         };
 
@@ -179,14 +190,18 @@ pub mod api {
             .expect("Failed to get lock for announcements.")
             .clone();
 
-        match announcements.0.iter_mut().find(|i| i.id == announcement.id) {
+        match announcements
+            .announcements
+            .iter_mut()
+            .find(|i| i.id == announcement.id)
+        {
             Some(announcement_in_db) => {
                 announcement_in_db.value = announcement.value;
             }
             None => return Err("Failed to find announcement in database".to_string()),
         }
 
-        save_announcements(app_handle, announcements)?;
+        save_announcements(app_handle, announcements.announcements)?;
 
         Ok(())
     }
@@ -194,17 +209,22 @@ pub mod api {
     #[tauri::command]
     pub fn save_announcements(
         app_handle: tauri::AppHandle,
-        announcements: Announcements,
+        announcements: Vec<Announcement>,
     ) -> Result<(), String> {
         let state = app_handle.state::<Bot>();
-        *state
+        let mut announcements_state = state
             .bot_data
             .announcements
             .lock()
-            .expect("Failed to get lock for settings") = announcements.clone();
+            .expect("Failed to get lock for settings");
 
-        let write_result =
-            write_file::<Announcements>(&app_handle, "announcements.json", announcements.clone());
+        announcements_state.announcements = announcements.clone();
+
+        let write_result = write_file::<Vec<Announcement>>(
+            &app_handle,
+            "announcements.json",
+            announcements.clone(),
+        );
 
         if let Some(err) = write_result.err() {
             match err {
@@ -219,7 +239,7 @@ pub mod api {
                 }
             }
         } else {
-            let _ = app_handle.emit("announcements_update", announcements);
+            let _ = app_handle.emit("announcements_update", announcements.clone());
         }
 
         Ok(())
@@ -238,18 +258,18 @@ pub mod api {
                 .lock()
                 .expect("Failed to get lock for announcements");
             match announcements
-                .0
+                .announcements
                 .iter()
                 .position(|announcement| announcement.id == announcement_id)
             {
                 None => return Err("Could not find index of insult.".to_string()),
-                Some(index) => announcements.0.remove(index),
+                Some(index) => announcements.announcements.remove(index),
             };
 
             announcements.clone()
         };
 
-        let _ = save_announcements(app_handle.clone(), announcements);
+        let _ = save_announcements(app_handle.clone(), announcements.announcements);
 
         Ok(())
     }

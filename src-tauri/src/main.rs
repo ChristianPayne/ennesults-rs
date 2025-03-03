@@ -14,7 +14,9 @@ mod migrations;
 mod twitch;
 mod updater;
 
-use bot::{Announcements, Authentication, Bot, BotData, Comebacks, Insults, Settings, Users};
+use bot::{
+    Announcement, Announcements, Authentication, Bot, BotData, Comebacks, Insults, Settings, Users,
+};
 use helpers::file::read_json_file;
 
 #[tokio::main]
@@ -84,10 +86,16 @@ async fn main() {
             let insults =
                 read_json_file::<Insults>(app.handle(), "insults.json").unwrap_or_default();
             let users = read_json_file::<Users>(app.handle(), "users.json").unwrap_or_default();
-            let announcements = read_json_file::<Announcements>(app.handle(), "announcements.json")
-                .unwrap_or_default();
+            let announcements =
+                read_json_file::<Vec<Announcement>>(app.handle(), "announcements.json")
+                    .unwrap_or_default();
 
-            let bot_data = BotData::new(comebacks, insults, users, announcements);
+            let bot_data = BotData::new(
+                comebacks,
+                insults,
+                users,
+                Announcements::from(announcements),
+            );
             let bot = Bot::new(settings, bot_data, auth);
             app.manage(bot);
 
