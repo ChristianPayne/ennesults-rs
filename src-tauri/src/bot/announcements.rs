@@ -21,123 +21,59 @@ pub struct Announcement {
     pub value: String,
 }
 
-#[derive(Debug, Default)]
-pub enum AnnouncementThread {
-    Running {
-        handle: JoinHandle<()>,
-        sender: Sender<()>,
-    },
-    #[default]
-    Stopped,
-}
-
-pub enum AnnouncementThreadShutdownError {
-    ThreadNotRunning,
-}
-
-impl AnnouncementThread {
-    pub fn new(app_handle: tauri::AppHandle, start_thread: bool) -> Self {
-        if start_thread {
-            let (tx, rx) = mpsc::channel();
-            let thread_handle = tokio::spawn(announcement_thread_loop(app_handle, rx));
-
-            Self::Running {
-                handle: thread_handle,
-                sender: tx,
-            }
-        } else {
-            Self::Stopped
-        }
-    }
-
-    pub fn shutdown(&mut self) -> Result<(), AnnouncementThreadShutdownError> {
-        match self {
-            AnnouncementThread::Stopped => Err(AnnouncementThreadShutdownError::ThreadNotRunning),
-            AnnouncementThread::Running { sender, handle } => {
-                let _ = sender.send(());
-                handle.abort();
-                *self = AnnouncementThread::Stopped;
-                Ok(())
-            }
-        }
-    }
-}
-
-pub async fn announcement_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
-    println!("Starting new announcement thread!");
-
+pub fn run_announcement(app_handle: AppHandle) -> Option<String> {
     let mut next_announcement_index: usize = 0;
 
-    loop {
-        let state = app_handle.state::<Bot>();
-        let (randomize_announcements, time_between_announcements) = {
-            let settings = state
-                .settings
-                .lock()
-                .expect("Failed to get lock for settings");
+    let state = app_handle.state::<Bot>();
+    let randomize_announcements = {
+        let settings = state
+            .settings
+            .lock()
+            .expect("Failed to get lock for settings");
 
-            (
-                settings.randomize_announcements,
-                settings.time_between_announcements,
-            )
-        };
+        settings.randomize_announcements
+    };
 
-        let sleep_time = Duration::from_secs(time_between_announcements as u64);
-        thread::sleep(sleep_time);
+    let state = app_handle.state::<Bot>();
 
-        match rx.try_recv() {
-            Ok(_) | Err(TryRecvError::Disconnected) => {
-                println!("Shutting down announcements thread.");
-                break;
-            }
-            Err(TryRecvError::Empty) => {}
-        }
+    let announcements = {
+        let announcements = state
+            .bot_data
+            .announcements
+            .lock()
+            .expect("Failed to get lock for insults.");
 
-        let state = app_handle.state::<Bot>();
+        announcements.0.clone()
+    };
 
-        let announcements = {
-            let announcements = state
-                .bot_data
-                .announcements
-                .lock()
-                .expect("Failed to get lock for insults.");
-
-            announcements.0.clone()
-        };
-
-        // Pick a random announcement.
-        let announcement = {
-            if randomize_announcements {
-                announcements.choose(&mut rand::thread_rng())
+    // Pick a random announcement.
+    let announcement = {
+        if randomize_announcements {
+            announcements.choose(&mut rand::thread_rng())
+        } else {
+            // Next announcement
+            if announcements.is_empty() {
+                None
             } else {
-                // Next announcement
-                if announcements.is_empty() {
-                    None
-                } else {
-                    let x = &announcements[next_announcement_index];
+                let x = &announcements[next_announcement_index];
 
-                    next_announcement_index += 1;
+                next_announcement_index += 1;
 
-                    if next_announcement_index == announcements.len() {
-                        next_announcement_index = 0
-                    }
-
-                    Some(x)
+                if next_announcement_index == announcements.len() {
+                    next_announcement_index = 0
                 }
-            }
-        };
 
-        match announcement {
-            Some(announcement) => {
-                if let Some(message) = format_announcement(app_handle.clone(), announcement, None) {
-                    // Say it in chat.
-                    let _ = say(state.clone(), message.as_str()).await;
-                }
+                Some(x)
             }
-            None => println!("Could not get an announcement to say."),
         }
+    };
 
-        println!("Looping announcement thread.");
+    match announcement {
+        Some(announcement) => format_announcement(app_handle.clone(), announcement, None),
+        None => {
+            println!("Could not get an announcement to say.");
+            None
+        }
     }
 }
 
@@ -210,7 +146,7 @@ pub mod api {
     use tauri::{Emitter, Manager};
 
     use crate::bot::Bot;
-    use crate::file::{write_file, WriteFileError};
+    use crate::helpers::file::{write_file, WriteFileError};
 
     use super::{Announcement, Announcements};
 

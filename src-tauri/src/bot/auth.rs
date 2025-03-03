@@ -2,7 +2,7 @@ use serde_json::Value;
 use tauri::AppHandle;
 use ts_rs::TS;
 
-use crate::date::get_local_now_formatted;
+use crate::helpers::date::get_local_now_formatted;
 
 const CLIENT_ID: &str = "nbdppbmm4iicute0sl1cj663xyvbi4";
 
@@ -190,7 +190,7 @@ pub mod api {
             api::{connect_to_channel, connect_to_twitch, disconnect_from_twitch},
             Bot,
         },
-        file::{write_file, WriteFileError},
+        helpers::file::{write_file, WriteFileError},
     };
 
     use super::{validate_auth, Authentication, AuthenticationBuilder, CLIENT_ID};

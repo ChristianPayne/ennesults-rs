@@ -9,7 +9,7 @@ use rand::seq::SliceRandom;
 
 use crate::bot::get_random_user;
 
-use super::{say, Bot, User, Users};
+use super::{say, Bot, Client, MessageThread, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -24,16 +24,6 @@ pub struct Insult {
     pub tags: HashSet<InsultTag>,
 }
 
-#[derive(Debug, Default)]
-pub enum InsultThread {
-    Running {
-        handle: tokio::task::JoinHandle<()>,
-        sender: std::sync::mpsc::Sender<()>,
-    },
-    #[default]
-    Stopped,
-}
-
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, TS, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub enum InsultTag {
@@ -44,90 +34,22 @@ pub enum InsultTag {
     Lurk,
 }
 
-#[allow(dead_code)]
-pub enum InsultThreadShutdownError {
-    ThreadNotRunning,
-}
+pub fn run_insult(app_handle: AppHandle) -> Option<String> {
+    // Pick a random insult.
+    let random_insult = choose_random_insult(app_handle.clone(), Some(vec![InsultTag::Insult]));
 
-impl InsultThread {
-    pub fn new(app_handle: tauri::AppHandle, start_thread: bool) -> Self {
-        if start_thread {
-            let (tx, rx) = mpsc::channel();
-            let thread_handle = tokio::spawn(insult_thread_loop(app_handle, rx));
-
-            Self::Running {
-                handle: thread_handle,
-                sender: tx,
+    match random_insult {
+        Some(insult) => {
+            if let Some(insult) = format_insult(app_handle.clone(), &insult, None, None) {
+                return Some(insult);
             }
-        } else {
-            Self::Stopped
+        }
+        None => {
+            println!("❌ Could not get a random insult.")
         }
     }
 
-    pub fn shutdown(&mut self) -> Result<(), InsultThreadShutdownError> {
-        match self {
-            InsultThread::Stopped => Err(InsultThreadShutdownError::ThreadNotRunning),
-            InsultThread::Running { sender, handle } => {
-                let _ = sender.send(());
-                handle.abort();
-                *self = InsultThread::Stopped;
-                Ok(())
-            }
-        }
-    }
-}
-
-pub async fn insult_thread_loop(app_handle: AppHandle, rx: Receiver<()>) {
-    println!("🔄 Starting new insult thread!");
-    'thread_loop: loop {
-        let state = app_handle.state::<Bot>();
-
-        let time_between_insults = {
-            let settings = state
-                .settings
-                .lock()
-                .expect("Failed to get lock for settings");
-
-            settings.time_between_insults
-        };
-
-        let sleep_time = Duration::from_secs(time_between_insults as u64);
-        thread::sleep(sleep_time);
-
-        match rx.try_recv() {
-            Ok(_) | Err(TryRecvError::Disconnected) => {
-                println!("Shutting down insult thread.");
-                break 'thread_loop;
-            }
-            Err(TryRecvError::Empty) => {}
-        }
-
-        // let insults = {
-        //     let insults = state
-        //         .bot_data
-        //         .insults
-        //         .lock()
-        //         .expect("Failed to get lock for insults.");
-
-        //     insults.0.clone()
-        // };
-
-        // Pick a random insult.
-        let random_insult = choose_random_insult(app_handle.clone(), Some(vec![InsultTag::Insult]));
-
-        match random_insult {
-            Some(insult) => {
-                if let Some(insult) = format_insult(app_handle.clone(), &insult, None, None) {
-                    // Say it in chat.
-                    let _ = say(state.clone(), insult.as_str()).await;
-                }
-            }
-            None => {
-                println!("❌ Could not get a random insult.")
-            }
-        }
-        println!("🔄 Looping insult thread.");
-    }
+    None
 }
 
 /// Chooses a random insult from the state of the bot.  
@@ -278,7 +200,7 @@ pub mod api {
     use tauri::{Emitter, Manager};
 
     use crate::bot::Bot;
-    use crate::file::{write_file, WriteFileError};
+    use crate::helpers::file::{write_file, WriteFileError};
 
     use super::{Insult, Insults};
 

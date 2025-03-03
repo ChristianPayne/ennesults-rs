@@ -1,5 +1,5 @@
 use crate::bot::{InsultTag, Insults, Settings};
-use crate::file::{delete_file, read_json_file, write_file, WriteFileError};
+use crate::helpers::file::{delete_file, read_json_file, write_file, WriteFileError};
 
 /// Migrations allow us to change the shape of the file system before running the application.  
 /// Each migration block should read from the file system and write back to the file system. No state should be touched in any of them as the state has not been managed by Tauri yet.

@@ -59,7 +59,7 @@ pub mod api {
 
     use crate::bot::api::{connect_to_channel, connect_to_twitch};
     use crate::bot::{Bot, Settings};
-    use crate::file::{write_file, WriteFileError};
+    use crate::helpers::file::{write_file, WriteFileError};
 
     #[tauri::command]
     pub fn get_channel_name(state: tauri::State<'_, Bot>) -> Result<String, String> {

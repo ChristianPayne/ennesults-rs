@@ -9,14 +9,13 @@ use migrations::run_migrations;
 mod bot;
 mod changelog;
 mod commands;
-mod date;
-mod file;
+mod helpers;
 mod migrations;
 mod twitch;
 mod updater;
 
 use bot::{Announcements, Authentication, Bot, BotData, Comebacks, Insults, Settings, Users};
-use file::read_json_file;
+use helpers::file::read_json_file;
 
 #[tokio::main]
 async fn main() {
