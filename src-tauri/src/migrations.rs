@@ -1,5 +1,5 @@
 use crate::bot::{InsultTag, Insults, Settings};
-use crate::file::{delete_file, read_json_file, write_file, WriteFileError};
+use crate::helpers::file::{delete_file, read_json_file, write_file, WriteFileError};
 
 /// Migrations allow us to change the shape of the file system before running the application.  
 /// Each migration block should read from the file system and write back to the file system. No state should be touched in any of them as the state has not been managed by Tauri yet.
@@ -18,6 +18,13 @@ pub fn run_migrations(app_handle: tauri::AppHandle) -> Result<(), String> {
     if !migrations_previously_run.contains(&"migrate_bot_info_to_settings".to_string()) {
         migrate_bot_info_to_settings(app_handle.clone())?;
         migrations_run.push("migrate_bot_info_to_settings".to_string());
+    }
+
+    if !migrations_previously_run
+        .contains(&"migrate_time_between_announcements_and_insults".to_string())
+    {
+        migrate_time_between_announcements_and_insults(app_handle.clone())?;
+        migrations_run.push("migrate_time_between_announcements_and_insults".to_string());
     }
 
     // Save the new list of migrations to the file.
@@ -90,6 +97,34 @@ pub fn migrate_bot_info_to_settings(app_handle: tauri::AppHandle) -> Result<(), 
     let _ = delete_file(&app_handle, "bot_info.json");
 
     println!("🚀 Bot Info migrated to Settings");
+
+    Ok(())
+}
+
+/// 2025-03-03 - Migration to rename time_between_announcements and time_between_insults to minimum_time_between_announcements and minimum_time_between_insults.
+pub fn migrate_time_between_announcements_and_insults(
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let (time_between_announcements, time_between_insults) = {
+        let settings =
+            read_json_file::<serde_json::Value>(&app_handle, "settings.json").unwrap_or_default();
+
+        let time_between_announcements =
+            settings["time_between_announcements"].as_u64().unwrap_or(0);
+        let time_between_insults = settings["time_between_insults"].as_u64().unwrap_or(0);
+
+        (time_between_announcements, time_between_insults)
+    };
+
+    let mut existing_settings =
+        read_json_file::<Settings>(&app_handle, "settings.json").unwrap_or_default();
+
+    existing_settings.minimum_time_between_announcements = time_between_announcements as u32;
+    existing_settings.maximum_time_between_announcements = time_between_announcements as u32;
+    existing_settings.minimum_time_between_insults = time_between_insults as u32;
+    existing_settings.maximum_time_between_insults = time_between_insults as u32;
+
+    let write_result = write_file::<Settings>(&app_handle, "settings.json", existing_settings);
 
     Ok(())
 }

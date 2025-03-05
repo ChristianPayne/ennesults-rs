@@ -82,7 +82,7 @@ pub mod api {
     use tauri::{Emitter, Manager};
 
     use crate::bot::{Bot, Comebacks};
-    use crate::file::{write_file, WriteFileError};
+    use crate::helpers::file::{write_file, WriteFileError};
 
     use super::Comeback;
 
