@@ -7,9 +7,9 @@ export type Announcement = { id: string, value: string, };
 
 export type Authentication = { "Valid": { details: AuthenticationDetails, last_validated: string | null, } } | { "Invalid": { reason: string, } } | "NotSignedIn";
 
-export type AuthenticationDetails = { access_token: string, client_id: string, broadcaster_id: string, login: string, expires_in: bigint, };
+export type AuthenticationDetails = { access_token: string, client_id: string, login: string, expires_in: bigint, channel_details: ChannelDetails, };
 
-export type Settings = { channel_name: string, auto_connect_on_startup: boolean, enable_whispers: boolean, users_allowed_to_whisper: Array<string>, enable_announcements: boolean, randomize_announcements: boolean, time_between_announcements: number, enable_insults: boolean, time_between_insults: number, lurk_time: number, enable_comebacks: boolean, percent_chance_of_comeback: number, comeback_exceptions: Array<string>, enable_corrections: boolean, percent_chance_of_correction: number, correction_exceptions: Array<string>, };
+export type ChannelDetails = { "Connected": { channel_id: string, } } | "Disconnected";
 
 export type Comeback = { id: string, value: string, };
 
@@ -18,6 +18,8 @@ export type DownloadEvent = { "event": "Started", "data": { contentLength: bigin
 export type Insult = { id: string, value: string, tags: Array<InsultTag>, };
 
 export type InsultTag = "Insult" | "Consent" | "Unconsent" | "Raid" | "Lurk";
+
+export type Settings = { channel_name: string, auto_connect_on_startup: boolean, enable_whispers: boolean, users_allowed_to_whisper: Array<string>, enable_announcements: boolean, randomize_announcements: boolean, minimum_time_between_announcements: number, maximum_time_between_announcements: number, enable_insults: boolean, minimum_time_between_insults: number, maximum_time_between_insults: number, lurk_time: number, enable_comebacks: boolean, percent_chance_of_comeback: number, comeback_exceptions: Array<string>, enable_corrections: boolean, percent_chance_of_correction: number, correction_exceptions: Array<string>, message_queue_interval: number, };
 
 export type TwitchMessage = { message_id: string, username: string, message: string, color: SerializeRBGColor | null, };
 

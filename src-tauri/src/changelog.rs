@@ -7,7 +7,16 @@ pub struct ChangelogVersionNotes {
     notes: &'static str,
 }
 
-const CHANGELOG: [ChangelogVersionNotes; 12] = [
+const CHANGELOG: [ChangelogVersionNotes; 13] = [
+    ChangelogVersionNotes {
+        version: "v1.5.0",
+        title: Some("Message Thread & Diagnostic Command"),
+        notes: r"- Merged the announcements and insults into a single message thread.
+        - Added a queue to the new message thread to handle messages better.
+        - Added a range (minimum and maximum) to the time between announcements and insults.
+        - Added a setting for the message queue interval.
+        - Added a diagnostic command to check the status of the bot and run commands.",
+    },
     ChangelogVersionNotes {
         version: "v1.4.4",
         title: None,

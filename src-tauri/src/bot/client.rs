@@ -7,8 +7,8 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
 use super::{
-    handle_whisper, process_comebacks, process_corrections, process_user_state, AnnouncementThread,
-    Bot, InsultThread, SerializeRBGColor, TwitchMessage,
+    handle_whisper, process_comebacks, process_corrections, process_user_state, Bot, MessageThread,
+    SerializeRBGColor, TwitchMessage,
 };
 use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
 
@@ -18,8 +18,7 @@ pub enum Client {
     Connected {
         client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
         client_join_handle: JoinHandle<()>,
-        insult_thread: InsultThread,
-        announcement_thread: AnnouncementThread,
+        message_thread: MessageThread,
     },
     #[default]
     Disconnected,
@@ -29,20 +28,38 @@ impl Client {
     pub fn new(
         twitch_client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
         twitch_client_thread_handle: JoinHandle<()>,
-        insult_thread: InsultThread,
-        announcement_thread: AnnouncementThread,
+        message_thread: MessageThread,
     ) -> Self {
         Client::Connected {
             client: twitch_client,
             client_join_handle: twitch_client_thread_handle,
-            insult_thread,
-            announcement_thread,
+            message_thread,
         }
     }
+
     pub fn get_client(&self) -> Option<TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>> {
         match self {
             Client::Disconnected => None,
             Client::Connected { client, .. } => Some(client.clone()),
+        }
+    }
+
+    pub async fn queue_message(&self, message: String) {
+        match self {
+            Client::Connected { message_thread, .. } => {
+                message_thread.queue_message(message).await;
+            }
+            Client::Disconnected => (),
+        }
+    }
+
+    pub fn is_message_thread_running(&self) -> bool {
+        match self {
+            Client::Connected { message_thread, .. } => match message_thread {
+                MessageThread::Running { handle, .. } => !handle.is_finished(),
+                MessageThread::Stopped => false,
+            },
+            Client::Disconnected => false,
         }
     }
 }
@@ -93,7 +110,6 @@ pub async fn handle_incoming_chat(
         match message {
             ServerMessage::Privmsg(msg) => {
                 {
-                    // dbg!(&msg);
                     let mut chat_messages = bot
                         .chat_messages
                         .lock()
@@ -110,9 +126,12 @@ pub async fn handle_incoming_chat(
 
                     chat_messages.push(twitch_message.clone());
 
-                    app_handle.emit("message", twitch_message).unwrap();
+                    app_handle
+                        .emit("message", twitch_message)
+                        .expect("Failed to emit twitch message.");
                 }
 
+                // Always process user state first so we keep track of the last seen time.
                 process_user_state(app_handle.clone(), &msg.sender);
 
                 // Chained if else statements so we only do one of the options.
@@ -180,8 +199,8 @@ pub async fn handle_incoming_chat(
 pub mod api {
     use crate::{
         bot::{
-            handle_incoming_chat, validate_auth, AnnouncementThread, Authentication,
-            AuthenticationError, Bot, ChannelDetails, InsultThread,
+            handle_incoming_chat, validate_auth, Authentication, AuthenticationError, Bot,
+            ChannelDetails, MessageThread,
         },
         twitch::get_broadcaster_id,
     };
@@ -268,23 +287,10 @@ pub mod api {
         let twitch_client_thread_handle =
             tokio::spawn(handle_incoming_chat(app_handle.clone(), incoming_messages));
 
-        let settings = state
-            .settings
-            .lock()
-            .expect("Failed to get lock for settings");
-
-        let insult_thread = InsultThread::new(app_handle.clone(), settings.enable_insults);
-
-        let announcement_thread =
-            AnnouncementThread::new(app_handle.clone(), settings.enable_announcements);
+        let message_thread = MessageThread::new(app_handle.clone());
 
         let mut client = state.client.lock().expect("Failed to get lock for client");
-        *client = Client::new(
-            twitch_client,
-            twitch_client_thread_handle,
-            insult_thread,
-            announcement_thread,
-        );
+        *client = Client::new(twitch_client, twitch_client_thread_handle, message_thread);
 
         println!("✅ Connected to Twitch!");
 
@@ -305,14 +311,10 @@ pub mod api {
             Client::Connected {
                 client: twitch_client,
                 client_join_handle,
-                insult_thread,
-                announcement_thread,
+                message_thread,
             } => {
-                // Shut down the insult thread if it is running.
-                let _ = insult_thread.shutdown();
-
-                // Shut down the announcement thread if it is running.
-                let _ = announcement_thread.shutdown();
+                // Shut down the message thread if it is running.
+                let _ = message_thread.shutdown();
 
                 // Tell the client to leave the twitch channel.
                 twitch_client.part(settings.channel_name.clone());
