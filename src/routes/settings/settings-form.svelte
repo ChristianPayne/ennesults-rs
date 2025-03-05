@@ -341,6 +341,23 @@
     </Form.Field>
   </div>
 
+  <h2>Message Queue</h2>
+  <div class="md:ml-8">
+    <Form.Field {form} name="messageQueueInterval">
+      <Form.Control let:attrs>
+        <Form.Label>Message Queue Interval</Form.Label>
+        <Input
+          {...attrs}
+          type="number"
+          bind:value={$formData.messageQueueInterval}
+        />
+      </Form.Control>
+      <Form.Description>
+        The amount of time (seconds) between messages sent from insults and announcements.
+      </Form.Description>
+    </Form.Field>
+  </div>
+
   <div class="flex justify-center">
     <Form.Button class="w-1/3">Save</Form.Button>
   </div>

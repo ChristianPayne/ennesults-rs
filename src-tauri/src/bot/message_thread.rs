@@ -9,8 +9,6 @@ use tokio::task::JoinHandle;
 
 use super::{run_announcement, run_insult, say, Bot};
 
-const SHORTEST_TIME_BETWEEN_MESSAGES: Duration = Duration::from_secs(5);
-
 #[derive(Debug, Default)]
 pub enum MessageThread {
     Running {
@@ -98,6 +96,12 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         settings.clone()
     };
 
+    // Adding the minimum time to insults and announcements at the start of the message thread so we don't send messages right away.
+    context.next_insult_message_time_stamp =
+        get_local_now() + Duration::from_secs(settings.minimum_time_between_insults as u64);
+    context.next_announcement_message_time_stamp =
+        get_local_now() + Duration::from_secs(settings.minimum_time_between_announcements as u64);
+
     loop {
         // println!("🔄 Looping message thread.");
         // Receive messages from the channel and handle them.
@@ -134,14 +138,22 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         if settings.enable_insults && now > context.next_insult_message_time_stamp {
             // Run the insult function.
             if let Some(insult) = run_insult(app_handle.clone()) {
-                let random_time = rand::thread_rng().gen_range(
-                    settings.minimum_time_between_insults..settings.maximum_time_between_insults,
-                );
+                let mut min_time = settings.minimum_time_between_insults;
+                let max_time = settings.maximum_time_between_insults;
+
+                // Check to make sure the minimum time is less than the maximum time.
+                if min_time > max_time {
+                    println!("🔴 Invalid insult timing: min > max. Setting min = max.");
+                    min_time = max_time;
+                }
+
+                let random_time = rand::thread_rng().gen_range(min_time..=max_time);
+
                 context.next_insult_message_time_stamp =
                     get_local_now() + Duration::from_secs(random_time as u64);
 
                 println!(
-                    "📝 Queuing insult message {}. Next insult in {} seconds.",
+                    "📝 Queuing insult message '{}'. Next insult in {} seconds.",
                     insult, random_time
                 );
 
@@ -152,15 +164,22 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         if settings.enable_announcements && now > context.next_announcement_message_time_stamp {
             // Run the announcement function.
             if let Some(announcement) = run_announcement(app_handle.clone()) {
-                let random_time = rand::thread_rng().gen_range(
-                    settings.minimum_time_between_announcements
-                        ..settings.maximum_time_between_announcements,
-                );
+                let mut min_time = settings.minimum_time_between_announcements;
+                let max_time = settings.maximum_time_between_announcements;
+
+                // Check to make sure the minimum time is less than the maximum time.
+                if min_time > max_time {
+                    println!("🔴 Invalid announcement timing: min > max. Setting min = max.");
+                    min_time = max_time;
+                }
+
+                let random_time = rand::thread_rng().gen_range(min_time..=max_time);
+
                 context.next_announcement_message_time_stamp =
                     get_local_now() + Duration::from_secs(random_time as u64);
 
                 println!(
-                    "📝 Queuing announcement message {}. Next announcement in {} seconds.",
+                    "📝 Queuing announcement message '{}'. Next announcement in {} seconds.",
                     announcement, random_time
                 );
 
@@ -170,7 +189,9 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
 
         // Make sure we don't send too many messages too quickly.
         if !context.message_queue.is_empty()
-            && now > context.last_message_time + SHORTEST_TIME_BETWEEN_MESSAGES
+            && now
+                > context.last_message_time
+                    + Duration::from_secs(settings.message_queue_interval as u64)
         {
             // Send a message from the queue.
             let message = context.message_queue.dequeue();
@@ -180,6 +201,8 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         }
 
         thread::sleep(Duration::from_secs(1));
+
+        // panic!("Test panic");
     }
 
     println!("👋 Message thread loop ended.");

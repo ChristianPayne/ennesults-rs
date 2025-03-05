@@ -52,6 +52,16 @@ impl Client {
             Client::Disconnected => (),
         }
     }
+
+    pub fn is_message_thread_running(&self) -> bool {
+        match self {
+            Client::Connected { message_thread, .. } => match message_thread {
+                MessageThread::Running { handle, .. } => !handle.is_finished(),
+                MessageThread::Stopped => false,
+            },
+            Client::Disconnected => false,
+        }
+    }
 }
 
 #[tauri::command]

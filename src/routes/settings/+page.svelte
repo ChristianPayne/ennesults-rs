@@ -47,6 +47,7 @@
       enableCorrections: settings.enable_corrections,
       percentChanceOfCorrection: settings.percent_chance_of_correction,
       correctionExceptions: settings.correction_exceptions.join(", "),
+      messageQueueInterval: settings.message_queue_interval,
     };
 
     validatedForm = await superValidate(formattedSettings, zod(formSchema));
@@ -108,6 +109,7 @@
           .split(",")
           .filter(Boolean)
           .map((user) => user.trim().toLowerCase()),
+        message_queue_interval: validatedData.messageQueueInterval,
       },
     })
       .then((settings) => {

@@ -29,6 +29,8 @@ pub struct Settings {
     pub enable_corrections: bool,
     pub percent_chance_of_correction: u32,
     pub correction_exceptions: Vec<String>,
+
+    pub message_queue_interval: u32,
 }
 
 impl Default for Settings {
@@ -52,6 +54,7 @@ impl Default for Settings {
             enable_corrections: false,
             percent_chance_of_correction: 20,
             correction_exceptions: vec![],
+            message_queue_interval: 6,
         }
     }
 }
