@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use tauri::{AppHandle, Emitter};
 
-use crate::file::{write_file, WriteFileError};
+use crate::helpers::file::{write_file, WriteFileError};
 
 use super::{Announcements, Comebacks, Insults, User, Users};
 

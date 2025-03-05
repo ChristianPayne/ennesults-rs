@@ -3,15 +3,16 @@ use ts_rs::TS;
 use twitch_irc::message::PrivmsgMessage;
 
 mod consent;
+mod diagnostic;
 mod test;
 mod unconsent;
 mod version;
 
 use consent::ConsentCommand;
+use diagnostic::DiagnosticCommand;
 use test::TestCommand;
 use unconsent::UnconsentCommand;
 use version::VersionCommand;
-
 #[derive(serde::Serialize, Clone, Copy, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub enum UserLevel {
@@ -42,7 +43,8 @@ pub fn command_from_str(command_string: &str) -> Option<Box<dyn Command>> {
         "test" | "t" => Some(Box::new(TestCommand)),
         "consent" | "c" | "consennet" => Some(Box::new(ConsentCommand)),
         "unconsent" | "uc" | "unconsennet" => Some(Box::new(UnconsentCommand)),
-        "version" => Some(Box::new(VersionCommand)),
+        "version" | "v" => Some(Box::new(VersionCommand)),
+        "diagnostic" | "d" => Some(Box::new(DiagnosticCommand)),
         _ => None,
     }
 }

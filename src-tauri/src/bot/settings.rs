@@ -14,10 +14,12 @@ pub struct Settings {
 
     pub enable_announcements: bool,
     pub randomize_announcements: bool,
-    pub time_between_announcements: u32,
+    pub minimum_time_between_announcements: u32,
+    pub maximum_time_between_announcements: u32,
 
     pub enable_insults: bool,
-    pub time_between_insults: u32,
+    pub minimum_time_between_insults: u32,
+    pub maximum_time_between_insults: u32,
     pub lurk_time: u32,
 
     pub enable_comebacks: bool,
@@ -27,22 +29,24 @@ pub struct Settings {
     pub enable_corrections: bool,
     pub percent_chance_of_correction: u32,
     pub correction_exceptions: Vec<String>,
+
+    pub message_queue_interval: u32,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
             channel_name: "".into(),
-            // bot_name: "".into(),
-            // oauth_token: "".into(),
             auto_connect_on_startup: false,
             enable_whispers: false,
             users_allowed_to_whisper: vec![],
             enable_announcements: false,
             randomize_announcements: false,
-            time_between_announcements: 300,
+            minimum_time_between_announcements: 300,
+            maximum_time_between_announcements: 300,
             enable_insults: false,
-            time_between_insults: 300,
+            minimum_time_between_insults: 300,
+            maximum_time_between_insults: 300,
             lurk_time: 5,
             enable_comebacks: false,
             percent_chance_of_comeback: 20,
@@ -50,6 +54,7 @@ impl Default for Settings {
             enable_corrections: false,
             percent_chance_of_correction: 20,
             correction_exceptions: vec![],
+            message_queue_interval: 6,
         }
     }
 }
@@ -59,7 +64,7 @@ pub mod api {
 
     use crate::bot::api::{connect_to_channel, connect_to_twitch};
     use crate::bot::{Bot, Settings};
-    use crate::file::{write_file, WriteFileError};
+    use crate::helpers::file::{write_file, WriteFileError};
 
     #[tauri::command]
     pub fn get_channel_name(state: tauri::State<'_, Bot>) -> Result<String, String> {
