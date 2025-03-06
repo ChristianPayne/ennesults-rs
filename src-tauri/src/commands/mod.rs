@@ -13,6 +13,7 @@ use diagnostic::DiagnosticCommand;
 use test::TestCommand;
 use unconsent::UnconsentCommand;
 use version::VersionCommand;
+
 #[derive(serde::Serialize, Clone, Copy, Debug, TS)]
 #[ts(export, export_to = "../../src/lib/types.ts")]
 pub enum UserLevel {

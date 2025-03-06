@@ -47,6 +47,15 @@ pub enum Authentication {
     NotSignedIn,
 }
 
+impl Authentication {
+    pub fn get_authentication_details(&self) -> Option<AuthenticationDetails> {
+        match self {
+            Authentication::Valid { details, .. } => Some(details.clone()),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct AuthenticationBuilder {
     access_token: Option<String>,
@@ -115,7 +124,7 @@ pub enum AuthenticationError {
 
 /// Take in details to validate, check them against the Twitch Validate API and return the details back or error.
 pub async fn validate_auth(
-    app_handle: AppHandle,
+    _app_handle: AppHandle,
     access_token: String,
 ) -> Result<Authentication, AuthenticationError> {
     println!("🤖 Validating details through Twitch...");

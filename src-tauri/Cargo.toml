@@ -18,9 +18,12 @@ dotenv_codegen = "0.15.0"
 serde = { version = "1.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1.0"
-twitch_api = { version = "0.7.0-rc.8", features = ["all"] }
+twitch_api = { git = "https://github.com/twitch-rs/twitch_api/", features = [
+    "all",
+    "reqwest",
+] }
 tokio = { version = "1.32.0", features = ["full"] }
-reqwest = { version = "0.11.20", features = ["blocking"] }
+reqwest = { version = "0.12", features = ["blocking"] }
 twitch-irc = "5.0.1"
 tauri-plugin-positioner = "2.0.0-rc"
 tauri-plugin-window-state = { version = "2.0.0-rc" }
@@ -43,3 +46,7 @@ custom-protocol = ["tauri/custom-protocol"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
+
+# workaround for https://github.com/twitch-rs/twitch_api/issues/256
+[patch.crates-io.twitch_types]
+git = "https://github.com/twitch-rs/twitch_api"

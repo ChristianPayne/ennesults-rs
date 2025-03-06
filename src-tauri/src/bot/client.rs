@@ -6,6 +6,9 @@ use twitch_irc::message::{ServerMessage, UserNoticeEvent};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 
+use twitch_api::helix::HelixClient;
+use twitch_api::twitch_oauth2::{AccessToken, UserToken};
+
 use super::{
     handle_whisper, process_comebacks, process_corrections, process_user_state, Bot, MessageThread,
     SerializeRBGColor, TwitchMessage,
@@ -19,6 +22,8 @@ pub enum Client {
         client: TwitchIRCClient<TCPTransport<TLS>, StaticLoginCredentials>,
         client_join_handle: JoinHandle<()>,
         message_thread: MessageThread,
+        // helix_client: HelixClient<'a, reqwest::Client>,
+        // token: UserToken,
     },
     #[default]
     Disconnected,
@@ -206,6 +211,10 @@ pub mod api {
     };
     use std::ops::Deref;
     use tauri::{AppHandle, Emitter, Manager};
+    use twitch_api::{
+        twitch_oauth2::{AccessToken, UserToken},
+        HelixClient,
+    };
     use twitch_irc::{
         login::StaticLoginCredentials, ClientConfig, SecureTCPTransport, TwitchIRCClient,
     };
@@ -289,8 +298,21 @@ pub mod api {
 
         let message_thread = MessageThread::new(app_handle.clone());
 
+        // let helix_client = HelixClient::default();
+        // let Ok(token) =
+        //     UserToken::from_token(&helix_client, AccessToken::from(details.access_token)).await
+        // else {
+        //     return Err("Failed to create user token.".to_string());
+        // };
+
         let mut client = state.client.lock().expect("Failed to get lock for client");
-        *client = Client::new(twitch_client, twitch_client_thread_handle, message_thread);
+        *client = Client::new(
+            twitch_client,
+            twitch_client_thread_handle,
+            message_thread,
+            // helix_client,
+            // token,
+        );
 
         println!("✅ Connected to Twitch!");
 
@@ -312,6 +334,7 @@ pub mod api {
                 client: twitch_client,
                 client_join_handle,
                 message_thread,
+                ..
             } => {
                 // Shut down the message thread if it is running.
                 let _ = message_thread.shutdown();
