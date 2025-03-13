@@ -3,7 +3,7 @@ use twitch_irc::message::PrivmsgMessage;
 
 use crate::bot::{
     api::{connect_to_channel, connect_to_twitch},
-    Bot,
+    run_insult, Bot,
 };
 
 use super::{Command, UserLevel};
@@ -23,7 +23,7 @@ impl Command for DiagnosticCommand {
     ) -> Option<String> {
         let state = app_handle.state::<Bot>();
 
-        let message = match args.len() {
+        match args.len() {
             1 => match args[0].as_str() {
                 "message_thread" => {
                     let client = state.client.lock().unwrap();
@@ -79,17 +79,13 @@ impl Command for DiagnosticCommand {
                         });
                         Some("🔄 Reconnecting...".to_string())
                     }
+                    "insult" => run_insult(app_handle.clone()),
                     _ => Some("🤔 Sub command not found".to_string()),
                 },
-                _ => None,
+                _ => Some("🔍 diagnostics: run argument not found.".to_string()),
             },
-            _ => None,
-        };
-
-        match message {
-            Some(message) => Some(message),
-            None => Some(
-                "🔍 diagnostics: message_thread, insults, announcements, run <reconnect>"
+            _ => Some(
+                "🔍 diagnostics: message_thread, insults, announcements, run <reconnect, insult>"
                     .to_string(),
             ),
         }

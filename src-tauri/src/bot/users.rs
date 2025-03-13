@@ -1,5 +1,5 @@
+// use serde_partial::SerializePartial;
 use std::collections::HashMap;
-
 use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 use twitch_irc::message::TwitchUserBasics;
@@ -13,8 +13,7 @@ use crate::helpers::date::{
 
 use super::Bot;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
-#[serde(default = "Default::default")]
+#[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone)]
 pub struct Users(pub HashMap<String, User>);
 
 impl Users {
@@ -36,16 +35,16 @@ pub struct User {
     pub username: String,
     pub consented: bool,
     pub last_seen: String,
+    #[serde(default = "default_bool")]
+    pub lurk: bool,
+}
+
+fn default_bool() -> bool {
+    false
 }
 
 pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
-    // Get existing users.
-    // Check if this user is already part of known users.
-    // If not, assign default User values and save it to our files.
-    // If they are known in our data, update any data we need to.
-
     let state = app_handle.state::<Bot>();
-
     let mut users = state.bot_data.get_users();
 
     match users.0.get_mut(&user.name) {
@@ -58,11 +57,13 @@ pub fn process_user_state(app_handle: AppHandle, user: &TwitchUserBasics) {
                     username: user.name.clone(),
                     consented: false,
                     last_seen: get_local_now_formatted(),
+                    lurk: false,
                 },
             );
         }
         // Update existing user
         Some(user) => {
+            user.lurk = false;
             user.last_seen = get_local_now_formatted();
         }
     }
@@ -100,7 +101,7 @@ pub fn get_random_user(
                 return streamer_inclusive;
             }
             // Check lurk status of all users.
-            let user_is_not_lurking = match parse_date_time(user.last_seen.as_str()) {
+            let user_has_spoken_since_lurk_timer = match parse_date_time(user.last_seen.as_str()) {
                 // If we error on parsing the last seen, let's not include the user as an option.
                 Err(_) => false,
                 // Calculate if the user's last seen date is within the lurk timer.
@@ -110,7 +111,7 @@ pub fn get_random_user(
                 }
             };
 
-            user_is_not_lurking && {
+            !user.lurk && user_has_spoken_since_lurk_timer && {
                 if user_must_be_consented {
                     user.consented
                 } else {

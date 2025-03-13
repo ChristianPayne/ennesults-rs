@@ -1,6 +1,6 @@
 [package]
 name = "ennesults-rs"
-version = "1.5.0"
+version = "1.6.0"
 description = "A Twitch bot created for Ennegineer to kindly insult her chat."
 authors = ["Christian Payne"]
 license = ""
@@ -34,6 +34,7 @@ tauri-plugin-process = "2"
 serde-inline-default = "0.2.3"
 tauri-plugin-oauth = "2"
 url-builder = "0.1.1"
+serde-partial = "0.3.1"
 
 
 [features]
