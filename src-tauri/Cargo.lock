@@ -804,7 +804,7 @@ dependencies = [
 
 [[package]]
 name = "ennesults-rs"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "chrono",
  "dotenv_codegen",
@@ -812,6 +812,7 @@ dependencies = [
  "reqwest 0.11.27",
  "serde",
  "serde-inline-default",
+ "serde-partial",
  "serde_json",
  "tauri",
  "tauri-build",
@@ -3315,7 +3316,7 @@ checksum = "b1eee588578aff73f856ab961cd2f79e36bc45d7ded33a7562adba4667aecc0e"
 dependencies = [
  "proc-macro2",
  "quote",
- "serde_derive_internals",
+ "serde_derive_internals 0.29.1",
  "syn 2.0.89",
 ]
 
@@ -3398,6 +3399,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-partial"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3dbf9ef30b657842ec9b1db856d02b83f9a86dcba40858359e7b92690945629f"
+dependencies = [
+ "serde",
+ "serde-partial-macro",
+]
+
+[[package]]
+name = "serde-partial-macro"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da23cf129015550ddb4671da7f0ea5beb94eaa2f0a5bca09b69069290666c797"
+dependencies = [
+ "quote",
+ "serde_derive_internals 0.26.0",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "serde-untagged"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3417,6 +3439,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.89",
+]
+
+[[package]]
+name = "serde_derive_internals"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85bf8229e7920a9f636479437026331ce11aa132b4dde37d121944a44d6e5f3c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]

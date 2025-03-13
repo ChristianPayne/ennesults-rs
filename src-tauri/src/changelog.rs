@@ -6,8 +6,13 @@ pub struct ChangelogVersionNotes {
     title: Option<&'static str>,
     notes: &'static str,
 }
-
-const CHANGELOG: [ChangelogVersionNotes; 13] = [
+const CHANGELOG: [ChangelogVersionNotes; 14] = [
+    ChangelogVersionNotes {
+        version: "v1.6.0",
+        title: Some("Lurk Command"),
+        notes: r"- Added a lurk command so users can be insulted when they leave us.
+        - Added an insult command to the diagnostics.",
+    },
     ChangelogVersionNotes {
         version: "v1.5.0",
         title: Some("Message Thread & Diagnostic Command"),

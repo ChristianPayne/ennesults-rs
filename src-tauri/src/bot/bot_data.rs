@@ -29,6 +29,7 @@ impl BotData {
         }
     }
 
+    /// Clones the users struct and returns it.
     pub fn get_users(&self) -> Users {
         let users_guard = self.users.lock().expect("Failed to get lock for users.");
 
