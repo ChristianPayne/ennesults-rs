@@ -1,7 +1,7 @@
 use crate::bot::{InsultTag, Insults, Settings};
 use crate::helpers::file::{delete_file, read_json_file, write_file, WriteFileError};
 
-/// Migrations allow us to change the shape of the file system before running the application.  
+/// Migrations allow us to change the shape of the file system before running the application.
 /// Each migration block should read from the file system and write back to the file system. No state should be touched in any of them as the state has not been managed by Tauri yet.
 pub fn run_migrations(app_handle: tauri::AppHandle) -> Result<(), String> {
     // Get migrations file. This holds the function signature name of different migrations.
@@ -124,7 +124,7 @@ pub fn migrate_time_between_announcements_and_insults(
     existing_settings.minimum_time_between_insults = time_between_insults as u32;
     existing_settings.maximum_time_between_insults = time_between_insults as u32;
 
-    let write_result = write_file::<Settings>(&app_handle, "settings.json", existing_settings);
+    let _ = write_file::<Settings>(&app_handle, "settings.json", existing_settings);
 
     Ok(())
 }

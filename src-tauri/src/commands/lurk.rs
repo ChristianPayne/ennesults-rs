@@ -3,7 +3,7 @@ use twitch_irc::message::PrivmsgMessage;
 
 use crate::bot::{choose_random_insult, format_insult, Bot, InsultTag};
 
-use super::{meets_minimum_user_level, parse_msg_for_user_level, Command, UserLevel};
+use super::{Command, UserLevel};
 
 #[derive(Debug)]
 pub struct LurkCommand;
@@ -15,7 +15,7 @@ impl Command for LurkCommand {
 
     fn run(
         &self,
-        args: Vec<String>,
+        _args: Vec<String>,
         msg: &PrivmsgMessage,
         app_handle: AppHandle,
     ) -> Option<String> {
