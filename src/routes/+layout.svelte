@@ -150,6 +150,10 @@
       });
     }
   }
+
+  async function testDb() {
+    await invoke("test").then(val => console.log(val))
+  }
 </script>
 
 <ModeWatcher />
@@ -166,6 +170,7 @@
       <Button variant="ghost" href="/comebacks">Comebacks</Button>
       <Button variant="ghost" href="/users">Users</Button>
       <Button variant="ghost" href="/settings">Settings</Button>
+      <Button variant="ghost" on:click={testDb}>Test</Button>
       <NotificationsPanel />
     </div>
   </div>

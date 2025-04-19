@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 extern crate dotenv_codegen;
+use sqlx::{prelude::FromRow, sqlite, Executor};
 use std::sync::Mutex;
 use tauri::Manager;
 
@@ -9,6 +10,7 @@ use migrations::run_migrations;
 mod bot;
 mod changelog;
 mod commands;
+mod database;
 mod helpers;
 mod migrations;
 mod twitch;
@@ -65,7 +67,8 @@ async fn main() {
             crate::bot::api::sign_out_of_twitch,
             crate::updater::fetch_update,
             crate::updater::install_update,
-            crate::changelog::get_changelog
+            crate::changelog::get_changelog,
+            crate::database::test
         ])
         .setup(|app| {
             // Manage state for updates.
