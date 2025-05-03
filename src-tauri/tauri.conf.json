@@ -30,8 +30,8 @@
       {
         "title": "Ennesults",
         "dragDropEnabled": false,
-        "minHeight": 540,
-        "minWidth": 480
+        "minHeight": 100,
+        "minWidth": 100
       }
     ],
     "security": {
