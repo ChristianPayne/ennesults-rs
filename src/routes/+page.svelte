@@ -72,27 +72,27 @@
 <h1>Dashboard</h1>
 
 <div
-  class="grid grid-cols-1 sm:grid-cols-3 gap-2 my-4 sm:gap-4 children:border children:rounded-xl children:p-4 children:sm:p-6 hover:children:bg-muted children:w-full children:text-left children:items-end"
+  class="grid grid-cols-1 xs:grid-cols-3 gap-2 my-4 sm:gap-4 children:border children:rounded-xl children:p-2 children:sm:p-6 hover:children:bg-muted children:w-full children:text-left children:items-end"
 >
   <button on:click={() => goto("/insults")}>
     <p class="text-lg font-semibold">Insults</p>
-    <NumberTicker class="text-4xl font-bold" value={insultCount}></NumberTicker>
-    <p class="text-muted-foreground">Insults loaded into the bot</p>
+    <NumberTicker class="text-xl sm:text-4xl font-bold" value={insultCount}></NumberTicker>
+    <p class="hidden sm:block text-muted-foreground">Insults loaded into the bot</p>
   </button>
   <button on:click={() => goto("/comebacks")}>
     <p class="text-lg font-semibold">Comebacks</p>
-    <NumberTicker class="text-4xl font-bold" value={comebacksCount}
+    <NumberTicker class="text-xl sm:text-4xl font-bold" value={comebacksCount}
     ></NumberTicker>
-    <p class="text-muted-foreground">Reactions to users @-ing her</p>
+    <p class="hidden sm:block text-muted-foreground">Reactions to users @-ing her</p>
   </button>
   <button on:click={() => goto("/users")}>
     <p class="text-lg font-semibold">Users</p>
-    <NumberTicker class="text-4xl font-bold" value={totalUsers}>
+    <NumberTicker class="text-xl sm:text-4xl font-bold" value={totalUsers}>
       <span class="text-muted-foreground text-sm"
         >/ {activeUsers} Consented</span
       >
     </NumberTicker>
-    <p class="text-muted-foreground">Users engaged with the bot</p>
+    <p class="hidden sm:block text-muted-foreground">Users engaged with the bot</p>
   </button>
 </div>
 
