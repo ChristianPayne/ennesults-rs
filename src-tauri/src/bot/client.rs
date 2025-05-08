@@ -1,3 +1,4 @@
+use chrono::Utc;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::task::JoinHandle;
@@ -5,12 +6,16 @@ use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{ServerMessage, UserNoticeEvent};
 use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
+use uuid::Uuid;
 
 use super::{
     handle_whisper, process_comebacks, process_corrections, process_user_state, Bot, MessageThread,
     SerializeRBGColor, TwitchMessage,
 };
-use crate::commands::{meets_minimum_user_level, parse_for_command, parse_msg_for_user_level};
+use crate::commands::{
+    meets_minimum_user_level, parse_for_command, parse_msg_for_user_level, UserLevel,
+};
+use crate::helpers::titlecase::TitleCase;
 
 // CLIENT
 #[derive(Debug, Default)]
@@ -65,7 +70,9 @@ impl Client {
 }
 
 #[tauri::command]
-pub async fn say(state: tauri::State<'_, Bot>, message: &str) -> Result<(), String> {
+pub async fn say(handle: AppHandle, message: &str) -> Result<(), String> {
+    let state = handle.state::<Bot>();
+
     let channel_name = {
         let settings = state
             .settings
@@ -98,6 +105,28 @@ pub async fn say(state: tauri::State<'_, Bot>, message: &str) -> Result<(), Stri
         return Err(e.to_string());
     }
 
+    let twitch_message = TwitchMessage {
+        message_id: Uuid::new_v4().to_string(),
+        username: state.get_bot_name().to_titlecase(),
+        message: message.to_string(),
+        color: None,
+        user_level: UserLevel::Bot,
+        timestamp: Utc::now().timestamp_millis(),
+    };
+
+    {
+        let mut chat_messages = state
+            .chat_messages
+            .lock()
+            .expect("Failed to get lock for chat_messages on bot state.");
+
+        chat_messages.push(twitch_message.clone());
+    }
+
+    handle
+        .emit("message", twitch_message)
+        .expect("Failed to emit twitch message.");
+
     Ok(())
 }
 
@@ -122,6 +151,8 @@ pub async fn handle_incoming_chat(
                         color: msg
                             .name_color
                             .map(|color| SerializeRBGColor(color.r, color.g, color.b)),
+                        user_level: parse_msg_for_user_level(&msg),
+                        timestamp: Utc::now().timestamp_millis(),
                     };
 
                     chat_messages.push(twitch_message.clone());
@@ -142,11 +173,11 @@ pub async fn handle_incoming_chat(
                     ) {
                         if let Some(reply) = command.run(args, &msg, app_handle.clone()) {
                             // say back the reply.
-                            let _ = say(app_handle.state::<Bot>(), reply.as_str()).await;
+                            let _ = say(app_handle.clone(), reply.as_str()).await;
                         }
                     } else {
                         let _ = say(
-                            app_handle.state::<Bot>(),
+                            app_handle.clone(),
                             "You do not have access to that command.",
                         )
                         .await;
@@ -178,7 +209,7 @@ pub async fn handle_incoming_chat(
                         user_notice_message.sender.name, viewer_count
                     );
                     // dbg!(&user_notice_message.channel_id);
-                    let _ = say(app_handle.state::<Bot>(), &raid_message).await;
+                    let _ = say(app_handle.clone(), &raid_message).await;
                 } else {
                     dbg!(user_notice_message);
                 }
