@@ -6,7 +6,13 @@ pub struct ChangelogVersionNotes {
     title: Option<&'static str>,
     notes: &'static str,
 }
-const CHANGELOG: [ChangelogVersionNotes; 15] = [
+const CHANGELOG: [ChangelogVersionNotes; 16] = [
+    ChangelogVersionNotes {
+        version: "v1.6.2",
+        title: None,
+        notes: r"- Bot messages now show up in the chat window.
+        - Timestamps are now in the chat window.",
+    },
     ChangelogVersionNotes {
         version: "v1.6.1",
         title: None,

@@ -25,6 +25,7 @@ pub enum UserLevel {
     Moderator,
     Broadcaster,
     Creator,
+    Bot,
 }
 
 impl UserLevel {
