@@ -195,7 +195,7 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         {
             // Send a message from the queue.
             let message = context.message_queue.dequeue();
-            let _ = say(app_handle.state::<Bot>().clone(), &message).await;
+            let _ = say(app_handle.clone(), &message).await;
             // println!("🚀 Sending message: {}", message);
             context.last_message_time = now;
         }

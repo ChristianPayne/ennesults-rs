@@ -21,8 +21,8 @@ export type InsultTag = "Insult" | "Consent" | "Unconsent" | "Raid" | "Lurk";
 
 export type Settings = { channel_name: string, auto_connect_on_startup: boolean, enable_whispers: boolean, users_allowed_to_whisper: Array<string>, enable_announcements: boolean, randomize_announcements: boolean, minimum_time_between_announcements: number, maximum_time_between_announcements: number, enable_insults: boolean, minimum_time_between_insults: number, maximum_time_between_insults: number, lurk_time: number, enable_comebacks: boolean, percent_chance_of_comeback: number, comeback_exceptions: Array<string>, enable_corrections: boolean, percent_chance_of_correction: number, correction_exceptions: Array<string>, message_queue_interval: number, };
 
-export type TwitchMessage = { message_id: string, username: string, message: string, color: SerializeRBGColor | null, };
+export type TwitchMessage = { message_id: string, username: string, message: string, color: SerializeRBGColor | null, user_level: UserLevel, timestamp: bigint, };
 
-export type User = { id: string, username: string, consented: boolean, last_seen: string, };
+export type User = { id: string, username: string, consented: boolean, last_seen: string, lurk: boolean, };
 
-export type UserLevel = "Viewer" | "Subscriber" | "Vip" | "Moderator" | "Broadcaster" | "Creator";
+export type UserLevel = "Viewer" | "Subscriber" | "Vip" | "Moderator" | "Broadcaster" | "Creator" | "Bot";

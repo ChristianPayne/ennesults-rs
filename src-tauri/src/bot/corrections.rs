@@ -40,7 +40,7 @@ pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) ->
             msg.message_text.to_lowercase().replace("en", "ENNE")
         );
 
-        let _ = say(state, corrected_message.as_str()).await;
+        let _ = say(app_handle.clone(), corrected_message.as_str()).await;
 
         return true;
     }
