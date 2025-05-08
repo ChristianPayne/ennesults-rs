@@ -33,12 +33,7 @@
         // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
         // event.payload is the payload object
         // console.log("event", event.payload)
-        messages.push({
-          message_id: event.payload.message_id,
-          username: event.payload.username,
-          message: event.payload.message,
-          color: event.payload.color,
-        });
+        messages.push(event.payload);
         messages = messages.slice(-maxChatMessages);
 
         return event;
@@ -104,14 +99,27 @@
   class="overflow-y-scroll h-[60vh] select-text border rounded-md p-2"
   bind:this={chatElement}
 >
-  <ul class="space-y-1">
+  <ul class="space-y-1 break-words">
     {#each messages as message (message.message_id)}
       <li>
-        <span
-          style="color: rgb({message.color?.[0]},{message.color?.[1]},{message
-            .color?.[2]});"
-          class="text-primary">{message.username}</span
-        >: {message.message}
+        {#if message.user_level === "Bot"}
+        <div class="border w-full p-1 rounded-md bg-muted/20">
+          {new Date(Number(message.timestamp)).toLocaleTimeString()} - 
+            <span
+              class="text-secondary">
+              {message.username}
+            </span>
+            : {message.message}
+          </div>
+        {:else}
+          {new Date(Number(message.timestamp)).toLocaleTimeString()} - 
+          <span 
+            style="color: rgb({message.color?.[0]},{message.color?.[1]},{message.color?.[2]});"
+            class="text-primary">
+            {message.username}
+          </span>
+          : {message.message}
+        {/if}
       </li>
     {/each}
   </ul>

@@ -1,5 +1,8 @@
+use crate::commands::UserLevel;
+
 use super::Authentication;
 use super::{BotData, Client, Settings};
+use chrono::Utc;
 use std::sync::Mutex;
 use ts_rs::TS;
 
@@ -10,6 +13,8 @@ pub struct TwitchMessage {
     pub username: String,
     pub message: String,
     pub color: Option<SerializeRBGColor>,
+    pub user_level: UserLevel,
+    pub timestamp: i64,
 }
 
 #[derive(serde::Serialize, Clone, Debug, TS)]
@@ -50,12 +55,12 @@ impl Bot {
         }
     }
 
-    pub fn get_bot_name(&self) -> Option<String> {
+    pub fn get_bot_name(&self) -> String {
         let authentication = self.auth.lock().expect("Failed to get lock for Auth");
 
         match authentication.clone() {
-            Authentication::Valid { details, .. } => Some(details.login),
-            Authentication::Invalid { .. } | Authentication::NotSignedIn => None,
+            Authentication::Valid { details, .. } => details.login,
+            Authentication::Invalid { .. } | Authentication::NotSignedIn => "Ennesults".to_string(),
         }
     }
 
