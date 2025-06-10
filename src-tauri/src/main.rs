@@ -17,7 +17,14 @@ mod twitch;
 mod updater;
 
 use bot::{
-    Announcement, Announcements, Authentication, Bot, BotData, Comebacks, Insults, Settings, Users,
+    announcements::{Announcement, Announcements},
+    auth::Authentication,
+    bot_data::BotData,
+    comebacks::Comebacks,
+    insults::Insults,
+    settings::Settings,
+    users::Users,
+    Bot,
 };
 use helpers::file::read_json_file;
 
@@ -32,7 +39,7 @@ async fn main() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
-            crate::bot::say,
+            crate::bot::client::say,
             crate::bot::api::connect_to_twitch,
             crate::bot::api::disconnect_from_twitch,
             crate::bot::api::connect_to_channel,

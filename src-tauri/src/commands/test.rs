@@ -9,9 +9,6 @@ use super::{Command, UserLevel};
 pub struct TestCommand;
 
 impl Command for TestCommand {
-    fn get_required_user_level(&self) -> UserLevel {
-        UserLevel::Creator
-    }
     fn run(
         &self,
         _args: Vec<String>,

@@ -1,6 +1,6 @@
 [package]
 name = "ennesults-rs"
-version = "1.6.0"
+version = "1.6.2"
 description = "A Twitch bot created for Ennegineer to kindly insult her chat."
 authors = ["Christian Payne"]
 license = ""
@@ -37,6 +37,7 @@ url-builder = "0.1.1"
 serde-partial = "0.3.1"
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
 surrealdb = { version = "2.2.1", features = ["kv-rocksdb"] }
+uuid = { version = "1.16.0", features = ["v4"] }
 
 
 [features]

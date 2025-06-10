@@ -160,11 +160,21 @@
 <Toaster position="bottom-left" />
 <div class="flex flex-col h-full">
   <!-- Title -->
-  <div class="flex flex-col sm:flex-row justify-between mb-2 p-2">
+  <div class="flex flex-col sm:flex-row justify-between mb-2 p-2 group transition-all duration-700 relative">
     <Button variant="ghost" href="/" class="text-2xl font-bold space-x-2">
       Ennesults
     </Button>
-    <div class="sm:flex sm:space-x-2 items-center">
+    <!-- Mobile menu (xs and smaller) -->
+    <div class="absolute grid grid-cols-2 items-center overflow-hidden h-0 group-hover:h-32 duration-200 bg-background group-hover:border-b-2 border-foreground translate-y-12 inset-0 origin-top xs:hidden">
+      <Button variant="ghost" href="/announcements">Announcements</Button>
+      <Button variant="ghost" href="/insults">Insults</Button>
+      <Button variant="ghost" href="/comebacks">Comebacks</Button>
+      <Button variant="ghost" href="/users">Users</Button>
+      <Button variant="ghost" href="/settings">Settings</Button>
+      <NotificationsPanel />
+    </div>
+    <!-- Desktop menu (larger than xs) -->
+    <div class="hidden xs:flex sm:space-x-2 items-center">
       <Button variant="ghost" href="/announcements">Announcements</Button>
       <Button variant="ghost" href="/insults">Insults</Button>
       <Button variant="ghost" href="/comebacks">Comebacks</Button>
@@ -176,7 +186,7 @@
   </div>
   <Separator />
   <!-- Main Content -->
-  <div class="grow px-4 xl:mx-auto xl:w-1/2 my-2 overflow-y-scroll">
+  <div class="grow px-1 xs:px-4 xl:mx-auto xl:w-1/2 my-2 overflow-y-scroll">
     {#key data.pathname}
       <div in:fade={{ duration: 100, delay: 100 }} out:fade={{ duration: 100 }}>
         <slot />
@@ -192,7 +202,7 @@
           <Dialog.Root>
             <Dialog.Trigger>
               <p class="font-light italic text-sm text-gray-400 select-text">
-                ennesults-rs v{tauriVersion}
+                <span class="hidden sm:inline">ennesults-rs</span> v{tauriVersion}
               </p>
             </Dialog.Trigger>
             <Dialog.Content>

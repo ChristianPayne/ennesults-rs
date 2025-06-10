@@ -7,7 +7,7 @@ use tauri::Manager;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::task::JoinHandle;
 
-use super::{run_announcement, run_insult, say, Bot};
+use super::{announcements::run_announcement, client::say, insults::run_insult, Bot};
 
 #[derive(Debug, Default)]
 pub enum MessageThread {
@@ -195,7 +195,7 @@ async fn message_thread_loop(app_handle: tauri::AppHandle, mut rx: Receiver<Mess
         {
             // Send a message from the queue.
             let message = context.message_queue.dequeue();
-            let _ = say(app_handle.state::<Bot>().clone(), &message).await;
+            let _ = say(app_handle.clone(), &message).await;
             // println!("🚀 Sending message: {}", message);
             context.last_message_time = now;
         }

@@ -3,7 +3,8 @@ use twitch_irc::message::PrivmsgMessage;
 
 use crate::bot::{
     api::{connect_to_channel, connect_to_twitch},
-    run_insult, Bot,
+    insults::run_insult,
+    Bot,
 };
 
 use super::{Command, UserLevel};

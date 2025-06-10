@@ -1,7 +1,7 @@
 {
   "name": "ennesults-rs",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.6.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -27,7 +27,8 @@
     "svelte-radix": "^1.1.1",
     "svelte-sonner": "^0.3.28",
     "tailwind-merge": "^2.5.2",
-    "tailwind-variants": "^0.2.1"
+    "tailwind-variants": "^0.2.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.5",

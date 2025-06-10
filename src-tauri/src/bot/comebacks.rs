@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::{say, Bot};
+use crate::bot::{client::say, Bot};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -41,17 +41,12 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
             return false;
         }
 
-        if let Some(bot_name) = state.get_bot_name() {
-            // Get bot name
-            (
-                bot_name,
-                settings.percent_chance_of_comeback,
-                comeback_options.0.clone(),
-                settings.channel_name.clone(),
-            )
-        } else {
-            return false;
-        }
+        (
+            state.get_bot_name(),
+            settings.percent_chance_of_comeback,
+            comeback_options.0.clone(),
+            settings.channel_name.clone(),
+        )
     };
 
     // Check if bot name is in msg.
@@ -70,7 +65,7 @@ pub async fn process_comebacks(app_handle: AppHandle, msg: &PrivmsgMessage) -> b
             formatted_comeback = formatted_comeback.replace("{{user}}", msg.sender.name.as_str());
             formatted_comeback = formatted_comeback.replace("{{streamer}}", channel_name.as_str());
 
-            let _ = say(state.clone(), formatted_comeback.as_str()).await;
+            let _ = say(app_handle.clone(), formatted_comeback.as_str()).await;
             return true;
         }
     }

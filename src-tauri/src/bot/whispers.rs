@@ -1,7 +1,7 @@
 use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::WhisperMessage;
 
-use crate::bot::{say, Bot};
+use crate::bot::{client::say, Bot};
 
 pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
     let bot = app_handle.state::<Bot>();
@@ -25,7 +25,7 @@ pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
         users_allowed_to_whisper.contains(&msg.sender.name.to_lowercase());
 
     if sender_allowed_to_whisper {
-        let _ = say(bot, msg.message_text.as_str()).await;
+        let _ = say(app_handle.clone(), msg.message_text.as_str()).await;
         app_handle
             .emit(
                 "alert",

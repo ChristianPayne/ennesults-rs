@@ -1,10 +1,14 @@
+use crate::{
+    bot::{
+        announcements::Announcements,
+        comebacks::Comebacks,
+        insults::Insults,
+        users::{User, Users},
+    },
+    helpers::file::{write_file, WriteFileError},
+};
 use std::sync::Mutex;
-
 use tauri::{AppHandle, Emitter};
-
-use crate::helpers::file::{write_file, WriteFileError};
-
-use super::{Announcements, Comebacks, Insults, User, Users};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct BotData {

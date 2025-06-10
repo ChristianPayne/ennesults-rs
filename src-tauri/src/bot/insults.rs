@@ -5,9 +5,10 @@ use ts_rs::TS;
 
 use rand::seq::SliceRandom;
 
-use crate::bot::get_random_user;
-
-use super::{Bot, User, Users};
+use crate::bot::{
+    users::{get_random_user, User, Users},
+    Bot,
+};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]

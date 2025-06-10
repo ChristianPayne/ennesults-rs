@@ -25,6 +25,7 @@ pub enum UserLevel {
     Moderator,
     Broadcaster,
     Creator,
+    Bot,
 }
 
 impl UserLevel {
@@ -35,10 +36,18 @@ impl UserLevel {
 
 pub trait Command: Send {
     /// The user level required to get the command to run. All levels under this will not be allowed.
-    fn get_required_user_level(&self) -> UserLevel;
+    fn get_required_user_level(&self) -> UserLevel {
+        UserLevel::Viewer
+    }
     /// This function will run when the command is matched. The optional returned string is the reply that Ennesults will say in chat.
-    fn run(&self, args: Vec<String>, msg: &PrivmsgMessage, app_handle: AppHandle)
-        -> Option<String>;
+    fn run(
+        &self,
+        _args: Vec<String>,
+        _msg: &PrivmsgMessage,
+        _app_handle: AppHandle,
+    ) -> Option<String> {
+        Some("⚠️ Command still being worked on! ⚠️".to_string())
+    }
 }
 
 pub fn command_from_str(command_string: &str) -> Option<Box<dyn Command>> {
@@ -62,7 +71,6 @@ pub enum ParseCommandError {
 pub fn parse_for_command(
     msg: &PrivmsgMessage,
 ) -> Result<(Box<dyn Command>, Vec<String>), ParseCommandError> {
-    // println!("{}", &msg.message_text);
     if !msg.message_text.starts_with('!') {
         return Err(ParseCommandError::NotACommand);
     };
@@ -71,6 +79,7 @@ pub fn parse_for_command(
     let command = raw_message.split_off(1);
     let msg_split: Vec<String> = command
         .split_whitespace()
+        // Max allowable arguments are two; command arg1 arg2.
         .take(3)
         .map(|x| x.to_string())
         .collect();
@@ -115,9 +124,7 @@ pub fn parse_msg_for_user_level(msg: &PrivmsgMessage) -> UserLevel {
     UserLevel::Viewer
 }
 
-pub fn meets_minimum_user_level(
-    incoming_user_level: UserLevel,
-    reference_user_level: UserLevel,
-) -> bool {
-    incoming_user_level.index() >= reference_user_level.index()
+/// Checks a user level against a requirement. If the user level is *at or above* the requirement, this will succeed.
+pub fn has_sufficient_permissions(user_level: UserLevel, required_user_level: UserLevel) -> bool {
+    user_level.index() >= required_user_level.index()
 }

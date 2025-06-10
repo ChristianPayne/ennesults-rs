@@ -125,7 +125,7 @@ pub fn get_random_user(
 pub mod api {
     use tauri::Manager;
 
-    use crate::bot::{Bot, User};
+    use crate::bot::{users::User, Bot};
 
     #[tauri::command]
     pub async fn get_users(state: tauri::State<'_, Bot>) -> Result<Vec<User>, String> {
