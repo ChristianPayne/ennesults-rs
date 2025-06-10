@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::{say, Bot};
+use crate::bot::{client::say, Bot};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]

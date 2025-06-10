@@ -1,8 +1,20 @@
-use crate::commands::UserLevel;
+pub mod announcements;
+pub mod auth;
+pub mod bot_data;
+pub mod client;
+pub mod comebacks;
+pub mod corrections;
+pub mod insults;
+pub mod message_thread;
+pub mod settings;
+pub mod users;
+pub mod whispers;
 
-use super::Authentication;
-use super::{BotData, Client, Settings};
-use chrono::Utc;
+use crate::bot::{
+    auth::Authentication, bot_data::BotData, client::Client, comebacks::Comebacks,
+    settings::Settings,
+};
+use crate::commands::UserLevel;
 use std::sync::Mutex;
 use ts_rs::TS;
 
@@ -81,11 +93,18 @@ impl Default for Bot {
 }
 
 pub mod api {
-    use tauri::{AppHandle, Manager};
-
-    use crate::bot::{Bot, TwitchMessage};
+    pub use super::announcements::api::*;
+    pub use super::auth::api::*;
+    pub use super::client::api::*;
+    pub use super::comebacks::api::*;
+    pub use super::insults::api::*;
+    pub use super::settings::api::*;
+    pub use super::users::api::*;
+    pub use super::whispers::api::*;
 
     use super::Authentication;
+    use crate::bot::{Bot, TwitchMessage};
+    use tauri::{AppHandle, Manager};
 
     #[tauri::command]
     pub fn get_chat_messages(state: tauri::State<'_, Bot>) -> Result<Vec<TwitchMessage>, String> {

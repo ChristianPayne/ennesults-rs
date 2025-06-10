@@ -1,18 +1,18 @@
 use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::{choose_random_insult, format_insult, Bot, InsultTag};
-
-use super::{meets_minimum_user_level, parse_msg_for_user_level, Command, UserLevel};
+use crate::{
+    bot::{
+        insults::{choose_random_insult, format_insult, InsultTag},
+        Bot,
+    },
+    commands::{has_sufficient_permissions, parse_msg_for_user_level, Command, UserLevel},
+};
 
 #[derive(Debug)]
 pub struct ConsentCommand;
 
 impl Command for ConsentCommand {
-    fn get_required_user_level(&self) -> UserLevel {
-        UserLevel::Viewer
-    }
-
     fn run(
         &self,
         args: Vec<String>,
@@ -25,7 +25,8 @@ impl Command for ConsentCommand {
         let consent_target = match args.len() {
             0 => Some(msg.sender.name.clone()),
             1 => {
-                if !meets_minimum_user_level(parse_msg_for_user_level(msg), UserLevel::Moderator) {
+                if !has_sufficient_permissions(parse_msg_for_user_level(msg), UserLevel::Moderator)
+                {
                     return Some(format!(
                         "{}, you cannot consent for someone else.",
                         msg.sender.name,

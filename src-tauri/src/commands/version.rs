@@ -7,10 +7,6 @@ use super::{Command, UserLevel};
 pub struct VersionCommand;
 
 impl Command for VersionCommand {
-    fn get_required_user_level(&self) -> UserLevel {
-        UserLevel::Creator
-    }
-
     fn run(
         &self,
         _args: Vec<String>,

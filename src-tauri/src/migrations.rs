@@ -1,4 +1,7 @@
-use crate::bot::{InsultTag, Insults, Settings};
+use crate::bot::{
+    insults::{InsultTag, Insults},
+    settings::Settings,
+};
 use crate::helpers::file::{delete_file, read_json_file, write_file, WriteFileError};
 
 /// Migrations allow us to change the shape of the file system before running the application.

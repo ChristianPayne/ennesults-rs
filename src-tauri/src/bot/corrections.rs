@@ -2,7 +2,7 @@ use rand::Rng;
 use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use super::{say, Bot};
+use super::{client::say, Bot};
 
 pub async fn process_corrections(app_handle: AppHandle, msg: &PrivmsgMessage) -> bool {
     if !msg.message_text.to_lowercase().contains("en") {

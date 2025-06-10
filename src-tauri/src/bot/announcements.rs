@@ -2,7 +2,10 @@ use rand::seq::SliceRandom;
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
-use super::{get_random_user, Bot, User, Users};
+use crate::bot::{
+    users::{get_random_user, User, Users},
+    Bot,
+};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(default = "Default::default")]
@@ -150,10 +153,10 @@ pub fn format_announcement(
 pub mod api {
     use tauri::{Emitter, Manager};
 
-    use crate::bot::Bot;
-    use crate::helpers::file::{write_file, WriteFileError};
-
-    use super::Announcement;
+    use crate::{
+        bot::{announcements::Announcement, Bot},
+        helpers::file::{write_file, WriteFileError},
+    };
 
     #[tauri::command]
     pub fn get_announcements(app_handle: tauri::AppHandle) -> Vec<Announcement> {

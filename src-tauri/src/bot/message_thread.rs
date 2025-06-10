@@ -7,7 +7,7 @@ use tauri::Manager;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::task::JoinHandle;
 
-use super::{run_announcement, run_insult, say, Bot};
+use super::{announcements::run_announcement, client::say, insults::run_insult, Bot};
 
 #[derive(Debug, Default)]
 pub enum MessageThread {

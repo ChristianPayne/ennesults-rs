@@ -1,7 +1,7 @@
 use tauri::{AppHandle, Emitter, Manager};
 use twitch_irc::message::WhisperMessage;
 
-use crate::bot::{say, Bot};
+use crate::bot::{client::say, Bot};
 
 pub async fn handle_whisper(app_handle: AppHandle, msg: WhisperMessage) {
     let bot = app_handle.state::<Bot>();

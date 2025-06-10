@@ -1,18 +1,18 @@
 use tauri::{AppHandle, Manager};
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::bot::{choose_random_insult, format_insult, Bot, InsultTag};
-
-use super::{Command, UserLevel};
+use crate::{
+    bot::{
+        insults::{choose_random_insult, format_insult, InsultTag},
+        Bot,
+    },
+    commands::Command,
+};
 
 #[derive(Debug)]
 pub struct LurkCommand;
 
 impl Command for LurkCommand {
-    fn get_required_user_level(&self) -> UserLevel {
-        UserLevel::Viewer
-    }
-
     fn run(
         &self,
         _args: Vec<String>,

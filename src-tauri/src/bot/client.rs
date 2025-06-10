@@ -8,14 +8,17 @@ use twitch_irc::transport::tcp::{TCPTransport, TLS};
 use twitch_irc::TwitchIRCClient;
 use uuid::Uuid;
 
-use super::{
-    handle_whisper, process_comebacks, process_corrections, process_user_state, Bot, MessageThread,
-    SerializeRBGColor, TwitchMessage,
+use crate::{
+    bot::{
+        comebacks::process_comebacks, corrections::process_corrections,
+        message_thread::MessageThread, users::process_user_state, whispers::handle_whisper, Bot,
+        SerializeRBGColor, TwitchMessage,
+    },
+    commands::{
+        has_sufficient_permissions, parse_for_command, parse_msg_for_user_level, UserLevel,
+    },
+    helpers::titlecase::TitleCase,
 };
-use crate::commands::{
-    meets_minimum_user_level, parse_for_command, parse_msg_for_user_level, UserLevel,
-};
-use crate::helpers::titlecase::TitleCase;
 
 // CLIENT
 #[derive(Debug, Default)]
@@ -167,7 +170,7 @@ pub async fn handle_incoming_chat(
 
                 // Chained if else statements so we only do one of the options.
                 if let Ok((command, args)) = parse_for_command(&msg) {
-                    if meets_minimum_user_level(
+                    if has_sufficient_permissions(
                         parse_msg_for_user_level(&msg),
                         command.get_required_user_level(),
                     ) {
@@ -230,8 +233,10 @@ pub async fn handle_incoming_chat(
 pub mod api {
     use crate::{
         bot::{
-            handle_incoming_chat, validate_auth, Authentication, AuthenticationError, Bot,
-            ChannelDetails, MessageThread,
+            auth::validate_auth,
+            auth::{Authentication, AuthenticationError, ChannelDetails},
+            client::{handle_incoming_chat, MessageThread},
+            Bot,
         },
         twitch::get_broadcaster_id,
     };
