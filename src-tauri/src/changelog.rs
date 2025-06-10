@@ -6,7 +6,7 @@ pub struct ChangelogVersionNotes {
     title: Option<&'static str>,
     notes: &'static str,
 }
-const CHANGELOG: [ChangelogVersionNotes; 16] = [
+const CHANGELOG: &[ChangelogVersionNotes] = &[
     ChangelogVersionNotes {
         version: "v1.6.2",
         title: None,
