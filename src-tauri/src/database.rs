@@ -1,42 +1,32 @@
-use serde::{Deserialize, Serialize};
-use surrealdb::RecordId;
-use surrealdb::Surreal;
-
-use surrealdb::engine::local::RocksDb;
+use serde::Serialize;
+use surrealdb::{
+    engine::local::{Db, RocksDb},
+    opt::auth::Root,
+    Surreal,
+};
 use tauri::{AppHandle, Manager};
 
-#[derive(Debug, Serialize)]
-struct Name<'a> {
-    first: &'a str,
-    last: &'a str,
-}
+pub mod init;
 
 #[derive(Debug, Serialize)]
-struct Person<'a> {
-    title: &'a str,
-    name: Name<'a>,
-    marketing: bool,
+pub enum DatabaseError {
+    ConnectionError(String),
+    SurrealError(surrealdb::Error),
 }
 
-#[derive(Debug, Serialize)]
-struct Responsibility {
-    marketing: bool,
+impl std::fmt::Display for DatabaseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Error: {:?}", self)
+    }
 }
 
-#[derive(Debug, Deserialize)]
-struct Record {
-    #[allow(dead_code)]
-    id: RecordId,
-}
-
-#[tauri::command]
-pub async fn test(app_handle: AppHandle) -> surrealdb::Result<()> {
-    println!("Testing database stuff.");
-
+pub async fn connect_to_database(
+    app_handle: &AppHandle,
+) -> Result<surrealdb::Surreal<Db>, DatabaseError> {
     let resource_path = app_handle
         .path()
         .app_data_dir()
-        .expect("Can't resolve app data dir.");
+        .map_err(|e| DatabaseError::ConnectionError(e.to_string()))?;
 
     let full_path = format!(
         "{}/{}",
@@ -45,42 +35,34 @@ pub async fn test(app_handle: AppHandle) -> surrealdb::Result<()> {
     );
 
     // Create database connection using RocksDB
-    let db = Surreal::new::<RocksDb>(full_path).await?;
+    let db = Surreal::new::<RocksDb>(full_path).await.map_err(|e| {
+        println!("❌ Failed to create database connection: {:?}", e);
+        DatabaseError::SurrealError(e)
+    })?;
 
-    // Select a specific namespace / database
-    db.use_ns("test").use_db("test").await?;
+    // Set namespace and database
+    match db.use_ns("ennesults").use_db("dev").await {
+        Ok(_) => (),
+        Err(e) => {
+            println!("❌ Failed to set namespace/database: {:?}", e);
+            return Err(DatabaseError::SurrealError(e));
+        }
+    }
 
-    // // Create a new person with a random id
-    // let created: Option<Record> = db
-    //     .create("person")
-    //     .content(Person {
-    //         title: "Founder & CEO",
-    //         name: Name {
-    //             first: "Tobie",
-    //             last: "Morgan Hitchcock",
-    //         },
-    //         marketing: true,
-    //     })
-    //     .await?;
-    // dbg!(created);
+    // Sign in
+    match db
+        .signin(Root {
+            username: "root",
+            password: "root",
+        })
+        .await
+    {
+        Ok(_) => (),
+        Err(e) => {
+            println!("❌ Database signin failed: {:?}", e);
+            return Err(DatabaseError::SurrealError(e));
+        }
+    }
 
-    // // Update a person record with a specific id
-    // let updated: Option<Record> = db
-    //     .update(("person", "jaime"))
-    //     .merge(Responsibility { marketing: true })
-    //     .await?;
-    // dbg!(updated);
-
-    // // Select all people records
-    // let people: Vec<Record> = db.select("person").await?;
-    // dbg!(people);
-
-    // Perform a custom advanced query
-    let groups = db
-        .query("SELECT marketing, count() FROM type::table($table) GROUP BY marketing")
-        .bind(("table", "person"))
-        .await?;
-    dbg!(groups);
-
-    Ok(())
+    Ok(db)
 }

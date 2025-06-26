@@ -35,14 +35,13 @@
       return;
     }
 
-    let currentAnnouncements = get(announcements$);
     let newAnnouncement: Announcement = {
       id: nanoid(),
       value: input.trim(),
     };
 
-    await invoke("save_announcements", {
-      announcements: [newAnnouncement, ...currentAnnouncements],
+    await invoke("save_announcement", {
+      announcement: newAnnouncement,
     });
 
     input = "";

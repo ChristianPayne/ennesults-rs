@@ -152,7 +152,17 @@
   }
 
   async function testDb() {
-    await invoke("test").then(val => console.log(val))
+    await invoke("create_database").then(val => console.log(val)).catch(e => console.error(e));
+  }
+
+  async function checkTables() {
+    await invoke<string>("check_tables").then(val => {
+      console.log("Table check result:", val);
+      alertNotification("System", {
+        title: "Database Tables",
+        description: val,
+      });
+    }).catch(e => console.error(e));
   }
 </script>
 
@@ -181,6 +191,7 @@
       <Button variant="ghost" href="/users">Users</Button>
       <Button variant="ghost" href="/settings">Settings</Button>
       <Button variant="ghost" on:click={testDb}>Test</Button>
+      <Button variant="ghost" on:click={checkTables}>Check Tables</Button>
       <NotificationsPanel />
     </div>
   </div>

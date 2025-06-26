@@ -151,122 +151,193 @@ pub fn format_announcement(
 }
 
 pub mod api {
+    use surrealdb::opt::Resource;
     use tauri::{Emitter, Manager};
 
     use crate::{
-        bot::{announcements::Announcement, Bot},
+        bot::{
+            announcements::{self, Announcement},
+            Bot,
+        },
         helpers::file::{write_file, WriteFileError},
     };
 
     #[tauri::command]
-    pub fn get_announcements(app_handle: tauri::AppHandle) -> Vec<Announcement> {
-        let state = app_handle.state::<Bot>();
-        let announcements = {
-            state
-                .bot_data
-                .announcements
-                .lock()
-                .expect("Failed to get lock for announcements.")
-                .announcements
-                .clone()
+    pub async fn get_announcements(
+        app_handle: tauri::AppHandle,
+    ) -> Result<Vec<Announcement>, String> {
+        // Get from SurrealDB
+        let db = match crate::database::connect_to_database(&app_handle).await {
+            Ok(db) => db,
+            Err(e) => return Err(format!("Failed to connect to database: {:?}", e)),
         };
 
-        announcements
+        // Left off here trying to get all announcements from the database. 
+        // The problems is that surreal can't convert to a vec of announcements.
+        // There is garbage in their "thing" type and it is a hassle to convert.
+        // https://github.com/surrealdb/surrealdb/issues/5794
+        let announcements = db
+            .select(Resource::from("announcements"))
+            .await
+            .map_err(|e| format!("Failed to query announcements: {:?}", e))?;
+
+        dbg!(&announcements);
+
+        Ok(announcements)
     }
 
     #[tauri::command]
-    pub fn update_announcement(
+    pub async fn update_announcement(
         app_handle: tauri::AppHandle,
         announcement: Announcement,
     ) -> Result<(), String> {
         let state = app_handle.state::<Bot>();
-        let mut announcements = state
-            .bot_data
-            .announcements
-            .lock()
-            .expect("Failed to get lock for announcements.")
-            .clone();
-
-        match announcements
-            .announcements
-            .iter_mut()
-            .find(|i| i.id == announcement.id)
         {
-            Some(announcement_in_db) => {
-                announcement_in_db.value = announcement.value;
+            let mut announcements = state
+                .bot_data
+                .announcements
+                .lock()
+                .expect("Failed to get lock for announcements.")
+                .clone();
+
+            match announcements
+                .announcements
+                .iter_mut()
+                .find(|i| i.id == announcement.id)
+            {
+                Some(announcement_in_db) => {
+                    announcement_in_db.value = announcement.value.clone();
+                }
+                None => return Err("Failed to find announcement in database".to_string()),
             }
-            None => return Err("Failed to find announcement in database".to_string()),
-        }
 
-        save_announcements(app_handle, announcements.announcements)?;
+            // Update in-memory state
+            let mut announcements_state = state
+                .bot_data
+                .announcements
+                .lock()
+                .expect("Failed to get lock for announcements.");
+            announcements_state.announcements = announcements.announcements.clone();
+        } // Drop mutex guards
 
-        Ok(())
-    }
+        // Update in SurrealDB
+        let db = match crate::database::connect_to_database(&app_handle).await {
+            Ok(db) => db,
+            Err(e) => return Err(format!("Failed to connect to database: {:?}", e)),
+        };
 
-    #[tauri::command]
-    pub fn save_announcements(
-        app_handle: tauri::AppHandle,
-        announcements: Vec<Announcement>,
-    ) -> Result<(), String> {
-        let state = app_handle.state::<Bot>();
-        let mut announcements_state = state
-            .bot_data
-            .announcements
-            .lock()
-            .expect("Failed to get lock for settings");
-
-        announcements_state.announcements = announcements.clone();
-
-        let write_result = write_file::<Vec<Announcement>>(
-            &app_handle,
-            "announcements.json",
-            announcements.clone(),
+        // Use raw query to avoid serialization issues
+        let query = format!(
+            "UPDATE announcements:{} CONTENT {{ id: '{}', value: '{}' }}",
+            announcement.id, announcement.id, announcement.value
         );
 
-        if let Some(err) = write_result.err() {
-            match err {
-                WriteFileError::FailedConvertJSON => {
-                    return Err("Failed to convert to json.".to_string())
-                }
-                WriteFileError::FailedCreateFile => {
-                    return Err("Failed to create file.".to_string())
-                }
-                WriteFileError::FailedWriteFile => {
-                    return Err("Failed to write contents in file.".to_string())
-                }
-            }
-        } else {
-            let _ = app_handle.emit("announcements_update", announcements.clone());
+        match db.query(query).await {
+            Ok(_) => println!("✅ Updated announcement: {}", announcement.id),
+            Err(e) => return Err(format!("Failed to update announcement: {:?}", e)),
         }
+
+        let _ = app_handle.emit("announcements_update", announcement.clone());
 
         Ok(())
     }
 
     #[tauri::command]
-    pub fn delete_announcement(
+    pub async fn save_announcement(
+        app_handle: tauri::AppHandle,
+        announcement: Announcement,
+    ) -> Result<(), String> {
+        let state = app_handle.state::<Bot>();
+
+        // Save to SurrealDB
+        let db = match crate::database::connect_to_database(&app_handle).await {
+            Ok(db) => db,
+            Err(e) => return Err(format!("Failed to connect to database: {:?}", e)),
+        };
+
+        // Use raw query to avoid serialization issues
+        let query = format!(
+            "CREATE announcements:{} CONTENT {{ id: '{}', value: '{}' }}",
+            announcement.id, announcement.id, announcement.value
+        );
+
+        match db.query(query).await {
+            Ok(_) => println!("✅ Saved announcement: {}", announcement.id),
+            Err(e) => {
+                println!("Failed to save announcement {:?}", &e);
+                return Err(format!(
+                    "Failed to save announcement {}: {:?}",
+                    announcement.id, e
+                ));
+            }
+        }
+
+        {
+            let mut announcements_state = state
+                .bot_data
+                .announcements
+                .lock()
+                .expect("Failed to get lock for settings");
+
+            // Check if announcement already exists
+            if let Some(existing) = announcements_state
+                .announcements
+                .iter_mut()
+                .find(|a| a.id == announcement.id)
+            {
+                // Update existing
+                existing.value = announcement.value.clone();
+            } else {
+                // Add new
+                announcements_state.announcements.push(announcement.clone());
+            }
+
+            let _ = app_handle.emit("announcements_update", announcements_state.clone());
+        } // Drop the mutex guard here
+
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub async fn delete_announcement(
         app_handle: tauri::AppHandle,
         announcement_id: String,
     ) -> Result<(), String> {
         let state = app_handle.state::<Bot>();
-        let announcements = {
+        {
             let mut announcements = state
                 .bot_data
                 .announcements
                 .lock()
                 .expect("Failed to get lock for announcements");
+
             match announcements
                 .announcements
                 .iter()
                 .position(|announcement| announcement.id == announcement_id)
             {
-                None => return Err("Could not find index of insult.".to_string()),
-                Some(index) => announcements.announcements.remove(index),
-            };
+                None => return Err("Could not find announcement.".to_string()),
+                Some(index) => {
+                    announcements.announcements.remove(index);
+                }
+            }
+        } // Drop mutex guard
 
-            announcements.clone()
+        // Delete from SurrealDB
+        let db = match crate::database::connect_to_database(&app_handle).await {
+            Ok(db) => db,
+            Err(e) => return Err(format!("Failed to connect to database: {:?}", e)),
         };
 
-        let _ = save_announcements(app_handle.clone(), announcements.announcements);
+        match db
+            .delete::<Option<Announcement>>(("announcements", &announcement_id))
+            .await
+        {
+            Ok(_) => println!("✅ Deleted announcement: {}", announcement_id),
+            Err(e) => return Err(format!("Failed to delete announcement: {:?}", e)),
+        }
+
+        let _ = app_handle.emit("announcements_update", announcement_id);
 
         Ok(())
     }

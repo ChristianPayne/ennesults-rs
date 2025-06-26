@@ -67,7 +67,7 @@ async fn main() {
             crate::bot::api::get_announcements,
             crate::bot::api::update_announcement,
             crate::bot::api::delete_announcement,
-            crate::bot::api::save_announcements,
+            crate::bot::api::save_announcement,
             crate::bot::api::open_auth_window,
             crate::bot::api::decode_auth_redirect,
             crate::bot::api::get_auth_status,
@@ -75,7 +75,8 @@ async fn main() {
             crate::updater::fetch_update,
             crate::updater::install_update,
             crate::changelog::get_changelog,
-            crate::database::test
+            crate::database::init::create_database,
+            crate::database::init::check_tables
         ])
         .setup(|app| {
             // Manage state for updates.
